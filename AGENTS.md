@@ -315,12 +315,12 @@ A task is complete when:
 1. The code runs without errors (`make dev` starts cleanly)
 2. `make test` passes with no failures
 3. `make lint` passes with no violations
-3. Any new model has a corresponding Alembic migration generated (not necessarily applied)
-4. Any new route has a corresponding Jinja2 template or returns valid JSON
-5. No business logic lives in a route handler
-6. All new enums have a `.label` property
-7. No rule in "What the Agent Must Not Do" has been violated
-8. The agent has not split `models.py` unless the split rule threshold was reached
+4. Any new model has a corresponding Alembic migration generated (not necessarily applied)
+5. Any new route has a corresponding Jinja2 template or returns valid JSON
+6. No business logic lives in a route handler
+7. All new enums have a `.label` property
+8. No rule in "What the Agent Must Not Do" has been violated
+9. The agent has not split `models.py` unless the split rule threshold was reached
 
 ---
 
