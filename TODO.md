@@ -83,7 +83,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   next_suggested (datetime nullable), teacher_approved (bool, default False).
   Generate Alembic migration.
 
-- [ ] **1.7 — PracticeSession and PracticeSessionItem models**
+- [x] **1.7 — PracticeSession and PracticeSessionItem models**
   `PracticeSession`: id, user_id FK, started_at, ended_at (nullable), total_minutes (nullable).
   `PracticeSessionItem`: id, session_id FK, item_type (enum: warmup | learning | retention),
   tune_id FK (nullable), warmup_id FK (nullable), minutes_allocated, completed (bool),
@@ -245,6 +245,12 @@ Before closing Phase 1:
 This phase is not yet ready for implementation. The design is intentionally
 incomplete and will be developed as the author's understanding of the
 pedagogical requirements matures through practice and teaching.
+
+- [ ] **Lesson sessions** — a session type on par with practice sessions
+      but structured around technique instruction rather than tune learning
+      and retention. Likely teacher-led. Design deferred until Phase 4
+      pedagogy layer is defined. `SessionItemType.technique` is already
+      in place as a building block.
 
 ### What is known and should inform earlier phases
 

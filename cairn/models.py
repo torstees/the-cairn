@@ -78,6 +78,13 @@ class ContentVisibility(LabelledEnum):
     private = "private"
 
 
+class SessionItemType(LabelledEnum):
+    warmup = "warmup"
+    learning = "learning"
+    retention = "retention"
+    technique = "technique"
+
+
 class Tune(TimestampMixin, Base):
     __tablename__ = "tunes"
 
@@ -95,6 +102,7 @@ class Tune(TimestampMixin, Base):
     difficulties: Mapped[list["TuneDifficulty"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     set_members: Mapped[list["TuneSetMember"]] = relationship(back_populates="tune")
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="tune")
+    session_items: Mapped[list["PracticeSessionItem"]] = relationship(back_populates="tune")
 
 
 class TuneSetting(TimestampMixin, Base):
@@ -138,6 +146,8 @@ class WarmupItem(TimestampMixin, Base):
     difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
 
     __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_warmup_difficulty_range"),)
+
+    session_items: Mapped[list["PracticeSessionItem"]] = relationship(back_populates="warmup")
 
 
 class TuneSet(TimestampMixin, Base):
@@ -184,6 +194,7 @@ class User(TimestampMixin, Base):
     primary_instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
 
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="user")
+    practice_sessions: Mapped[list["PracticeSession"]] = relationship(back_populates="user")
 
 
 class StudentProgress(TimestampMixin, Base):
@@ -206,3 +217,35 @@ class StudentProgress(TimestampMixin, Base):
 
     user: Mapped["User"] = relationship(back_populates="progress_records")
     tune: Mapped["Tune"] = relationship(back_populates="progress_records")
+
+
+class PracticeSession(TimestampMixin, Base):
+    __tablename__ = "practice_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    total_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    user: Mapped["User"] = relationship(back_populates="practice_sessions")
+    items: Mapped[list["PracticeSessionItem"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+class PracticeSessionItem(TimestampMixin, Base):
+    __tablename__ = "practice_session_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("practice_sessions.id"), nullable=False)
+    item_type: Mapped[SessionItemType] = mapped_column(Enum(SessionItemType), nullable=False)
+    tune_id: Mapped[int | None] = mapped_column(ForeignKey("tunes.id"), nullable=True)
+    warmup_id: Mapped[int | None] = mapped_column(ForeignKey("warmup_items.id"), nullable=True)
+    minutes_allocated: Mapped[int] = mapped_column(Integer, nullable=False)
+    completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    rating_given: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    session: Mapped["PracticeSession"] = relationship(back_populates="items")
+    tune: Mapped["Tune | None"] = relationship(back_populates="session_items")
+    warmup: Mapped["WarmupItem | None"] = relationship(back_populates="session_items")
