@@ -26,7 +26,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Create `cairn/dependencies.py` (`get_db` dependency).
   App must start with `make dev` and return 200 on `GET /`.
 
-- [ ] **0.4 — Base template**
+- [x] **0.4 — Base template**
   Create `cairn/templates/base.html`.
   Must load via CDN: Tailwind CSS, HTMX, Alpine.js, abcjs (pin versions).
   Include a minimal nav placeholder and a `{% block content %}` area.
