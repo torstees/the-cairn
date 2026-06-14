@@ -96,7 +96,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   `StudentProgress`, `WarmupItem`.
   All `Read` schemas must include `id` and `created_at`.
 
-- [ ] **1.9 — Apply all migrations**
+- [x] **1.9 — Apply all migrations**
   Run `make migrate`. Verify `cairn.db` is created and all tables exist.
   Write a smoke test in `tests/test_models.py` that creates one instance of each
   model and commits it.

@@ -360,6 +360,9 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
 - Framework: `pytest` with `pytest-asyncio`
 - All tests use an in-memory SQLite database configured in `conftest.py`
 - Every service function must have at least one test
+- Use realistic domain data for test fixtures — actual Irish tune titles,
+  correct keys, valid ABC notation snippets, plausible instrument names.
+  Avoid placeholder values like "test", "foo", or "key_placeholder".
 - Route tests use FastAPI's `AsyncClient` from `httpx`
 - Run tests: `make test`
 
