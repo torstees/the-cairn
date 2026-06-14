@@ -50,7 +50,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Include relationships and `TimestampMixin`.
   Generate Alembic migration.
 
-- [ ] **1.3 — WarmupItem model**
+- [x] **1.3 — WarmupItem model**
   Fields: id, title, warmup_type, content, instrument (nullable), difficulty.
   Generate Alembic migration.
 

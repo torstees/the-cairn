@@ -151,3 +151,18 @@ class TuneDifficulty(TimestampMixin, Base):
     )
 
     tune: Mapped["Tune"] = relationship(back_populates="difficulties")
+
+
+class WarmupItem(TimestampMixin, Base):
+    __tablename__ = "warmup_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    warmup_type: Mapped[WarmupType] = mapped_column(Enum(WarmupType), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
+    difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_warmup_difficulty_range"),
+    )
