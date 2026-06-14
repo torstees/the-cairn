@@ -119,6 +119,7 @@ class Tune(TimestampMixin, Base):
     difficulties: Mapped[list["TuneDifficulty"]] = relationship(
         back_populates="tune", cascade="all, delete-orphan"
     )
+    set_members: Mapped[list["TuneSetMember"]] = relationship(back_populates="tune")
 
 
 class TuneSetting(TimestampMixin, Base):
@@ -166,3 +167,36 @@ class WarmupItem(TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_warmup_difficulty_range"),
     )
+
+
+class TuneSet(TimestampMixin, Base):
+    __tablename__ = "tune_sets"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    flow_difficulty: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    flow_difficulty_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "flow_difficulty IS NULL OR (flow_difficulty >= 1 AND flow_difficulty <= 5)",
+            name="ck_tuneset_flow_difficulty_range",
+        ),
+    )
+
+    members: Mapped[list["TuneSetMember"]] = relationship(
+        back_populates="tune_set", cascade="all, delete-orphan", order_by="TuneSetMember.order"
+    )
+
+
+class TuneSetMember(TimestampMixin, Base):
+    __tablename__ = "tune_set_members"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    set_id: Mapped[int] = mapped_column(ForeignKey("tune_sets.id"), nullable=False)
+    tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    order: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    tune_set: Mapped["TuneSet"] = relationship(back_populates="members")
+    tune: Mapped["Tune"] = relationship(back_populates="set_members")

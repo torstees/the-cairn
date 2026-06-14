@@ -54,7 +54,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Fields: id, title, warmup_type, content, instrument (nullable), difficulty.
   Generate Alembic migration.
 
-- [ ] **1.4 — TuneSet and TuneSetMember models**
+- [x] **1.4 — TuneSet and TuneSetMember models**
   `TuneSet`: id, title, description, flow_difficulty (nullable int 1–5),
   flow_difficulty_notes (nullable text).
   `TuneSetMember`: id, set_id FK, tune_id FK, order (int, explicit position).
