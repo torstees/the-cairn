@@ -273,7 +273,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Existing `abc_notation` values that contain full ABC headers will have
   those headers stripped by `build_abc` at render time.
 
-- [ ] **2.4 — TuneSetting management**
+- [x] **2.4 — TuneSetting management**
   Add routes under `/tunes/{id}/settings`:
   - `GET /tunes/{id}/settings/new` — form for adding a new setting (HTMX partial)
   - `POST /tunes/{id}/settings` — create setting
@@ -281,7 +281,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
     (must demote existing core in same transaction)
   All responses are HTMX partials; no full page reload.
 
-- [ ] **2.5 — Tune difficulty ratings**
+- [x] **2.5 — Tune difficulty ratings**
   Add routes under `/tunes/{id}/difficulty`:
   - `GET /tunes/{id}/difficulty` — show difficulty by instrument (HTMX partial)
   - `POST /tunes/{id}/difficulty` — set difficulty for an instrument

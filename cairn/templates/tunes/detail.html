@@ -71,22 +71,7 @@
 
   {% include "tunes/partials/_settings.html" %}
 
-  <section>
-    <h2 class="text-xl font-semibold text-stone-700 mb-3">Difficulty</h2>
-    {% if tune.difficulties %}
-    <ul class="space-y-2">
-      {% for d in tune.difficulties %}
-      <li class="flex items-center gap-3 text-sm">
-        <span class="text-stone-600 w-32">{{ d.instrument.label }}</span>
-        <span class="font-medium">{{ d.difficulty }}/5</span>
-        {% if d.notes %}<span class="text-stone-500">— {{ d.notes }}</span>{% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="text-stone-500 text-sm">No difficulty ratings yet.</p>
-    {% endif %}
-  </section>
+  {% include "tunes/partials/_difficulty.html" %}
 
 </div>
 {% endblock %}

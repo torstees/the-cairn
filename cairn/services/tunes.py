@@ -2,8 +2,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Instrument, OrnamentationLevel, Tune, TuneSetting
-from cairn.schemas import TuneCreate, TuneSettingCreate, TuneUpdate
+from cairn.models import Instrument, OrnamentationLevel, Tune, TuneDifficulty, TuneSetting
+from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
 
 
 def get_setting_for_instrument(tune: Tune, instrument: Instrument | None) -> TuneSetting:
@@ -149,6 +149,37 @@ async def set_core_setting(
     await db.commit()
     await db.refresh(target)
     return target
+
+
+async def set_difficulty(
+    db: AsyncSession,
+    tune_id: int,
+    difficulty_in: TuneDifficultyCreate,
+) -> TuneDifficulty | None:
+    """Upsert a difficulty rating for a (tune, instrument) pair."""
+    if await db.get(Tune, tune_id) is None:
+        return None
+    result = await db.execute(
+        select(TuneDifficulty).where(
+            TuneDifficulty.tune_id == tune_id,
+            TuneDifficulty.instrument == difficulty_in.instrument,
+        )
+    )
+    record = result.scalar_one_or_none()
+    if record:
+        record.difficulty = difficulty_in.difficulty
+        record.notes = difficulty_in.notes
+    else:
+        record = TuneDifficulty(
+            tune_id=tune_id,
+            instrument=difficulty_in.instrument,
+            difficulty=difficulty_in.difficulty,
+            notes=difficulty_in.notes,
+        )
+        db.add(record)
+    await db.commit()
+    await db.refresh(record)
+    return record
 
 
 async def delete_tune(db: AsyncSession, tune_id: int) -> bool:

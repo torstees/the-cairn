@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneSetting, TuneType
-from cairn.schemas import TuneCreate, TuneSettingCreate, TuneUpdate
-from cairn.services.tunes import create_setting, create_tune, delete_tune, get_tune, list_tunes, set_core_setting, update_tune
+from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
+from cairn.services.tunes import create_setting, create_tune, delete_tune, get_tune, list_tunes, set_core_setting, set_difficulty, update_tune
 
 ABC = "X:1\nT:Test\nM:4/4\nK:D\n|:DEFG|ABcd:|\n"
 
@@ -245,3 +245,46 @@ async def test_set_core_returns_none_for_missing_setting(db: AsyncSession) -> No
     tune = await create_tune(db, _tune_create(), abc_notation=ABC)
     result = await set_core_setting(db, tune.id, 99999)
     assert result is None
+
+
+# ── set_difficulty ────────────────────────────────────────────────────────────
+
+def _difficulty_create(tune_id: int, **kwargs) -> TuneDifficultyCreate:
+    defaults = dict(tune_id=tune_id, instrument=Instrument.fiddle, difficulty=3)
+    return TuneDifficultyCreate(**{**defaults, **kwargs})
+
+
+async def test_set_difficulty_creates_rating(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(), abc_notation=ABC)
+    result = await set_difficulty(db, tune.id, _difficulty_create(tune.id))
+    assert result is not None
+    assert result.instrument == Instrument.fiddle
+    assert result.difficulty == 3
+
+
+async def test_set_difficulty_updates_existing(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(), abc_notation=ABC)
+    await set_difficulty(db, tune.id, _difficulty_create(tune.id, difficulty=2))
+    result = await set_difficulty(db, tune.id, _difficulty_create(tune.id, difficulty=5))
+    assert result is not None
+    assert result.difficulty == 5
+    found = await get_tune(db, tune.id)
+    assert found is not None
+    assert len(found.difficulties) == 1
+
+
+async def test_set_difficulty_returns_none_for_missing_tune(db: AsyncSession) -> None:
+    result = await set_difficulty(db, 99999, _difficulty_create(99999))
+    assert result is None
+
+
+async def test_set_difficulty_different_instruments_are_independent(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(), abc_notation=ABC)
+    await set_difficulty(db, tune.id, _difficulty_create(tune.id, instrument=Instrument.fiddle, difficulty=3))
+    await set_difficulty(db, tune.id, _difficulty_create(tune.id, instrument=Instrument.flute, difficulty=5))
+    found = await get_tune(db, tune.id)
+    assert found is not None
+    assert len(found.difficulties) == 2
+    by_instrument = {d.instrument: d.difficulty for d in found.difficulties}
+    assert by_instrument[Instrument.fiddle] == 3
+    assert by_instrument[Instrument.flute] == 5
