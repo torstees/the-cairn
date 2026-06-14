@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from cairn.models import Instrument, OrnamentationLevel, Tune, TuneSetting
-from cairn.schemas import TuneCreate, TuneUpdate
+from cairn.schemas import TuneCreate, TuneSettingCreate, TuneUpdate
 
 
 def get_setting_for_instrument(tune: Tune, instrument: Instrument | None) -> TuneSetting:
@@ -98,6 +98,57 @@ async def update_tune(
     await db.commit()
     await db.refresh(tune)
     return tune
+
+
+async def create_setting(
+    db: AsyncSession,
+    tune_id: int,
+    setting_in: TuneSettingCreate,
+) -> TuneSetting | None:
+    """Add a non-core TuneSetting to an existing tune."""
+    if await db.get(Tune, tune_id) is None:
+        return None
+    setting = TuneSetting(
+        tune_id=tune_id,
+        label=setting_in.label,
+        abc_notation=setting_in.abc_notation,
+        is_core=False,
+        instrument=setting_in.instrument,
+        source=setting_in.source,
+        ornamentation_level=setting_in.ornamentation_level,
+        source_notes=setting_in.source_notes,
+        mutation_notation=setting_in.mutation_notation,
+    )
+    db.add(setting)
+    await db.commit()
+    await db.refresh(setting)
+    return setting
+
+
+async def set_core_setting(
+    db: AsyncSession,
+    tune_id: int,
+    setting_id: int,
+) -> TuneSetting | None:
+    """Promote setting_id to core, demoting the existing core in one transaction."""
+    target = await db.get(TuneSetting, setting_id)
+    if target is None or target.tune_id != tune_id:
+        return None
+    if target.is_core:
+        return target
+    result = await db.execute(
+        select(TuneSetting).where(
+            TuneSetting.tune_id == tune_id,
+            TuneSetting.is_core.is_(True),
+        )
+    )
+    current_core = result.scalar_one_or_none()
+    if current_core:
+        current_core.is_core = False
+    target.is_core = True
+    await db.commit()
+    await db.refresh(target)
+    return target
 
 
 async def delete_tune(db: AsyncSession, tune_id: int) -> bool:

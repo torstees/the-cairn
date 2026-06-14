@@ -20,6 +20,7 @@
   var activeAudioCtx = null;
   var currentAbcString = "";
   var naturalBpm = null;
+  var activeSettingId = null;
 
   // ── ABC helpers ────────────────────────────────────────────────────────────
 
@@ -46,6 +47,43 @@
 
   // ── detail page ────────────────────────────────────────────────────────────
 
+  function applyActiveCard(settingId) {
+    document.querySelectorAll("[data-setting-id]").forEach(function (el) {
+      el.classList.remove("ring-2", "ring-stone-400", "bg-stone-50");
+    });
+    var card = document.querySelector('[data-setting-id="' + settingId + '"]');
+    if (card) card.classList.add("ring-2", "ring-stone-400", "bg-stone-50");
+  }
+
+  // Called from Alpine @click on each setting card.
+  function selectSetting(settingId) {
+    activeSettingId = settingId;
+    applyActiveCard(settingId);
+
+    var tmpl = document.getElementById("abc-setting-" + settingId);
+    if (!tmpl) return;
+    var abc = tmpl.content.textContent.trim();
+    if (!abc) return;
+
+    if (activeSynth) {
+      activeSynth.stop();
+      teardownAudio();
+      var btn = document.getElementById("abc-play");
+      if (btn) btn.textContent = "▶ Play";
+    }
+
+    render(abc);
+
+    var editor = document.getElementById("abc-editor");
+    if (editor) editor.value = abc;
+
+    naturalBpm = extractBpm(abc);
+    var tempoSlider = document.getElementById("abc-tempo");
+    var tempoLabel = document.getElementById("abc-tempo-label");
+    if (tempoSlider && naturalBpm) tempoSlider.value = naturalBpm;
+    if (tempoLabel && naturalBpm) tempoLabel.textContent = naturalBpm + " bpm";
+  }
+
   function render(abcString) {
     currentAbcString = abcString;
     visualObj = ABCJS.renderAbc("abc-render", abcString, RENDER_OPTS);
@@ -58,6 +96,14 @@
     if (!abcString) return;
 
     render(abcString);
+
+    // Highlight whichever card corresponds to what's currently rendered
+    var coreCard = document.querySelector("[data-setting-id][data-is-core='true']") ||
+                   document.querySelector("[data-setting-id]");
+    if (coreCard) {
+      activeSettingId = parseInt(coreCard.dataset.settingId, 10);
+      applyActiveCard(activeSettingId);
+    }
 
     var btn = document.getElementById("abc-play");
     var tempoSlider = document.getElementById("abc-tempo");
@@ -243,10 +289,18 @@
     }
   }
 
+  // Expose to Alpine @click handlers
+  window.selectSetting = selectSetting;
+
   // ── init ───────────────────────────────────────────────────────────────────
 
   document.addEventListener("DOMContentLoaded", function () {
     renderScore();
     initFormPreview();
+
+    // Re-apply the active ring after HTMX swaps the settings section
+    document.addEventListener("htmx:afterSwap", function () {
+      if (activeSettingId !== null) applyActiveCard(activeSettingId);
+    });
   });
 })();

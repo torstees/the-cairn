@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import KeyMode, KeyRoot, TuneType
+from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
 from cairn.services.tunes import create_tune, delete_tune, get_tune, list_tunes, update_tune
@@ -14,8 +14,11 @@ router = APIRouter(prefix="/tunes", tags=["tunes"])
 _TUNE_TYPES = list(TuneType)
 _KEY_ROOTS = list(KeyRoot)
 _KEY_MODES = list(KeyMode)
+_INSTRUMENTS = list(Instrument)
+_ORN_LEVELS = list(OrnamentationLevel)
 
 _FORM_CTX = {"tune_types": _TUNE_TYPES, "key_roots": _KEY_ROOTS, "key_modes": _KEY_MODES}
+_SETTINGS_CTX = {"instruments": _INSTRUMENTS, "orn_levels": _ORN_LEVELS}
 
 
 @router.get("/new")
@@ -68,7 +71,11 @@ async def tune_detail(request: Request, tune_id: int, db: AsyncSession = Depends
         raise HTTPException(status_code=404, detail="Tune not found")
     core = next((s for s in tune.settings if s.is_core and s.instrument is None), None)
     built_abc = build_abc(tune, core) if core else ""
-    return templates.TemplateResponse(request, "tunes/detail.html", {"tune": tune, "built_abc": built_abc})
+    settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
+    return templates.TemplateResponse(
+        request, "tunes/detail.html",
+        {"tune": tune, "built_abc": built_abc, "settings_abc": settings_abc, **_SETTINGS_CTX},
+    )
 
 
 @router.get("/{tune_id}/edit")
