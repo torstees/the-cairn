@@ -25,6 +25,8 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Create `cairn/database.py` (async engine, `AsyncSession` factory, `Base`, `TimestampMixin`).
   Create `cairn/dependencies.py` (`get_db` dependency).
   App must start with `make dev` and return 200 on `GET /`.
+  Run `alembic init alembic` and configure `env.py` for async SQLAlchemy
+  Verify `alembic/versions/` directory exists before considering complete
 
 - [x] **0.4 — Base template**
   Create `cairn/templates/base.html`.
@@ -35,7 +37,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### 1. Core Data Models
 
-- [ ] **1.1 — Enums**
+- [x] **1.1 — Enums**
   Define all enums in `cairn/models.py`:
   `TuneType`, `Instrument`, `ProgressStatus`, `OrnamentationLevel`, `WarmupType`.
   All must be `str, enum.Enum` with a `.label` property.
