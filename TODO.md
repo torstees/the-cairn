@@ -90,7 +90,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   rating_given (int nullable).
   Generate Alembic migration.
 
-- [ ] **1.8 — Pydantic schemas**
+- [x] **1.8 — Pydantic schemas**
   Create `cairn/schemas.py` with `Create`, `Update`, and `Read` schemas for:
   `Tune`, `TuneSetting`, `TuneDifficulty`, `TuneSet`, `TuneSetMember`,
   `StudentProgress`, `WarmupItem`.
