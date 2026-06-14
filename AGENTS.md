@@ -156,12 +156,18 @@ class Tune(TimestampMixin, Base):
 
 ### Enums
 - Define all domain enums in `models.py` using `enum.Enum`
-- Use `str` as a mixin so values serialize naturally to JSON
-- Always add a `.label` property for human-readable display in templates
+- All enums inherit from `LabelledEnum` (defined in `models.py`) which
+  provides a `.label` property via `value.replace("_", " ").title()`
+- Never define `.label` directly on individual enum classes
 - Keep storage values as `snake_case` strings; `.label` handles presentation
 
 ```python
-class ProgressStatus(str, enum.Enum):
+class LabelledEnum(str, enum.Enum):
+    @property
+    def label(self) -> str:
+        return self.value.replace("_", " ").title()
+
+class ProgressStatus(LabelledEnum):
     just_learning     = "just_learning"
     getting_there     = "getting_there"
     nearly_there      = "nearly_there"
