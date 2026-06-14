@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.dependencies import get_db
 from cairn.models import KeyMode, KeyRoot, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
+from cairn.services.abc_utils import build_abc
 from cairn.services.tunes import create_tune, delete_tune, get_tune, list_tunes, update_tune
 from cairn.templating import templates
 
@@ -14,13 +15,15 @@ _TUNE_TYPES = list(TuneType)
 _KEY_ROOTS = list(KeyRoot)
 _KEY_MODES = list(KeyMode)
 
+_FORM_CTX = {"tune_types": _TUNE_TYPES, "key_roots": _KEY_ROOTS, "key_modes": _KEY_MODES}
+
 
 @router.get("/new")
 async def tune_new(request: Request) -> Response:
     return templates.TemplateResponse(
         request,
         "tunes/form.html",
-        {"tune": None, "tune_types": _TUNE_TYPES, "key_roots": _KEY_ROOTS, "key_modes": _KEY_MODES},
+        {"tune": None, "core_abc": "", **_FORM_CTX},
     )
 
 
@@ -63,7 +66,9 @@ async def tune_detail(request: Request, tune_id: int, db: AsyncSession = Depends
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    return templates.TemplateResponse(request, "tunes/detail.html", {"tune": tune})
+    core = next((s for s in tune.settings if s.is_core and s.instrument is None), None)
+    built_abc = build_abc(tune, core) if core else ""
+    return templates.TemplateResponse(request, "tunes/detail.html", {"tune": tune, "built_abc": built_abc})
 
 
 @router.get("/{tune_id}/edit")
@@ -71,10 +76,12 @@ async def tune_edit(request: Request, tune_id: int, db: AsyncSession = Depends(g
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
+    core = next((s for s in tune.settings if s.is_core and s.instrument is None), None)
+    core_abc = core.abc_notation if core else ""
     return templates.TemplateResponse(
         request,
         "tunes/form.html",
-        {"tune": tune, "tune_types": _TUNE_TYPES, "key_roots": _KEY_ROOTS, "key_modes": _KEY_MODES},
+        {"tune": tune, "core_abc": core_abc, **_FORM_CTX},
     )
 
 
@@ -88,6 +95,7 @@ async def tune_update(
     key_root: KeyRoot = Form(...),
     key_mode: KeyMode = Form(...),
     time_signature: str = Form(...),
+    abc_notation: str | None = Form(None),
     origin: str | None = Form(None),
     region: str | None = Form(None),
     notes: str | None = Form(None),
@@ -102,7 +110,7 @@ async def tune_update(
         region=region or None,
         notes=notes or None,
     )
-    tune = await update_tune(db, tune_id, tune_in)
+    tune = await update_tune(db, tune_id, tune_in, abc_notation=abc_notation or None)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
     return RedirectResponse(f"/tunes/{tune.id}", status_code=303)

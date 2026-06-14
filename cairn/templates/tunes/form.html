@@ -2,7 +2,7 @@
 {% block title %}{% if tune %}Edit {{ tune.title }}{% else %}Add Tune{% endif %} — The Cairn{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto">
+<div class="{% if tune %}max-w-5xl{% else %}max-w-2xl{% endif %} mx-auto">
   <div class="flex items-center gap-3 mb-6">
     <a href="/tunes" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Tunes</a>
     <h1 class="text-3xl font-bold text-stone-800">
@@ -10,119 +10,139 @@
     </h1>
   </div>
 
-  <form method="POST"
-        action="{% if tune %}/tunes/{{ tune.id }}{% else %}/tunes{% endif %}"
-        class="bg-white rounded-lg shadow-sm p-6 space-y-5"
-        x-data="{
-          tuneType: '{{ tune.tune_type.value if tune else 'reel' }}',
-          timeSig: '{{ tune.time_signature if tune else '' }}',
-          defaults: {reel:'4/4',jig:'6/8',slip_jig:'9/8',hornpipe:'4/4',polka:'2/4',slide:'6/8',strathspey:'4/4',waltz:'3/4',air:'',march:'4/4',barndance:'4/4'},
-          onTypeChange() { if (!this.timeSig) this.timeSig = this.defaults[this.tuneType] || ''; }
-        }">
+  <div class="{% if tune %}flex gap-6 items-start{% endif %}">
 
-    <div>
-      <label class="block text-sm font-medium text-stone-700 mb-1" for="title">Title</label>
-      <input id="title" name="title" type="text" required
-             value="{{ tune.title if tune else '' }}"
-             class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+    {# ── Form column ──────────────────────────────────────────────────────── #}
+    <div class="{% if tune %}flex-1 min-w-0{% endif %}">
+      <form method="POST"
+            action="{% if tune %}/tunes/{{ tune.id }}{% else %}/tunes{% endif %}"
+            class="bg-white rounded-lg shadow-sm p-6 space-y-5"
+            x-data="{
+              tuneType: '{{ tune.tune_type.value if tune else 'reel' }}',
+              timeSig: '{{ tune.time_signature if tune else '' }}',
+              defaults: {reel:'4/4',jig:'6/8',slip_jig:'9/8',hornpipe:'4/4',polka:'2/4',slide:'6/8',strathspey:'4/4',waltz:'3/4',air:'',march:'4/4',barndance:'4/4'},
+              onTypeChange() { if (!this.timeSig) this.timeSig = this.defaults[this.tuneType] || ''; }
+            }">
+
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1" for="title">Title</label>
+          <input id="title" name="title" type="text" required
+                 value="{{ tune.title if tune else '' }}"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1" for="tune_type">Type</label>
+            <select id="tune_type" name="tune_type" required
+                    x-model="tuneType"
+                    @change="onTypeChange()"
+                    class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
+              {% for tt in tune_types %}
+              <option value="{{ tt.value }}"
+                {% if tune and tune.tune_type == tt %}selected{% endif %}>
+                {{ tt.label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1" for="key_root">Key Root</label>
+            <select id="key_root" name="key_root" required
+                    class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
+              {% for kr in key_roots %}
+              <option value="{{ kr.value }}"
+                {% if tune and tune.key_root == kr %}selected{% endif %}>
+                {{ kr.label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1" for="key_mode">Mode</label>
+            <select id="key_mode" name="key_mode" required
+                    class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
+              {% for km in key_modes %}
+              <option value="{{ km.value }}"
+                {% if tune and tune.key_mode == km %}selected{% endif %}>
+                {{ km.label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1" for="time_signature">Time Signature</label>
+            <input id="time_signature" name="time_signature" type="text" required
+                   x-model="timeSig"
+                   placeholder="e.g. 4/4"
+                   class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1" for="origin">Origin <span class="text-stone-400 font-normal">(optional)</span></label>
+            <input id="origin" name="origin" type="text"
+                   value="{{ tune.origin if tune and tune.origin else '' }}"
+                   placeholder="e.g. O'Neill's 1001"
+                   class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1" for="region">Region <span class="text-stone-400 font-normal">(optional)</span></label>
+            <input id="region" name="region" type="text"
+                   value="{{ tune.region if tune and tune.region else '' }}"
+                   placeholder="e.g. Clare, Sligo"
+                   class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1" for="notes">Notes <span class="text-stone-400 font-normal">(optional)</span></label>
+          <textarea id="notes" name="notes" rows="3"
+                    class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">{{ tune.notes if tune and tune.notes else '' }}</textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1" for="abc_notation">Music Notation</label>
+          <p class="text-xs text-stone-400 mb-1">
+            Notes only — T:, K:, M:, R:, C:, O:, A:, S:, Z:, N: are generated from the fields above.
+            Add optional headers like <code>L:</code> or <code>Q:</code> above the notes if needed.
+          </p>
+          <textarea id="abc_notation" name="abc_notation" rows="8"
+                    {% if not tune %}required{% endif %}
+                    placeholder="L:1/8&#10;|:DEFG ABcd|efge dcAG:|"
+                    class="w-full font-mono text-sm border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">{{ core_abc }}</textarea>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="submit"
+                  class="bg-stone-700 hover:bg-stone-600 text-white px-5 py-2 rounded-lg font-medium">
+            {% if tune %}Save Changes{% else %}Add Tune{% endif %}
+          </button>
+          <a href="{% if tune %}/tunes/{{ tune.id }}{% else %}/tunes{% endif %}"
+             class="px-5 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 font-medium">
+            Cancel
+          </a>
+        </div>
+      </form>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-stone-700 mb-1" for="tune_type">Type</label>
-        <select id="tune_type" name="tune_type" required
-                x-model="tuneType"
-                @change="onTypeChange()"
-                class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
-          {% for tt in tune_types %}
-          <option value="{{ tt.value }}"
-            {% if tune and tune.tune_type == tt %}selected{% endif %}>
-            {{ tt.label }}
-          </option>
-          {% endfor %}
-        </select>
+    {# ── Live preview column (edit only) ──────────────────────────────────── #}
+    {% if tune %}
+    <div class="flex-1 min-w-0 sticky top-8">
+      <h2 class="text-xl font-semibold text-stone-700 mb-3">Live Preview</h2>
+      <div class="bg-white rounded-lg shadow-sm p-4 overflow-x-auto">
+        <div id="form-abc-render"></div>
       </div>
-
-      <div>
-        <label class="block text-sm font-medium text-stone-700 mb-1" for="key_root">Key Root</label>
-        <select id="key_root" name="key_root" required
-                class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
-          {% for kr in key_roots %}
-          <option value="{{ kr.value }}"
-            {% if tune and tune.key_root == kr %}selected{% endif %}>
-            {{ kr.label }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-stone-700 mb-1" for="key_mode">Mode</label>
-        <select id="key_mode" name="key_mode" required
-                class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
-          {% for km in key_modes %}
-          <option value="{{ km.value }}"
-            {% if tune and tune.key_mode == km %}selected{% endif %}>
-            {{ km.label }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-stone-700 mb-1" for="time_signature">Time Signature</label>
-        <input id="time_signature" name="time_signature" type="text" required
-               x-model="timeSig"
-               placeholder="e.g. 4/4"
-               class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
-      </div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-stone-700 mb-1" for="origin">Origin <span class="text-stone-400 font-normal">(optional)</span></label>
-        <input id="origin" name="origin" type="text"
-               value="{{ tune.origin if tune and tune.origin else '' }}"
-               placeholder="e.g. O'Neill's 1001"
-               class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-stone-700 mb-1" for="region">Region <span class="text-stone-400 font-normal">(optional)</span></label>
-        <input id="region" name="region" type="text"
-               value="{{ tune.region if tune and tune.region else '' }}"
-               placeholder="e.g. Clare, Sligo"
-               class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
-      </div>
-    </div>
-
-    <div>
-      <label class="block text-sm font-medium text-stone-700 mb-1" for="notes">Notes <span class="text-stone-400 font-normal">(optional)</span></label>
-      <textarea id="notes" name="notes" rows="3"
-                class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">{{ tune.notes if tune and tune.notes else '' }}</textarea>
-    </div>
-
-    {% if not tune %}
-    <div>
-      <label class="block text-sm font-medium text-stone-700 mb-1" for="abc_notation">ABC Notation</label>
-      <textarea id="abc_notation" name="abc_notation" rows="8" required
-                placeholder="X:1&#10;T:Tune Title&#10;M:4/4&#10;L:1/8&#10;K:D&#10;|:DEFG ABcd|..."
-                class="w-full font-mono text-sm border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400"></textarea>
     </div>
     {% endif %}
 
-    <div class="flex gap-3 pt-2">
-      <button type="submit"
-              class="bg-stone-700 hover:bg-stone-600 text-white px-5 py-2 rounded-lg font-medium">
-        {% if tune %}Save Changes{% else %}Add Tune{% endif %}
-      </button>
-      <a href="{% if tune %}/tunes/{{ tune.id }}{% else %}/tunes{% endif %}"
-         class="px-5 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 font-medium">
-        Cancel
-      </a>
-    </div>
-  </form>
+  </div>
 </div>
 {% endblock %}

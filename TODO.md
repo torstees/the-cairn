@@ -195,10 +195,83 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Safe to delete `cairn.db` and re-run `make migrate` from scratch
   — no production data exists.
 
-- [ ] **2.3 — ABC notation display**
+- [x] **2.3 — ABC notation display**
   On `tunes/detail.html`, render the core `TuneSetting.abc_notation` using abcjs.
   The rendered score and a basic audio playback button must be visible.
   Use a `<div id="abc-render">` target and initialise abcjs in `static/js/app.js`.
+
+- [x] **2.3b — Build ABC headers from DB fields**
+  Currently `TuneSetting.abc_notation` is expected to contain a complete ABC
+  file including headers. Redesign so that `abc_notation` holds only the
+  music body (notes) plus any optional user-supplied headers that are not
+  covered by DB fields. Headers are assembled on the fly from the database.
+
+  **Field-to-header mapping** (canonical order, K: always last):
+    X:  → always 1 for a single tune (position in TuneSet once 2.4 is done)
+    T:  → Tune.title
+    C:  → Tune.composer                           (omit if null)
+    O:  → Tune.origin                             (omit if null)
+    A:  → Tune.region                             (omit if null)
+    R:  → Tune.tune_type.value
+    M:  → Tune.time_signature
+    S:  → TuneSetting.source                      (omit if null)
+    Z:  → TuneSetting.source_notes                (omit if null)
+    N:  → Tune.notes                              (omit if null)
+    N:  → "Arranged for {instrument.label}"       (omit if null; always after Tune.notes N:)
+    K:  → key_root + mode suffix (e.g. "Ador", "D", "Gmix")
+
+  Both N: lines may be present simultaneously when both Tune.notes and
+  TuneSetting.instrument are set. Each appears on its own N: line.
+
+  **User-supplied headers**
+  Any line in `abc_notation` matching `^[A-Z]:` whose letter is not in the
+  mapped set above is treated as a user-supplied header and inserted between
+  the last N: line and K: in the output. `L:` is the primary expected example.
+  Lines in `abc_notation` whose letter IS in the mapped set are silently
+  dropped (DB value takes precedence).
+
+  **`build_abc(tune, setting, x=1) -> str`**
+  Create `cairn/services/abc_utils.py`.
+  This function assembles the final ABC string from the mapping above.
+  It is the only place in the codebase that produces ABC for rendering or
+  export. The function must:
+  1. Parse `setting.abc_notation` into user-supplied headers and music lines
+  2. Build the DB-derived headers in canonical order
+  3. Insert user-supplied headers between the last N: and K:
+  4. Append the music lines
+  Write unit tests in `tests/test_services/test_abc_utils.py` covering:
+  - All DB fields populated
+  - Nullable fields omitted correctly
+  - L: in abc_notation is preserved
+  - Headers in the mapped set inside abc_notation are dropped
+  - K: is always the last header
+  - Both N: lines present when both Tune.notes and instrument are set
+  - Only one N: line when only one of the two is set
+
+  **Remove `_sync_abc_key`**
+  Delete `_sync_abc_key` and `_ABC_MODE_SUFFIX` from `cairn/services/tunes.py`.
+  `create_tune` and `update_tune` no longer need to rewrite the ABC — the
+  key is always built from the DB by `build_abc`. Remove the K: rewrite
+  calls in both functions.
+
+  **Rendering**
+  Update `cairn/templates/tunes/detail.html` so the string inside
+  `<template id="abc-source">` is the output of `build_abc(tune, core)`
+  rather than `core.abc_notation` directly.
+
+  **Form**
+  Update `cairn/templates/tunes/form.html`:
+  - Rename the textarea label from "ABC Notation" to "Music Notation"
+  - Update the placeholder to show only notes plus an optional L: line,
+    with a short hint listing which fields are auto-generated as headers
+  - Remove the abc_notation textarea from the edit form — the notes body
+    is set at creation and edited via the TuneSetting management routes
+    added in task 2.4
+
+  **No migration needed**
+  Safe to delete `cairn.db` and re-run `make migrate` — no production data.
+  Existing `abc_notation` values that contain full ABC headers will have
+  those headers stripped by `build_abc` at render time.
 
 - [ ] **2.4 — TuneSetting management**
   Add routes under `/tunes/{id}/settings`:

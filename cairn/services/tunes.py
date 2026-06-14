@@ -2,37 +2,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneSetting
+from cairn.models import Instrument, OrnamentationLevel, Tune, TuneSetting
 from cairn.schemas import TuneCreate, TuneUpdate
-
-_ABC_MODE_SUFFIX: dict[str, str] = {
-    "major": "",
-    "minor": "m",
-    "dorian": "Dor",
-    "mixolydian": "Mix",
-    "lydian": "Lyd",
-}
-
-
-def _sync_abc_key(abc_notation: str, key_root: KeyRoot, key_mode: KeyMode) -> str:
-    """Rewrite (or append) the K: header so it matches key_root and key_mode."""
-    key_str = f"K:{key_root.value}{_ABC_MODE_SUFFIX[key_mode.value]}"
-    trailing_newline = abc_notation.endswith("\n")
-    lines = abc_notation.splitlines()
-    replaced = False
-    new_lines = []
-    for line in lines:
-        if line.startswith("K:") and not replaced:
-            new_lines.append(key_str)
-            replaced = True
-        else:
-            new_lines.append(line)
-    if not replaced:
-        new_lines.append(key_str)
-    result = "\n".join(new_lines)
-    if trailing_newline:
-        result += "\n"
-    return result
 
 
 def get_setting_for_instrument(tune: Tune, instrument: Instrument | None) -> TuneSetting:
@@ -62,17 +33,17 @@ async def create_tune(
     """Create a tune and its mandatory core setting in a single transaction.
 
     The core setting always has instrument=None — it represents the traditional
-    version valid for all instruments.
+    version valid for all instruments. abc_notation stores the music body only;
+    headers are assembled at render time by build_abc.
     """
     tune = Tune(**tune_in.model_dump())
     db.add(tune)
     await db.flush()  # populate tune.id before referencing it in TuneSetting
 
-    synced_abc = _sync_abc_key(abc_notation, tune_in.key_root, tune_in.key_mode)
     core_setting = TuneSetting(
         tune_id=tune.id,
         label=setting_label,
-        abc_notation=synced_abc,
+        abc_notation=abc_notation,
         is_core=True,
         instrument=None,
         ornamentation_level=OrnamentationLevel.none,
@@ -101,18 +72,29 @@ async def list_tunes(db: AsyncSession) -> list[Tune]:
     return list(result.scalars().all())
 
 
-async def update_tune(db: AsyncSession, tune_id: int, tune_in: TuneUpdate) -> Tune | None:
-    tune = await get_tune(db, tune_id)  # load settings for potential K: sync
+async def update_tune(
+    db: AsyncSession,
+    tune_id: int,
+    tune_in: TuneUpdate,
+    *,
+    abc_notation: str | None = None,
+) -> Tune | None:
+    tune = await db.get(Tune, tune_id)
     if tune is None:
         return None
-    update_data = tune_in.model_dump(exclude_unset=True)
-    key_changed = "key_root" in update_data or "key_mode" in update_data
-    for field, value in update_data.items():
+    for field, value in tune_in.model_dump(exclude_unset=True).items():
         setattr(tune, field, value)
-    if key_changed:
-        core = next((s for s in tune.settings if s.is_core and s.instrument is None), None)
+    if abc_notation is not None:
+        result = await db.execute(
+            select(TuneSetting).where(
+                TuneSetting.tune_id == tune_id,
+                TuneSetting.is_core.is_(True),
+                TuneSetting.instrument.is_(None),
+            )
+        )
+        core = result.scalar_one_or_none()
         if core:
-            core.abc_notation = _sync_abc_key(core.abc_notation, tune.key_root, tune.key_mode)
+            core.abc_notation = abc_notation
     await db.commit()
     await db.refresh(tune)
     return tune
