@@ -77,7 +77,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   With `.label` property per convention.
   No migration needed yet — enum is defined but not attached to any model until Phase 4.
 
-- [ ] **1.6 — StudentProgress model**
+- [x] **1.6 — StudentProgress model**
   Fields: id, user_id FK, tune_id FK, status (ProgressStatus), confidence (int 1–5),
   interval_days (float), ease_factor (float, default 2.5), last_practiced (datetime nullable),
   next_suggested (datetime nullable), teacher_approved (bool, default False).

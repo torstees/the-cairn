@@ -1,6 +1,7 @@
 import enum
+from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cairn.database import Base, TimestampMixin
@@ -93,6 +94,7 @@ class Tune(TimestampMixin, Base):
     settings: Mapped[list["TuneSetting"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     difficulties: Mapped[list["TuneDifficulty"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     set_members: Mapped[list["TuneSetMember"]] = relationship(back_populates="tune")
+    progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="tune")
 
 
 class TuneSetting(TimestampMixin, Base):
@@ -180,3 +182,27 @@ class User(TimestampMixin, Base):
     hashed_password: Mapped[str] = mapped_column(String(200), nullable=False)
     role: Mapped[Role] = mapped_column(Enum(Role), nullable=False)
     primary_instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
+
+    progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="user")
+
+
+class StudentProgress(TimestampMixin, Base):
+    __tablename__ = "student_progress"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    status: Mapped[ProgressStatus] = mapped_column(Enum(ProgressStatus), nullable=False)
+    confidence: Mapped[int] = mapped_column(Integer, nullable=False)
+    interval_days: Mapped[float] = mapped_column(Float, nullable=False)
+    ease_factor: Mapped[float] = mapped_column(Float, default=2.5, nullable=False)
+    last_practiced: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    next_suggested: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    teacher_approved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("confidence >= 1 AND confidence <= 5", name="ck_student_progress_confidence_range"),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="progress_records")
+    tune: Mapped["Tune"] = relationship(back_populates="progress_records")
