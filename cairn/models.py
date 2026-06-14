@@ -1,5 +1,10 @@
 import enum
 
+from sqlalchemy import Boolean, CheckConstraint, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from cairn.database import Base, TimestampMixin
+
 
 class TuneType(str, enum.Enum):
     reel = "reel"
@@ -92,3 +97,57 @@ class ContentVisibility(str, enum.Enum):
     @property
     def label(self) -> str:
         return self.value.title()
+
+
+class Tune(TimestampMixin, Base):
+    __tablename__ = "tunes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    tune_type: Mapped[TuneType] = mapped_column(Enum(TuneType), nullable=False)
+    key: Mapped[str] = mapped_column(String(50), nullable=False)
+    time_signature: Mapped[str] = mapped_column(String(10), nullable=False)
+    origin: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    region: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # FK to users.id added in migration 1.5 once the User model exists
+    created_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    settings: Mapped[list["TuneSetting"]] = relationship(
+        back_populates="tune", cascade="all, delete-orphan"
+    )
+    difficulties: Mapped[list["TuneDifficulty"]] = relationship(
+        back_populates="tune", cascade="all, delete-orphan"
+    )
+
+
+class TuneSetting(TimestampMixin, Base):
+    __tablename__ = "tune_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    label: Mapped[str] = mapped_column(String(100), nullable=False)
+    abc_notation: Mapped[str] = mapped_column(Text, nullable=False)
+    is_core: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    ornamentation_level: Mapped[OrnamentationLevel] = mapped_column(
+        Enum(OrnamentationLevel), default=OrnamentationLevel.none, nullable=False
+    )
+    source_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    tune: Mapped["Tune"] = relationship(back_populates="settings")
+
+
+class TuneDifficulty(TimestampMixin, Base):
+    __tablename__ = "tune_difficulties"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    instrument: Mapped[Instrument] = mapped_column(Enum(Instrument), nullable=False)
+    difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_tune_difficulty_range"),
+    )
+
+    tune: Mapped["Tune"] = relationship(back_populates="difficulties")

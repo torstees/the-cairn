@@ -43,7 +43,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   All must be `str, enum.Enum` with a `.label` property.
   Refer to AGENTS.md for the full `ProgressStatus` value list.
 
-- [ ] **1.2 — Tune and TuneSetting models**
+- [x] **1.2 — Tune and TuneSetting models**
   `Tune`: id, title, tune_type, key, time_signature, origin, region, notes, created_by.
   `TuneSetting`: id, tune_id FK, label, abc_notation, is_core, ornamentation_level, source_notes.
   `TuneDifficulty`: id, tune_id FK, instrument, difficulty (1–5), notes.
