@@ -62,7 +62,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   `peak_difficulty` is never stored — always derived as MAX of member difficulties.
   Generate Alembic migration.
 
-- [ ] **1.5 — User model (stub)**
+- [x] **1.5 — User model (stub)**
   Fields: id, username, email, hashed_password, role (enum: guest | student | teacher | admin),
   primary_instrument.
   No auth logic yet — model only.

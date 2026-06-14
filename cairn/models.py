@@ -6,7 +6,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from cairn.database import Base, TimestampMixin
 
 
-class TuneType(str, enum.Enum):
+class LabelledEnum(str, enum.Enum):
+    @property
+    def label(self) -> str:
+        return self.value.replace("_", " ").title()
+
+
+class TuneType(LabelledEnum):
     reel = "reel"
     jig = "jig"
     slip_jig = "slip_jig"
@@ -19,12 +25,8 @@ class TuneType(str, enum.Enum):
     march = "march"
     barndance = "barndance"
 
-    @property
-    def label(self) -> str:
-        return self.value.replace("_", " ").title()
 
-
-class Instrument(str, enum.Enum):
+class Instrument(LabelledEnum):
     flute = "flute"
     tin_whistle = "tin_whistle"
     uilleann_pipes = "uilleann_pipes"
@@ -38,12 +40,8 @@ class Instrument(str, enum.Enum):
     bodhrán = "bodhrán"
     harp = "harp"
 
-    @property
-    def label(self) -> str:
-        return self.value.replace("_", " ").title()
 
-
-class ProgressStatus(str, enum.Enum):
+class ProgressStatus(LabelledEnum):
     just_learning = "just_learning"
     getting_there = "getting_there"
     nearly_there = "nearly_there"
@@ -52,51 +50,31 @@ class ProgressStatus(str, enum.Enum):
     performance_ready = "performance_ready"
     solo_ready = "solo_ready"
 
-    @property
-    def label(self) -> str:
-        return self.value.replace("_", " ").title()
 
-
-class OrnamentationLevel(str, enum.Enum):
+class OrnamentationLevel(LabelledEnum):
     none = "none"
     minimal = "minimal"
     moderate = "moderate"
     full = "full"
 
-    @property
-    def label(self) -> str:
-        return self.value.title()
 
-
-class WarmupType(str, enum.Enum):
+class WarmupType(LabelledEnum):
     scale = "scale"
     snippet = "snippet"
     text_blurb = "text_blurb"
 
-    @property
-    def label(self) -> str:
-        return self.value.replace("_", " ").title()
 
-
-class Role(str, enum.Enum):
+class Role(LabelledEnum):
     guest = "guest"  # never stored in users table; exists for authorization logic only
     student = "student"
     teacher = "teacher"
     admin = "admin"
 
-    @property
-    def label(self) -> str:
-        return self.value.title()
 
-
-class ContentVisibility(str, enum.Enum):
+class ContentVisibility(LabelledEnum):
     public = "public"
     enrolled = "enrolled"
     private = "private"
-
-    @property
-    def label(self) -> str:
-        return self.value.title()
 
 
 class Tune(TimestampMixin, Base):
@@ -110,15 +88,10 @@ class Tune(TimestampMixin, Base):
     origin: Mapped[str | None] = mapped_column(String(200), nullable=True)
     region: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # FK to users.id added in migration 1.5 once the User model exists
-    created_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
 
-    settings: Mapped[list["TuneSetting"]] = relationship(
-        back_populates="tune", cascade="all, delete-orphan"
-    )
-    difficulties: Mapped[list["TuneDifficulty"]] = relationship(
-        back_populates="tune", cascade="all, delete-orphan"
-    )
+    settings: Mapped[list["TuneSetting"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
+    difficulties: Mapped[list["TuneDifficulty"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     set_members: Mapped[list["TuneSetMember"]] = relationship(back_populates="tune")
 
 
@@ -147,9 +120,7 @@ class TuneDifficulty(TimestampMixin, Base):
     difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    __table_args__ = (
-        CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_tune_difficulty_range"),
-    )
+    __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_tune_difficulty_range"),)
 
     tune: Mapped["Tune"] = relationship(back_populates="difficulties")
 
@@ -164,9 +135,7 @@ class WarmupItem(TimestampMixin, Base):
     instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
     difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    __table_args__ = (
-        CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_warmup_difficulty_range"),
-    )
+    __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_warmup_difficulty_range"),)
 
 
 class TuneSet(TimestampMixin, Base):
@@ -200,3 +169,14 @@ class TuneSetMember(TimestampMixin, Base):
 
     tune_set: Mapped["TuneSet"] = relationship(back_populates="members")
     tune: Mapped["Tune"] = relationship(back_populates="set_members")
+
+
+class User(TimestampMixin, Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(200), nullable=False)
+    role: Mapped[Role] = mapped_column(Enum(Role), nullable=False)
+    primary_instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
