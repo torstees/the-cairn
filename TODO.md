@@ -370,6 +370,10 @@ Before closing Phase 1:
 ## Phase 2 — Practice Intelligence (Planned, Not Started)
 
 - Spaced repetition scheduling surfaced in the UI
+- Per-user tempo tracking — add `target_tempo: int | None` to `StudentProgress`;
+  initialise the detail-page speed slider from the user's last recorded tempo for
+  that tune (falling back to the type-based default); capture slider value when
+  recording a practice rating; surface tempo trend in session history charts
 - Bars-to-show logic fully wired to status
 - WarmupItem rotation (avoid repeating the same warmup)
 - Session history view and progress-over-time charts
