@@ -61,10 +61,19 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Generate Alembic migration.
 
 - [ ] **1.5 — User model (stub)**
-  Fields: id, username, email, hashed_password, role (enum: student | teacher | admin),
+  Fields: id, username, email, hashed_password, role (enum: guest | student | teacher | admin),
   primary_instrument.
   No auth logic yet — model only.
   Generate Alembic migration.
+  Note: `guest` role represents unauthenticated visitors and is defined in the
+  enum for use in authorization logic only. Guests are never stored in the
+  `users` table. All other roles require a user record.
+
+- [ ] **1.5b — ContentVisibility enum**
+  Add `ContentVisibility` enum to `models.py`:
+  values: `public`, `enrolled`, `private`.
+  With `.label` property per convention.
+  No migration needed yet — enum is defined but not attached to any model until Phase 4.
 
 - [ ] **1.6 — StudentProgress model**
   Fields: id, user_id FK, tune_id FK, status (ProgressStatus), confidence (int 1–5),
@@ -228,3 +237,50 @@ Before closing Phase 1:
 - ABC transformation layer
 - Linking ornaments to specific positions in a tune with explanations
 - Presenting ornamentation as independent study items
+
+## Phase 4 — Pedagogy and Technique Layer (Design Pending)
+
+This phase is not yet ready for implementation. The design is intentionally
+incomplete and will be developed as the author's understanding of the
+pedagogical requirements matures through practice and teaching.
+
+### What is known and should inform earlier phases
+
+- `OrnamentDefinition` (Phase 3) must include `functional_purpose`,
+  `when_to_use`, `when_not_to_use`, `instrument_notes`, `regional_variation`
+- No content storage designed in earlier phases should assume a simple
+  structure — the pedagogy layer will need richer relationships
+
+### Open design questions (resolve before implementing)
+
+- [ ] What long-form content types are needed beyond `OrnamentDefinition`?
+      (Conceptual articles? Technique guides? Listening exercises?)
+- [ ] How is pedagogical content surfaced during a practice session?
+      (Proactively suggested? Student-initiated? Teacher-assigned?)
+- [ ] What other implicit traditional pedagogy concepts belong here?
+      Running list (add to this as they surface):
+      - Ornamentation functional purpose ✓
+      - The "lift" and rhythmic feel of different tune types (reel vs jig vs hornpipe)
+      - Regional stylistic differences
+      - Tone production and breathing (instrument-specific)
+      - How to listen analytically to recordings
+- [x] Is this content teacher-authored, built-in, or both?
+      → Both. Visibility flag on the contribution controls access,
+        not a distinction between content types. See ContentVisibility
+        enum (1.5b) and OrnamentDefinition notes in AGENTS.md.
+- [ ] How does this layer interact with the ABC transformation system?
+- [ ] **Session/regional discovery** — public, location-based listings of
+      traditional music sessions contributed by teachers and experienced players.
+      Potentially linkable to tune repertoire (e.g. "this session favours Clare
+      style reels"). Public and search-indexed by definition since sessions are
+      inherently public events. May warrant its own phase given scope.
+      Open questions:
+      - Who can contribute session listings — teachers only, or any verified user?
+      - How is location handled — free text, structured address, or map-based?
+      - How does repertoire linking work — tags, explicit tune lists, or style flags?
+
+### Do not start this phase until
+
+- [ ] The open design questions above are resolved
+- [ ] At least one complete learning cycle has been completed with the app
+      (real practice experience will inform the design better than speculation)

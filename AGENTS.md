@@ -234,6 +234,53 @@ on `Tune` itself. Use `TuneDifficulty` with an instrument enum.
 
 ---
 
+## Planned: Pedagogy and Technique Layer
+
+This section is intentionally incomplete. A pedagogical content system is planned
+but not yet fully designed. Do not make structural decisions that would close off
+this design space.
+
+### What is known
+
+The app intends to go beyond tune notation and ornamentation reference to provide
+rich explanations of *why* traditional music techniques exist and *when* to use them.
+The core insight driving this: ornamentation in Irish traditional music is functional,
+not decorative. Each ornament solves a specific musical problem (e.g. rolls maintain
+pulse on sustained notes; cuts and strikes accent and articulate). Students who
+understand the function will use ornaments musically and spontaneously; students
+who only learn where ornaments appear in specific tunes are working from a script.
+
+This extends beyond ornamentation to any technique or concept that traditional
+pedagogy leaves implicit but that adult learners benefit from having made explicit.
+
+### What this implies for existing models
+
+`OrnamentDefinition` must support this richer pedagogical intent. At minimum it needs:
+- `functional_purpose` — why this ornament exists musically
+- `when_to_use` — the musical conditions that call for it
+- `when_not_to_use` — equally important
+- `instrument_notes` — behaviour varies significantly across instruments
+- `regional_variation` — e.g. Sligo rolls vs Clare rolls
+
+### What is not yet designed
+
+- A broader long-form content type for conceptual scaffolding
+  (e.g. "What is pulse and why does it matter", "Why pipes and flute ornament
+  differently from fiddle", "How to listen for ornamentation in recordings")
+- How this content is surfaced during practice sessions
+- Whether this content is teacher-authored, student-facing only, or both
+- What other implicit traditional pedagogy concepts belong here beyond ornamentation
+  (rhythmic feel, regional style, tone production, breathing, etc.)
+
+### Constraints for the agent
+
+- Do not implement `OrnamentDefinition` without the fields listed above
+- Do not design any content storage as a simple key-value or tag system —
+  the pedagogy layer will need richer structure than that
+- Do not assume ornamentation is the only concept this layer will cover
+- Leave the content type for long-form conceptual articles as an open question
+  until the design is ready
+
 ## Domain Rules (Invariants — Never Violate)
 
 1. **Every tune has exactly one `is_core = True` TuneSetting at all times.**
