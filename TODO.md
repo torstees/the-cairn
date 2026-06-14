@@ -71,7 +71,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   enum for use in authorization logic only. Guests are never stored in the
   `users` table. All other roles require a user record.
 
-- [ ] **1.5b — ContentVisibility enum**
+- [x] **1.5b — ContentVisibility enum**
   Add `ContentVisibility` enum to `models.py`:
   values: `public`, `enrolled`, `private`.
   With `.label` property per convention.
