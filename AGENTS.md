@@ -293,8 +293,11 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
 
 ## Domain Rules (Invariants — Never Violate)
 
-1. **Every tune has exactly one `is_core = True` TuneSetting at all times.**
-   Enforce at the service layer, not only at the database layer.
+1. **Every tune has exactly one `is_core = True` TuneSetting where
+    `instrument` is null** — the traditional version valid for all
+    instruments. Instrument-specific arrangements are non-core settings
+    with `instrument` set explicitly. Never mark an instrument-specific
+    setting as `is_core = True`.
 
 2. **Progress is per student per tune.** Never modify a `Tune` record to
    reflect a student's progress.
@@ -319,6 +322,17 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
 9. **`flow_difficulty` and tune `difficulty` use the same 1–5 scale
    but are never interchangeable.** Always use field names and display
    labels to distinguish them in UI and queries.
+
+10. **Transposition is always applied at render time, never stored.**
+    The ABC notation stored in `TuneSetting` is always the original
+    untransposed version. Transposed versions are derived on request
+    via `abc_utils.py` and returned to the client directly.
+    Never write a transposed ABC string back to the database.
+
+11. **`mutation_notation` format is not yet defined.**
+    The field exists as a placeholder only. Do not implement any
+    rendering, parsing, or transformation logic for `mutation_notation`
+    until the format is decided in Phase 3. Store as raw text only.
 
 ---
 

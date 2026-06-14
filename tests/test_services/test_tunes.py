@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import TuneSetting, TuneType
+from cairn.models import KeyMode, KeyRoot, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.tunes import create_tune, delete_tune, get_tune, list_tunes, update_tune
 
@@ -10,7 +10,7 @@ ABC = "X:1\nT:Test\nM:4/4\nK:D\n|:DEFG|ABcd:|\n"
 
 
 def _tune_create(**kwargs) -> TuneCreate:
-    defaults = dict(title="The Morning Dew", tune_type=TuneType.reel, key="D Major", time_signature="4/4")
+    defaults = dict(title="The Morning Dew", tune_type=TuneType.reel, key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4")
     return TuneCreate(**{**defaults, **kwargs})
 
 
@@ -97,10 +97,11 @@ async def test_list_tunes_empty(db: AsyncSession) -> None:
 
 async def test_update_tune_changes_fields(db: AsyncSession) -> None:
     tune = await create_tune(db, _tune_create(), abc_notation=ABC)
-    updated = await update_tune(db, tune.id, TuneUpdate(title="Revised Title", key="G Major"))
+    updated = await update_tune(db, tune.id, TuneUpdate(title="Revised Title", key_root=KeyRoot.G, key_mode=KeyMode.major))
     assert updated is not None
     assert updated.title == "Revised Title"
-    assert updated.key == "G Major"
+    assert updated.key_root == KeyRoot.G
+    assert updated.key_mode == KeyMode.major
     assert updated.time_signature == "4/4"  # unchanged
 
 

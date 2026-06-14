@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from cairn.models import Instrument, OrnamentationLevel, ProgressStatus, TuneType, WarmupType
+from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, ProgressStatus, TuneType, WarmupType
 
 
 class _ReadBase(BaseModel):
@@ -17,8 +17,10 @@ class _ReadBase(BaseModel):
 class TuneCreate(BaseModel):
     title: str
     tune_type: TuneType
-    key: str
+    key_root: KeyRoot
+    key_mode: KeyMode
     time_signature: str
+    composer: str | None = None
     origin: str | None = None
     region: str | None = None
     notes: str | None = None
@@ -28,8 +30,10 @@ class TuneCreate(BaseModel):
 class TuneUpdate(BaseModel):
     title: str | None = None
     tune_type: TuneType | None = None
-    key: str | None = None
+    key_root: KeyRoot | None = None
+    key_mode: KeyMode | None = None
     time_signature: str | None = None
+    composer: str | None = None
     origin: str | None = None
     region: str | None = None
     notes: str | None = None
@@ -38,8 +42,10 @@ class TuneUpdate(BaseModel):
 class TuneRead(_ReadBase):
     title: str
     tune_type: TuneType
-    key: str
+    key_root: KeyRoot
+    key_mode: KeyMode
     time_signature: str
+    composer: str | None
     origin: str | None
     region: str | None
     notes: str | None
@@ -53,16 +59,22 @@ class TuneSettingCreate(BaseModel):
     label: str
     abc_notation: str
     is_core: bool = False
+    instrument: Instrument | None = None
+    source: str | None = None
     ornamentation_level: OrnamentationLevel = OrnamentationLevel.none
     source_notes: str | None = None
+    mutation_notation: str | None = None
 
 
 class TuneSettingUpdate(BaseModel):
     label: str | None = None
     abc_notation: str | None = None
     is_core: bool | None = None
+    instrument: Instrument | None = None
+    source: str | None = None
     ornamentation_level: OrnamentationLevel | None = None
     source_notes: str | None = None
+    mutation_notation: str | None = None
 
 
 class TuneSettingRead(_ReadBase):
@@ -70,8 +82,11 @@ class TuneSettingRead(_ReadBase):
     label: str
     abc_notation: str
     is_core: bool
+    instrument: Instrument | None
+    source: str | None
     ornamentation_level: OrnamentationLevel
     source_notes: str | None
+    mutation_notation: str | None
 
 
 # ── TuneDifficulty ────────────────────────────────────────────────────────────

@@ -96,6 +96,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   `StudentProgress`, `WarmupItem`.
   All `Read` schemas must include `id` and `created_at`.
 
+
 - [x] **1.9 — Apply all migrations**
   Run `make migrate`. Verify `cairn.db` is created and all tables exist.
   Write a smoke test in `tests/test_models.py` that creates one instance of each
@@ -112,7 +113,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Enforce the invariant: a tune must always have exactly one `is_core=True` setting.
   Write tests in `tests/test_services/test_tunes.py`.
 
-- [ ] **2.2 — Tune routes and templates**
+- [x] **2.2 — Tune routes and templates**
   Router: `cairn/routers/tunes.py`, prefix `/tunes`.
   Routes:
   - `GET /tunes` — list all tunes → `tunes/index.html`
@@ -122,6 +123,77 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   - `GET /tunes/{id}/edit` — edit form → `tunes/form.html`
   - `POST /tunes/{id}` — update tune
   - `DELETE /tunes/{id}` — delete (HTMX, returns empty 200)
+
+- [x] **2.2b — Split key field and add time signature defaults**
+      Model, schema, service, and migration changes only.
+      **Key root enum**
+      Use the full chromatic set for `KeyRoot` including enharmonic equivalents:
+      C, C#, Db, D, Eb, E, F, F#, Gb, G, Ab, A, Bb, B.
+      Rationale: supports O'Neill's transcriptions at concert pitch and is
+      required for the planned transposition feature. Enharmonic equivalents
+      (C#/Db, F#/Gb, Ab) are included since ABC notation and music21 both
+      handle them and we don't want to lose information from historical sources.
+      The ABC `K:` declaration and the stored `key_root`/`key_mode` fields
+      must always be kept in sync — enforce this in the tune service.
+      UI form changes (HTMX auto-populate, dual dropdowns) are
+      part of this task since the form at 2.2 needs updating anyway.
+      Safe to drop existing `key` column — no production data exists.
+      Delete `cairn.db` and re-run `make migrate` after generation
+      rather than attempting an in-place migration on dev.
+
+- [x] **2.2c — TuneSetting and Tune model additions**
+  **Tune model**
+  Add `composer` field (nullable):
+    composer: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    Maps to ABC notation's `C:` field — seed import script should extract
+    it automatically. Many traditional tunes will have no known composer.
+
+  **TuneSetting model**
+  Add three fields:
+    `instrument` (nullable) — identifies instrument-specific arrangements.
+    Null means the setting is valid for all instruments:
+      instrument: Mapped[Instrument | None] = mapped_column(
+        Enum(Instrument), nullable=True
+      )
+    `source` (nullable) — the person, collection, festival class, or
+    recording responsible for this particular setting. Distinct from
+    `source_notes` which provides context. Examples: "Tommy Peoples",
+    "Catskills Irish Arts Week 2019", "O'Neill's 1001":
+        source: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+  `mutation_notation` (nullable, format TBD) — placeholder for future
+  variation and mutation annotation. Do not implement any rendering or
+  parsing logic for this field. Store as raw text only. See Phase 3
+  open design questions:
+    mutation_notation: Mapped[str | None] = mapped_column(
+      Text, nullable=True
+        # Format TBD — see Phase 3 mutation notation design notes
+        # Do not implement rendering until format is decided
+    )
+
+  **Domain rule update**
+  The `is_core = True` invariant now reads:
+  A tune has exactly one `is_core = True` setting where `instrument`
+  is null — representing the traditional version for all instruments.
+  Instrument-specific arrangements are non-core settings with
+  `instrument` set explicitly. Enforce at service layer.
+
+  **Display logic for instrument-specific settings**
+  When rendering a tune for a specific instrument:
+  1. Check for a non-core setting matching the user's instrument
+  2. If found, display it by default with a note "showing [instrument] arrangement"
+  3. Always keep the core setting accessible regardless
+  Implement this logic in the tune service, not the route handler.
+
+  **Update schemas**
+  Add all new fields to `TuneCreate`, `TuneUpdate`, and `TuneRead`.
+  Add `instrument` to `TuneSettingCreate`, `TuneSettingUpdate`,
+  and `TuneSettingRead`.
+
+  **Migration**
+  Generate a single Alembic migration covering all changes above.
+  Safe to delete `cairn.db` and re-run `make migrate` from scratch
+  — no production data exists.
 
 - [ ] **2.3 — ABC notation display**
   On `tunes/detail.html`, render the core `TuneSetting.abc_notation` using abcjs.
@@ -233,12 +305,28 @@ Before closing Phase 1:
 - SetReview (keep / never again verdict)
 - Teacher approval workflow
 
+
 ## Phase 3 — Ornamentation System (Planned, Not Started)
 
 - OrnamentDefinition library (cut, roll, cran, triplet, etc.)
 - ABC transformation layer
 - Linking ornaments to specific positions in a tune with explanations
 - Presenting ornamentation as independent study items
+- [ ] **Transposition** — allow ABC notation to be rendered in any key,
+      particularly useful for players on different instruments or tunings
+      (e.g. Bb piper seeing D flute notation transposed to their fingering).
+      Implementation notes:
+      - Use `music21` for transposition logic in `abc_utils.py`
+      - Transposition manipulates the ABC `K:` field directly
+      - `key_root` and `key_mode` on `Tune` must be updated to match
+        the transposed `K:` declaration — enforce sync in tune service
+      - Stored ABC is always the original untransposed version;
+        transposition is applied at render time, never stored
+      - Consider O'Neill's concert pitch issue: a tune stored in Bb
+        may be the same tune a flute player knows in D — transposition
+        makes these reconcilable
+      - UI: a key selector on the tune detail page that re-renders
+        the ABC via HTMX without a full page reload
 
 ## Phase 4 — Pedagogy and Technique Layer (Design Pending)
 

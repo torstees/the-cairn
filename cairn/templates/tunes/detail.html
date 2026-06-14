@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ tune.title }} — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <a href="/tunes" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Tunes</a>
+      <h1 class="text-3xl font-bold text-stone-800 mt-1">{{ tune.title }}</h1>
+      <p class="text-stone-500 mt-1">
+        {{ tune.tune_type.label }}
+        &middot; {{ tune.key_root.label }} {{ tune.key_mode.label }}
+        &middot; {{ tune.time_signature }}
+        {% if tune.region %}&middot; {{ tune.region }}{% endif %}
+      </p>
+    </div>
+    <a href="/tunes/{{ tune.id }}/edit"
+       class="shrink-0 border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
+      Edit
+    </a>
+  </div>
+
+  {% if tune.origin or tune.notes %}
+  <div class="bg-white rounded-lg shadow-sm px-5 py-4 mb-6 space-y-2">
+    {% if tune.origin %}
+    <p class="text-sm"><span class="font-medium text-stone-600">Origin:</span> {{ tune.origin }}</p>
+    {% endif %}
+    {% if tune.notes %}
+    <p class="text-sm text-stone-700">{{ tune.notes }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold text-stone-700 mb-3">Settings</h2>
+    {% if tune.settings %}
+    <ul class="space-y-3">
+      {% for setting in tune.settings %}
+      <li class="bg-white rounded-lg shadow-sm px-5 py-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="font-medium text-stone-800">{{ setting.label }}</span>
+          {% if setting.is_core %}
+          <span class="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">Core</span>
+          {% endif %}
+          {% if setting.ornamentation_level.value != 'none' %}
+          <span class="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
+            {{ setting.ornamentation_level.label }} ornamentation
+          </span>
+          {% endif %}
+        </div>
+        <pre class="text-xs font-mono text-stone-500 whitespace-pre-wrap">{{ setting.abc_notation }}</pre>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-stone-500 text-sm">No settings.</p>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-700 mb-3">Difficulty</h2>
+    {% if tune.difficulties %}
+    <ul class="space-y-2">
+      {% for d in tune.difficulties %}
+      <li class="flex items-center gap-3 text-sm">
+        <span class="text-stone-600 w-32">{{ d.instrument.label }}</span>
+        <span class="font-medium">{{ d.difficulty }}/5</span>
+        {% if d.notes %}<span class="text-stone-500">— {{ d.notes }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-stone-500 text-sm">No difficulty ratings yet.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

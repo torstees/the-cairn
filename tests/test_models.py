@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import (
     Instrument,
+    KeyMode,
+    KeyRoot,
     OrnamentationLevel,
     PracticeSession,
     PracticeSessionItem,
@@ -34,7 +36,7 @@ def _user(**kwargs) -> User:
 
 
 def _tune(**kwargs) -> Tune:
-    defaults = dict(title="The Morning Dew", tune_type=TuneType.reel, key="D Major", time_signature="4/4")
+    defaults = dict(title="The Morning Dew", tune_type=TuneType.reel, key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4")
     return Tune(**{**defaults, **kwargs})
 
 

@@ -85,14 +85,41 @@ class SessionItemType(LabelledEnum):
     technique = "technique"
 
 
+class KeyRoot(LabelledEnum):
+    C = "C"
+    C_sharp = "C#"
+    D_flat = "Db"
+    D = "D"
+    E_flat = "Eb"
+    E = "E"
+    F = "F"
+    F_sharp = "F#"
+    G_flat = "Gb"
+    G = "G"
+    A_flat = "Ab"
+    A = "A"
+    B_flat = "Bb"
+    B = "B"
+
+
+class KeyMode(LabelledEnum):
+    major = "major"
+    minor = "minor"
+    dorian = "dorian"
+    mixolydian = "mixolydian"
+    lydian = "lydian"
+
+
 class Tune(TimestampMixin, Base):
     __tablename__ = "tunes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     tune_type: Mapped[TuneType] = mapped_column(Enum(TuneType), nullable=False)
-    key: Mapped[str] = mapped_column(String(50), nullable=False)
+    key_root: Mapped[KeyRoot] = mapped_column(Enum(KeyRoot), nullable=False)
+    key_mode: Mapped[KeyMode] = mapped_column(Enum(KeyMode), nullable=False)
     time_signature: Mapped[str] = mapped_column(String(10), nullable=False)
+    composer: Mapped[str | None] = mapped_column(String(200), nullable=True)
     origin: Mapped[str | None] = mapped_column(String(200), nullable=True)
     region: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -113,10 +140,17 @@ class TuneSetting(TimestampMixin, Base):
     label: Mapped[str] = mapped_column(String(100), nullable=False)
     abc_notation: Mapped[str] = mapped_column(Text, nullable=False)
     is_core: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
+    source: Mapped[str | None] = mapped_column(String(200), nullable=True)
     ornamentation_level: Mapped[OrnamentationLevel] = mapped_column(
         Enum(OrnamentationLevel), default=OrnamentationLevel.none, nullable=False
     )
     source_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mutation_notation: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+        # Format TBD — see Phase 3 mutation notation design notes
+        # Do not implement rendering until format is decided
+    )
 
     tune: Mapped["Tune"] = relationship(back_populates="settings")
 
