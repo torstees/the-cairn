@@ -105,7 +105,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### 2. Tune Management
 
-- [ ] **2.1 — Tune CRUD service**
+- [x] **2.1 — Tune CRUD service**
   Create `cairn/services/tunes.py`.
   Functions: `create_tune`, `get_tune`, `list_tunes`, `update_tune`, `delete_tune`.
   `create_tune` must also create a core `TuneSetting` (is_core=True) in the same transaction.
