@@ -22,7 +22,8 @@
               timeSig: '{{ tune.time_signature if tune else '' }}',
               defaults: {reel:'4/4',jig:'6/8',slip_jig:'9/8',hornpipe:'4/4',polka:'2/4',slide:'6/8',strathspey:'4/4',waltz:'3/4',air:'',march:'4/4',barndance:'4/4'},
               onTypeChange() { if (!this.timeSig) this.timeSig = this.defaults[this.tuneType] || ''; }
-            }">
+            }"
+            x-init="onTypeChange()">
 
         <div>
           <label class="block text-sm font-medium text-stone-700 mb-1" for="title">Title</label>
