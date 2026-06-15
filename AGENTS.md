@@ -5,6 +5,13 @@ Read it fully before writing or modifying any code.
 
 ---
 
+## Repository
+
+GitHub: https://github.com/torstees/the-cairn
+Use `gh` CLI for issues, PRs, and other GitHub operations — do not construct URLs manually.
+
+---
+
 ## What This Project Is
 
 **The Cairn** is a web application for learning and retaining traditional Irish music tunes.

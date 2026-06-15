@@ -86,7 +86,10 @@
 
   function render(abcString) {
     currentAbcString = abcString;
-    visualObj = ABCJS.renderAbc("abc-render", abcString, RENDER_OPTS);
+    // Strip Q: from the visual render — the tempo annotation is misleading
+    // because it never updates when the slider moves. Audio uses currentAbcString.
+    var displayAbc = abcString.replace(/^Q:[^\n]*\n?/m, "");
+    visualObj = ABCJS.renderAbc("abc-render", displayAbc, RENDER_OPTS);
   }
 
   function renderScore() {
