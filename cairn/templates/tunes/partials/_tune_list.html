@@ -1,0 +1,70 @@
+{# Filter controls + tune list — both inside #tune-content so active state re-renders with results #}
+
+<div class="space-y-2 mb-5">
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="text-xs text-stone-400 w-14 shrink-0">Family</span>
+    <a href="/tunes"
+       hx-get="/tunes" hx-target="#tune-content" hx-swap="innerHTML" hx-push-url="true"
+       class="px-3 py-1 rounded-full text-sm border transition-colors
+              {% if not active_type and not active_family %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
+      All
+    </a>
+    {% for key, label in family_labels.items() %}
+    <a href="/tunes?family={{ key }}"
+       hx-get="/tunes?family={{ key }}" hx-target="#tune-content" hx-swap="innerHTML" hx-push-url="true"
+       class="px-3 py-1 rounded-full text-sm border transition-colors
+              {% if active_family == key %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="text-xs text-stone-400 w-14 shrink-0">Type</span>
+    {% for tt in tune_types %}
+    <a href="/tunes?type={{ tt.value }}"
+       hx-get="/tunes?type={{ tt.value }}" hx-target="#tune-content" hx-swap="innerHTML" hx-push-url="true"
+       class="px-3 py-1 rounded-full text-sm border transition-colors
+              {% if active_type == tt %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
+      {{ tt.label }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if tunes %}
+<ul class="space-y-3">
+  {% for tune in tunes %}
+  <li class="flex items-center justify-between bg-white rounded-lg shadow-sm px-5 py-4 gap-4">
+    <div class="min-w-0">
+      <a href="/tunes/{{ tune.id }}"
+         class="text-lg font-semibold text-stone-800 hover:text-stone-600 hover:underline">
+        {{ tune.title }}
+      </a>
+      <span class="ml-3 text-sm text-stone-500">
+        {{ tune.tune_type.label }} &middot; {{ tune.key_root.label }} {{ tune.key_mode.label }}
+      </span>
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+      <a href="/tunes/{{ tune.id }}/edit"
+         class="text-sm text-stone-500 hover:text-stone-700">Edit</a>
+      <button
+        hx-delete="/tunes/{{ tune.id }}"
+        hx-target="closest li"
+        hx-swap="outerHTML swap:300ms"
+        hx-confirm="Delete &ldquo;{{ tune.title }}&rdquo;?"
+        class="text-sm text-red-500 hover:text-red-700">
+        Delete
+      </button>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% elif active_type or active_family %}
+<p class="text-stone-500 text-sm py-8 text-center">No tunes match this filter.</p>
+{% else %}
+<div class="text-center py-16 text-stone-500">
+  <p class="text-lg mb-3">No tunes yet.</p>
+  <a href="/tunes/new" class="underline hover:text-stone-700">Add your first tune.</a>
+</div>
+{% endif %}

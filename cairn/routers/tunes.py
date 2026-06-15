@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,7 +6,7 @@ from cairn.dependencies import get_db
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
-from cairn.services.tunes import create_tune, delete_tune, get_tune, list_tunes, update_tune
+from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, create_tune, delete_tune, get_tune, list_tunes, update_tune
 from cairn.templating import templates
 
 router = APIRouter(prefix="/tunes", tags=["tunes"])
@@ -31,9 +31,22 @@ async def tune_new(request: Request) -> Response:
 
 
 @router.get("/")
-async def tune_list(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
-    tunes = await list_tunes(db)
-    return templates.TemplateResponse(request, "tunes/index.html", {"tunes": tunes})
+async def tune_list(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    tune_type: TuneType | None = Query(default=None, alias="type"),
+    family: str | None = None,
+) -> Response:
+    tunes = await list_tunes(db, tune_type=tune_type, family=family)
+    ctx = {
+        "tunes": tunes,
+        "tune_types": _TUNE_TYPES,
+        "family_labels": FAMILY_LABELS,
+        "active_type": tune_type,
+        "active_family": family,
+    }
+    template = "tunes/partials/_tune_list.html" if request.headers.get("HX-Request") else "tunes/index.html"
+    return templates.TemplateResponse(request, template, ctx)
 
 
 @router.post("/")
