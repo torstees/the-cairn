@@ -1,9 +1,18 @@
+import re
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from cairn.models import Instrument, OrnamentationLevel, Tune, TuneDifficulty, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
+
+_ARTICLE_RE = re.compile(r'^(?:the|a|an)\s+', re.IGNORECASE)
+
+
+def sort_key(title: str) -> str:
+    """Return the sort key for a title by stripping a leading article."""
+    return _ARTICLE_RE.sub('', title)
 
 # Groupings are hardcoded for now; extracting to a user-editable DB table is a separate concern.
 TUNE_FAMILIES: dict[str, list[TuneType]] = {
@@ -51,7 +60,7 @@ async def create_tune(
     version valid for all instruments. abc_notation stores the music body only;
     headers are assembled at render time by build_abc.
     """
-    tune = Tune(**tune_in.model_dump())
+    tune = Tune(**tune_in.model_dump(), sort_title=sort_key(tune_in.title))
     db.add(tune)
     await db.flush()  # populate tune.id before referencing it in TuneSetting
 
@@ -87,7 +96,7 @@ async def list_tunes(
     stmt = (
         select(Tune)
         .options(selectinload(Tune.settings), selectinload(Tune.difficulties))
-        .order_by(Tune.title)
+        .order_by(Tune.sort_title)
     )
     if tune_type is not None:
         stmt = stmt.where(Tune.tune_type == tune_type)
@@ -111,6 +120,8 @@ async def update_tune(
         return None
     for field, value in tune_in.model_dump(exclude_unset=True).items():
         setattr(tune, field, value)
+    if 'title' in tune_in.model_fields_set:
+        tune.sort_title = sort_key(tune.title)
     if abc_notation is not None:
         result = await db.execute(
             select(TuneSetting).where(

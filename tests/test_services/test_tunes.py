@@ -1,16 +1,29 @@
-import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
-from cairn.services.tunes import TUNE_FAMILIES, create_setting, create_tune, delete_tune, get_tune, list_tunes, set_core_setting, set_difficulty, update_tune
+from cairn.services.tunes import (
+    TUNE_FAMILIES,
+    create_setting,
+    create_tune,
+    delete_tune,
+    get_tune,
+    list_tunes,
+    set_core_setting,
+    set_difficulty,
+    sort_key,
+    update_tune,
+)
 
 ABC = "X:1\nT:Test\nM:4/4\nK:D\n|:DEFG|ABcd:|\n"
 
 
 def _tune_create(**kwargs) -> TuneCreate:
-    defaults = dict(title="The Morning Dew", tune_type=TuneType.reel, key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4")
+    defaults = dict(
+        title="The Morning Dew", tune_type=TuneType.reel,
+        key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4",
+    )
     return TuneCreate(**{**defaults, **kwargs})
 
 
@@ -88,6 +101,53 @@ async def test_list_tunes_ordered_by_title(db: AsyncSession) -> None:
     assert tunes[1].title == "The Foxhunter"
 
 
+async def test_list_tunes_article_sort_order(db: AsyncSession) -> None:
+    await create_tune(db, _tune_create(title="The Foxhunter"), abc_notation=ABC)
+    await create_tune(db, _tune_create(title="An Rogaire Dubh"), abc_notation=ABC)
+    await create_tune(db, _tune_create(title="A Fig For A Kiss"), abc_notation=ABC)
+    await create_tune(db, _tune_create(title="Banish Misfortune"), abc_notation=ABC)
+    tunes = await list_tunes(db)
+    titles = [t.title for t in tunes]
+    assert titles == ["Banish Misfortune", "A Fig For A Kiss", "The Foxhunter", "An Rogaire Dubh"]
+
+
+async def test_sort_key_strips_the(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(title="The Morning Dew"), abc_notation=ABC)
+    assert tune.sort_title == "Morning Dew"
+
+
+async def test_sort_key_strips_a(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(title="A Fig For A Kiss"), abc_notation=ABC)
+    assert tune.sort_title == "Fig For A Kiss"
+
+
+async def test_sort_key_strips_an(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(title="An Rogaire Dubh"), abc_notation=ABC)
+    assert tune.sort_title == "Rogaire Dubh"
+
+
+async def test_sort_key_no_article(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(title="Banish Misfortune"), abc_notation=ABC)
+    assert tune.sort_title == "Banish Misfortune"
+
+
+async def test_sort_key_title_update_refreshes_sort_title(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(title="Banish Misfortune"), abc_notation=ABC)
+    updated = await update_tune(db, tune.id, TuneUpdate(title="The Morning Dew"))
+    assert updated is not None
+    assert updated.sort_title == "Morning Dew"
+
+
+def test_sort_key_function_cases() -> None:
+    assert sort_key("The Morning Dew") == "Morning Dew"
+    assert sort_key("A Fig For A Kiss") == "Fig For A Kiss"
+    assert sort_key("An Rogaire Dubh") == "Rogaire Dubh"
+    assert sort_key("Banish Misfortune") == "Banish Misfortune"
+    assert sort_key("the morning dew") == "morning dew"
+    assert sort_key("THE FOXHUNTER") == "FOXHUNTER"
+    assert sort_key("Anthology") == "Anthology"  # 'An' not followed by space
+
+
 async def test_list_tunes_empty(db: AsyncSession) -> None:
     tunes = await list_tunes(db)
     assert tunes == []
@@ -125,7 +185,9 @@ async def test_tune_families_cover_all_tune_types(db: AsyncSession) -> None:
 
 async def test_update_tune_changes_fields(db: AsyncSession) -> None:
     tune = await create_tune(db, _tune_create(), abc_notation=ABC)
-    updated = await update_tune(db, tune.id, TuneUpdate(title="Revised Title", key_root=KeyRoot.G, key_mode=KeyMode.major))
+    updated = await update_tune(
+        db, tune.id, TuneUpdate(title="Revised Title", key_root=KeyRoot.G, key_mode=KeyMode.major)
+    )
     assert updated is not None
     assert updated.title == "Revised Title"
     assert updated.key_root == KeyRoot.G

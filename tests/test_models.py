@@ -36,7 +36,11 @@ def _user(**kwargs) -> User:
 
 
 def _tune(**kwargs) -> Tune:
-    defaults = dict(title="The Morning Dew", tune_type=TuneType.reel, key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4")
+    defaults = dict(
+        title="The Morning Dew", sort_title="Morning Dew",
+        tune_type=TuneType.reel, key_root=KeyRoot.D, key_mode=KeyMode.major,
+        time_signature="4/4",
+    )
     return Tune(**{**defaults, **kwargs})
 
 
