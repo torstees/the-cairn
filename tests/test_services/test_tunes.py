@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
-from cairn.services.tunes import create_setting, create_tune, delete_tune, get_tune, list_tunes, set_core_setting, set_difficulty, update_tune
+from cairn.services.tunes import TUNE_FAMILIES, create_setting, create_tune, delete_tune, get_tune, list_tunes, set_core_setting, set_difficulty, update_tune
 
 ABC = "X:1\nT:Test\nM:4/4\nK:D\n|:DEFG|ABcd:|\n"
 
@@ -91,6 +91,34 @@ async def test_list_tunes_ordered_by_title(db: AsyncSession) -> None:
 async def test_list_tunes_empty(db: AsyncSession) -> None:
     tunes = await list_tunes(db)
     assert tunes == []
+
+
+async def test_list_tunes_filter_by_type(db: AsyncSession) -> None:
+    await create_tune(db, _tune_create(title="The Morning Dew", tune_type=TuneType.reel), abc_notation=ABC)
+    await create_tune(db, _tune_create(title="Banish Misfortune", tune_type=TuneType.jig), abc_notation=ABC)
+    reels = await list_tunes(db, tune_type=TuneType.reel)
+    assert len(reels) == 1
+    assert reels[0].title == "The Morning Dew"
+
+
+async def test_list_tunes_filter_by_family(db: AsyncSession) -> None:
+    await create_tune(db, _tune_create(title="A Jig", tune_type=TuneType.jig), abc_notation=ABC)
+    await create_tune(db, _tune_create(title="A Slip Jig", tune_type=TuneType.slip_jig), abc_notation=ABC)
+    await create_tune(db, _tune_create(title="A Reel", tune_type=TuneType.reel), abc_notation=ABC)
+    results = await list_tunes(db, family="jig_family")
+    titles = {t.title for t in results}
+    assert titles == {"A Jig", "A Slip Jig"}
+
+
+async def test_list_tunes_unknown_family_returns_all(db: AsyncSession) -> None:
+    await create_tune(db, _tune_create(title="A Reel", tune_type=TuneType.reel), abc_notation=ABC)
+    results = await list_tunes(db, family="nonexistent")
+    assert len(results) == 1  # unknown family → no WHERE clause → all tunes
+
+
+async def test_tune_families_cover_all_tune_types(db: AsyncSession) -> None:
+    all_covered = {t for types in TUNE_FAMILIES.values() for t in types}
+    assert all_covered == set(TuneType)
 
 
 # ── update_tune ───────────────────────────────────────────────────────────────

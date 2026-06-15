@@ -10,38 +10,7 @@
   </a>
 </div>
 
-{% if tunes %}
-<ul id="tune-list" class="space-y-3">
-  {% for tune in tunes %}
-  <li class="flex items-center justify-between bg-white rounded-lg shadow-sm px-5 py-4 gap-4">
-    <div class="min-w-0">
-      <a href="/tunes/{{ tune.id }}"
-         class="text-lg font-semibold text-stone-800 hover:text-stone-600 hover:underline">
-        {{ tune.title }}
-      </a>
-      <span class="ml-3 text-sm text-stone-500">
-        {{ tune.tune_type.label }} &middot; {{ tune.key_root.label }} {{ tune.key_mode.label }}
-      </span>
-    </div>
-    <div class="flex items-center gap-3 shrink-0">
-      <a href="/tunes/{{ tune.id }}/edit"
-         class="text-sm text-stone-500 hover:text-stone-700">Edit</a>
-      <button
-        hx-delete="/tunes/{{ tune.id }}"
-        hx-target="closest li"
-        hx-swap="outerHTML swap:300ms"
-        hx-confirm="Delete &ldquo;{{ tune.title }}&rdquo;?"
-        class="text-sm text-red-500 hover:text-red-700">
-        Delete
-      </button>
-    </div>
-  </li>
-  {% endfor %}
-</ul>
-{% else %}
-<div class="text-center py-16 text-stone-500">
-  <p class="text-lg mb-3">No tunes yet.</p>
-  <a href="/tunes/new" class="underline hover:text-stone-700">Add your first tune.</a>
+<div id="tune-content">
+  {% include "tunes/partials/_tune_list.html" %}
 </div>
-{% endif %}
 {% endblock %}

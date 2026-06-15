@@ -2,8 +2,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Instrument, OrnamentationLevel, Tune, TuneDifficulty, TuneSetting
+from cairn.models import Instrument, OrnamentationLevel, Tune, TuneDifficulty, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
+
+# Groupings are hardcoded for now; extracting to a user-editable DB table is a separate concern.
+TUNE_FAMILIES: dict[str, list[TuneType]] = {
+    "jig_family": [TuneType.jig, TuneType.slip_jig, TuneType.slide],
+    "reel_family": [TuneType.reel, TuneType.hornpipe, TuneType.barndance],
+    "march_family": [TuneType.march, TuneType.strathspey],
+    "other": [TuneType.polka, TuneType.waltz, TuneType.air],
+}
+
+FAMILY_LABELS: dict[str, str] = {
+    "jig_family": "Jig Family",
+    "reel_family": "Reel Family",
+    "march_family": "March Family",
+    "other": "Other",
+}
 
 
 def get_setting_for_instrument(tune: Tune, instrument: Instrument | None) -> TuneSetting:
@@ -63,12 +78,24 @@ async def get_tune(db: AsyncSession, tune_id: int) -> Tune | None:
     return result.scalar_one_or_none()
 
 
-async def list_tunes(db: AsyncSession) -> list[Tune]:
-    result = await db.execute(
+async def list_tunes(
+    db: AsyncSession,
+    *,
+    tune_type: TuneType | None = None,
+    family: str | None = None,
+) -> list[Tune]:
+    stmt = (
         select(Tune)
         .options(selectinload(Tune.settings), selectinload(Tune.difficulties))
         .order_by(Tune.title)
     )
+    if tune_type is not None:
+        stmt = stmt.where(Tune.tune_type == tune_type)
+    elif family is not None:
+        types = TUNE_FAMILIES.get(family, [])
+        if types:
+            stmt = stmt.where(Tune.tune_type.in_(types))
+    result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
