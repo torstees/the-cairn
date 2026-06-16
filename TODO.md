@@ -299,14 +299,14 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Write thorough tests in `tests/test_services/test_spaced_rep.py` covering
   all confidence values (1–5) and edge cases (first practice, reset on low confidence).
 
-- [ ] **3.2 — Progress routes**
+- [x] **3.2 — Progress routes**
   Router: `cairn/routers/progress.py`, prefix `/progress`.
   Routes:
   - `GET /progress` — all tunes with current status for the current user
   - `POST /progress/{tune_id}` — record a practice rating (HTMX, returns updated badge)
   - `POST /progress/{tune_id}/status` — manually advance or set status
 
-- [ ] **3.3 — Progress badge component**
+- [x] **3.3 — Progress badge component**
   Create `cairn/templates/components/_progress_badge.html`.
   Displays `status.label` with a colour-coded indicator.
   Used on tune detail and practice session views.
