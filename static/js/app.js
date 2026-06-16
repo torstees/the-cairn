@@ -94,17 +94,24 @@
   }
 
   // Score note click → highlight that note, move textarea cursor there.
+  // NOTE: mouseEvent.currentTarget is the SVG container (ABCJS uses event
+  // delegation), NOT the individual note <g> element. Use charMap instead.
   function handleScoreClick(abcElem, tuneNumber, classes, analysis, drag, mouseEvent) {
     clearCursorHighlight();
-    if (mouseEvent && mouseEvent.currentTarget) {
-      mouseEvent.currentTarget.classList.add("abcjs-cursor-active");
-      cursorHighlightEl = mouseEvent.currentTarget;
-    }
-    var editor = document.getElementById("abc-editor");
-    if (editor && abcElem && typeof abcElem.startChar === "number") {
-      var pos = abcElem.startChar + qLineLength(currentAbcString);
-      editor.focus();
-      editor.setSelectionRange(pos, pos);
+    if (abcElem && typeof abcElem.startChar === "number") {
+      for (var i = 0; i < charMap.length; i++) {
+        if (charMap[i].start === abcElem.startChar) {
+          charMap[i].el.classList.add("abcjs-cursor-active");
+          cursorHighlightEl = charMap[i].el;
+          break;
+        }
+      }
+      var editor = document.getElementById("abc-editor");
+      if (editor) {
+        var pos = abcElem.startChar + qLineLength(currentAbcString);
+        editor.focus();
+        editor.setSelectionRange(pos, pos);
+      }
     }
   }
 
@@ -524,7 +531,11 @@
     initFormPreview();
 
     document.addEventListener("htmx:afterSwap", function () {
-      if (activeSettingId !== null) applyActiveCard(activeSettingId);
+      if (activeSettingId !== null) {
+        // Re-render the main score from the refreshed abc-setting-{id} template
+        // (the swap updated those templates with the latest saved ABC).
+        selectSetting(activeSettingId);
+      }
     });
   });
 })();

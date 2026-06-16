@@ -113,7 +113,11 @@
           </div>
 
           <div class="flex gap-2 pt-1">
-            <button type="submit"
+            <button type="button"
+                    hx-post="/tunes/{{ tune.id }}/settings/{{ setting.id }}"
+                    hx-target="#settings-section"
+                    hx-swap="outerHTML"
+                    hx-include="closest form"
                     class="bg-stone-700 hover:bg-stone-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
               Save
             </button>
