@@ -115,6 +115,7 @@ class Tune(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
+    sort_title: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     tune_type: Mapped[TuneType] = mapped_column(Enum(TuneType), nullable=False)
     key_root: Mapped[KeyRoot] = mapped_column(Enum(KeyRoot), nullable=False)
     key_mode: Mapped[KeyMode] = mapped_column(Enum(KeyMode), nullable=False)
