@@ -3,9 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
 from cairn.models import Instrument, OrnamentationLevel
-from cairn.schemas import TuneSettingCreate
+from cairn.schemas import TuneSettingCreate, TuneSettingUpdate
 from cairn.services.abc_utils import build_abc
-from cairn.services.tunes import create_setting, get_tune, set_core_setting
+from cairn.services.tunes import create_setting, get_tune, set_core_setting, update_setting
 from cairn.templating import templates
 
 router = APIRouter(prefix="/tunes", tags=["settings"])
@@ -61,6 +61,36 @@ async def setting_create(
     result = await create_setting(db, tune_id, setting_in)
     if result is None:
         raise HTTPException(status_code=404, detail="Tune not found")
+    tune = await get_tune(db, tune_id)
+    return templates.TemplateResponse(
+        request, "tunes/partials/_settings.html", _settings_ctx(tune)
+    )
+
+
+@router.post("/{tune_id}/settings/{setting_id}")
+async def setting_update(
+    request: Request,
+    tune_id: int,
+    setting_id: int,
+    db: AsyncSession = Depends(get_db),
+    label: str = Form(...),
+    abc_notation: str = Form(...),
+    instrument: str = Form(""),
+    ornamentation_level: OrnamentationLevel = Form(OrnamentationLevel.none),
+    source: str = Form(""),
+    source_notes: str = Form(""),
+) -> Response:
+    setting_in = TuneSettingUpdate(
+        label=label,
+        abc_notation=abc_notation,
+        instrument=Instrument(instrument) if instrument else None,
+        ornamentation_level=ornamentation_level,
+        source=source or None,
+        source_notes=source_notes or None,
+    )
+    result = await update_setting(db, tune_id, setting_id, setting_in)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Setting not found")
     tune = await get_tune(db, tune_id)
     return templates.TemplateResponse(
         request, "tunes/partials/_settings.html", _settings_ctx(tune)

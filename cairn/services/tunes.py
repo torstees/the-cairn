@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from cairn.models import Instrument, OrnamentationLevel, Tune, TuneDifficulty, TuneSetting, TuneType
-from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
+from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
 
 _ARTICLE_RE = re.compile(r'^(?:the|a|an)\s+', re.IGNORECASE)
 
@@ -187,6 +187,23 @@ async def set_core_setting(
     await db.commit()
     await db.refresh(target)
     return target
+
+
+async def update_setting(
+    db: AsyncSession,
+    tune_id: int,
+    setting_id: int,
+    setting_in: TuneSettingUpdate,
+) -> TuneSetting | None:
+    """Update fields on an existing TuneSetting."""
+    setting = await db.get(TuneSetting, setting_id)
+    if setting is None or setting.tune_id != tune_id:
+        return None
+    for field, value in setting_in.model_dump(exclude_unset=True).items():
+        setattr(setting, field, value)
+    await db.commit()
+    await db.refresh(setting)
+    return setting
 
 
 async def set_difficulty(

@@ -3,6 +3,13 @@
     responsive: "resize",
     add_classes: true,
     wrap: { preferredMeasuresPerLine: 4, minSpacing: 1.5, maxSpacing: 2.5 },
+    clickListener: handleScoreClick,
+  };
+
+  var PREVIEW_OPTS = {
+    responsive: "resize",
+    add_classes: true,
+    wrap: { preferredMeasuresPerLine: 4, minSpacing: 1.5, maxSpacing: 2.5 },
   };
 
   // Shared ABC constants — must match cairn/services/abc_utils.py
@@ -21,20 +28,16 @@
   var currentAbcString = "";
   var naturalBpm = null;
   var activeSettingId = null;
+  var cursorHighlightEl = null;
+  var rebuildMapTimer = null;
 
   // ── ABC helpers ────────────────────────────────────────────────────────────
 
-  // Extract the BPM number from a Q: header.
-  // Handles Q:1/4=100, Q:3/8=100 (note-spec form) and Q:100 (legacy form).
   function extractBpm(abcString) {
     var m = abcString.match(/^Q:[^=\n]*=(\d+)/m) || abcString.match(/^Q:(\d+)/m);
     return m ? parseInt(m[1], 10) : null;
   }
 
-  // Return a copy of abcString with the Q: BPM replaced by bpm.
-  // Preserves the note-length specifier (e.g. Q:3/8= stays, only the number changes).
-  // Uses .test() to detect which form is present — avoids a fall-through bug when
-  // the replacement value equals the existing value (strings would compare equal).
   function setQBpm(abcString, bpm) {
     if (/^Q:[^=\n]+=\d+/m.test(abcString)) {
       return abcString.replace(/^(Q:[^=\n]+=)\d+/m, "$1" + bpm);
@@ -43,6 +46,92 @@
       return abcString.replace(/^Q:\d+/m, "Q:" + bpm);
     }
     return abcString.replace(/^K:/m, "Q:1/4=" + bpm + "\nK:");
+  }
+
+  // Length of the Q: line that was stripped for display (to convert between
+  // textarea char positions and visualObj char positions).
+  function qLineLength(abcString) {
+    var m = (abcString || "").match(/^Q:[^\n]*\n/m);
+    return m ? m[0].length : 0;
+  }
+
+  // ── cursor highlighting ────────────────────────────────────────────────────
+
+  // Builds a [{start, end, el}] map by zipping parsed note elements (in order)
+  // with .abcjs-note SVG elements (in DOM order). Best-effort — may misalign
+  // on chords or grace notes.
+  function buildCharMap(tuneObj, renderDivId) {
+    var parsed = [];
+    if (tuneObj && tuneObj.lines) {
+      tuneObj.lines.forEach(function (line) {
+        (line.staff || []).forEach(function (staff) {
+          (staff.voices || []).forEach(function (voice) {
+            voice.forEach(function (elem) {
+              if (elem.el_type === "note" && typeof elem.startChar === "number") {
+                parsed.push({ start: elem.startChar, end: elem.endChar || elem.startChar });
+              }
+            });
+          });
+        });
+      });
+    }
+    var svgEls = document.querySelectorAll("#" + renderDivId + " .abcjs-note, #" + renderDivId + " .abcjs-rest");
+    var map = [];
+    var len = Math.min(parsed.length, svgEls.length);
+    for (var i = 0; i < len; i++) {
+      map.push({ start: parsed[i].start, end: parsed[i].end, el: svgEls[i] });
+    }
+    return map;
+  }
+
+  var charMap = [];
+
+  function clearCursorHighlight() {
+    if (cursorHighlightEl) {
+      cursorHighlightEl.classList.remove("abcjs-cursor-active");
+      cursorHighlightEl = null;
+    }
+  }
+
+  // Score note click → highlight that note, move textarea cursor there.
+  function handleScoreClick(abcElem, tuneNumber, classes, analysis, drag, mouseEvent) {
+    clearCursorHighlight();
+    if (mouseEvent && mouseEvent.currentTarget) {
+      mouseEvent.currentTarget.classList.add("abcjs-cursor-active");
+      cursorHighlightEl = mouseEvent.currentTarget;
+    }
+    var editor = document.getElementById("abc-editor");
+    if (editor && abcElem && typeof abcElem.startChar === "number") {
+      var pos = abcElem.startChar + qLineLength(currentAbcString);
+      editor.focus();
+      editor.setSelectionRange(pos, pos);
+    }
+  }
+
+  // Textarea cursor move → highlight the corresponding note in the score.
+  function syncCursorToScore() {
+    var editor = document.getElementById("abc-editor");
+    if (!editor) return;
+    // Lazy rebuild: ABCJS responsive: "resize" re-renders after layout, invalidating
+    // the charMap that was built synchronously during render(). Rebuild if empty.
+    if (!charMap.length && visualObj && visualObj[0]) {
+      charMap = buildCharMap(visualObj[0], "abc-render");
+    }
+    if (!charMap.length) return;
+    var displayPos = editor.selectionStart - qLineLength(currentAbcString);
+    clearCursorHighlight();
+    // Find the note whose start is closest to and <= cursor position (nearest-left).
+    var best = null;
+    for (var i = 0; i < charMap.length; i++) {
+      var entry = charMap[i];
+      if (entry.start <= displayPos && (best === null || entry.start > best.start)) {
+        best = entry;
+      }
+    }
+    if (best && best.el) {
+      best.el.classList.add("abcjs-cursor-active");
+      cursorHighlightEl = best.el;
+    }
   }
 
   // ── detail page ────────────────────────────────────────────────────────────
@@ -55,7 +144,6 @@
     if (card) card.classList.add("ring-2", "ring-stone-400", "bg-stone-50");
   }
 
-  // Called from Alpine @click on each setting card.
   function selectSetting(settingId) {
     activeSettingId = settingId;
     applyActiveCard(settingId);
@@ -86,10 +174,23 @@
 
   function render(abcString) {
     currentAbcString = abcString;
-    // Strip Q: from the visual render — the tempo annotation is misleading
-    // because it never updates when the slider moves. Audio uses currentAbcString.
+    clearCursorHighlight();
+    charMap = [];
+    if (rebuildMapTimer) { clearTimeout(rebuildMapTimer); rebuildMapTimer = null; }
+    // Strip Q: from the visual render — tempo annotation is misleading since
+    // it never updates when the slider moves. Audio uses currentAbcString.
     var displayAbc = abcString.replace(/^Q:[^\n]*\n?/m, "");
     visualObj = ABCJS.renderAbc("abc-render", displayAbc, RENDER_OPTS);
+    if (visualObj && visualObj[0]) {
+      charMap = buildCharMap(visualObj[0], "abc-render");
+      // ABCJS responsive:"resize" fires a ResizeObserver callback after layout,
+      // replacing the initial SVG and making the charMap stale. Rebuild after
+      // the next paint to capture the final DOM elements.
+      rebuildMapTimer = setTimeout(function () {
+        charMap = buildCharMap(visualObj[0], "abc-render");
+        rebuildMapTimer = null;
+      }, 150);
+    }
   }
 
   function renderScore() {
@@ -100,7 +201,6 @@
 
     render(abcString);
 
-    // Highlight whichever card corresponds to what's currently rendered
     var coreCard = document.querySelector("[data-setting-id][data-is-core='true']") ||
                    document.querySelector("[data-setting-id]");
     if (coreCard) {
@@ -112,14 +212,10 @@
     var tempoSlider = document.getElementById("abc-tempo");
     var tempoLabel = document.getElementById("abc-tempo-label");
 
-    // Initialise slider at the natural BPM from the Q: header
     naturalBpm = extractBpm(abcString);
-    if (tempoSlider && naturalBpm) {
-      tempoSlider.value = naturalBpm;
-    }
-    if (tempoLabel && naturalBpm) {
-      tempoLabel.textContent = naturalBpm + " bpm";
-    }
+    if (tempoSlider && naturalBpm) tempoSlider.value = naturalBpm;
+    if (tempoLabel && naturalBpm) tempoLabel.textContent = naturalBpm + " bpm";
+
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
         tempoLabel.textContent = this.value + " bpm";
@@ -150,6 +246,8 @@
         }
         render(editor.value);
       });
+      editor.addEventListener("keyup", syncCursorToScore);
+      editor.addEventListener("click", syncCursorToScore);
     }
   }
 
@@ -169,7 +267,6 @@
     btn.textContent = "Loading…";
     btn.disabled = true;
 
-    // Render BPM-adjusted ABC to the hidden element so the visible score is untouched.
     var sliderBpm = parseInt((document.getElementById("abc-tempo") || {}).value, 10)
                     || naturalBpm || 100;
     var audioVisual = ABCJS.renderAbc("abc-audio", setQBpm(currentAbcString, sliderBpm), {});
@@ -210,7 +307,7 @@
     }
   }
 
-  // ── edit form preview ──────────────────────────────────────────────────────
+  // ── edit/new tune form preview ─────────────────────────────────────────────
 
   function parseUserHeaders(raw) {
     var lines = raw.split("\n");
@@ -219,14 +316,17 @@
     var inMusic = false;
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
-      if (!inMusic && line.length >= 2 && line[1] === ":" && /[A-Za-z]/.test(line[0])) {
-        if (!MAPPED_HEADERS.has(line[0].toUpperCase())) {
-          userHeaders.push(line);
+      if (!inMusic) {
+        if (!line.trim() || line[0] === "%") continue; // blank lines and ABC comments
+        if (line.length >= 2 && line[1] === ":" && /[A-Za-z]/.test(line[0])) {
+          if (!MAPPED_HEADERS.has(line[0].toUpperCase())) {
+            userHeaders.push(line);
+          }
+          continue;
         }
-      } else {
-        inMusic = true;
-        musicLines.push(line);
       }
+      inMusic = true;
+      musicLines.push(line);
     }
     return { userHeaders: userHeaders, musicLines: musicLines };
   }
@@ -280,7 +380,7 @@
     if (!renderDiv) return;
 
     function updatePreview() {
-      ABCJS.renderAbc("form-abc-render", buildFormAbc(), RENDER_OPTS);
+      ABCJS.renderAbc("form-abc-render", buildFormAbc(), PREVIEW_OPTS);
     }
 
     updatePreview();
@@ -292,8 +392,130 @@
     }
   }
 
-  // Expose to Alpine @click handlers
+  // ── setting add/edit preview ───────────────────────────────────────────────
+
+  // Returns the char offset in an ABC string where the music body begins
+  // (i.e., after all header lines).
+  function musicStartIn(abcString) {
+    var lines = abcString.split("\n");
+    var pos = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (!line.trim() || line[0] === "%") { pos += line.length + 1; continue; }
+      if (line.length >= 2 && line[1] === ":" && /[A-Za-z]/.test(line[0])) {
+        pos += line.length + 1; continue;
+      }
+      return pos;
+    }
+    return pos;
+  }
+
+  // Build a minimal ABC string from the user-typed notation and the tune's
+  // metadata (read from data-* attributes on #settings-section).
+  function buildSettingAbc(notation, tuneData) {
+    var parsed = parseUserHeaders(notation);
+    var headers = ["X:1", "T:Preview"];
+    if (tuneData.tuneType) headers.push("R:" + tuneData.tuneType);
+    if (tuneData.timeSig) headers.push("M:" + tuneData.timeSig);
+    var hasQ = parsed.userHeaders.some(function (h) {
+      return h.length >= 2 && h[0].toUpperCase() === "Q" && h[1] === ":";
+    });
+    if (!hasQ && tuneData.tuneType) {
+      headers.push(DEFAULT_TEMPO[tuneData.tuneType] || "Q:1/4=100");
+    }
+    for (var i = 0; i < parsed.userHeaders.length; i++) headers.push(parsed.userHeaders[i]);
+    var modeSuffix = MODE_SUFFIX[tuneData.keyMode] || "";
+    headers.push("K:" + (tuneData.keyRoot || "C") + modeSuffix);
+    var music = parsed.musicLines.join("\n").trim();
+    return headers.join("\n") + (music ? "\n" + music : "") + "\n";
+  }
+
+  // Wire up a textarea to render a live preview and sync the cursor to the
+  // rendered score. Call once per form open (Alpine $nextTick ensures the
+  // textarea is visible before this runs).
+  function initSettingPreview(textareaId, previewDivId) {
+    var textarea = document.getElementById(textareaId);
+    var section = document.getElementById("settings-section");
+    if (!textarea || !section) return;
+
+    var tuneData = {
+      tuneType: section.dataset.tuneType || "",
+      keyRoot:  section.dataset.keyRoot  || "C",
+      keyMode:  section.dataset.keyMode  || "major",
+      timeSig:  section.dataset.timeSig  || "4/4",
+    };
+
+    var previewVisualObj = null;
+    var previewCharMap = [];
+    var previewCursorEl = null;
+    var previewRebuildTimer = null;
+
+    function clearPreviewHighlight() {
+      if (previewCursorEl) {
+        previewCursorEl.classList.remove("abcjs-cursor-active");
+        previewCursorEl = null;
+      }
+    }
+
+    function rebuildPreviewCharMap() {
+      previewCharMap = [];
+      if (previewVisualObj && previewVisualObj[0]) {
+        previewCharMap = buildCharMap(previewVisualObj[0], previewDivId);
+      }
+    }
+
+    function updatePreview() {
+      var abc = buildSettingAbc(textarea.value, tuneData);
+      clearPreviewHighlight();
+      previewCharMap = [];
+      if (previewRebuildTimer) { clearTimeout(previewRebuildTimer); previewRebuildTimer = null; }
+      previewVisualObj = ABCJS.renderAbc(previewDivId, abc, PREVIEW_OPTS);
+      rebuildPreviewCharMap();
+      previewRebuildTimer = setTimeout(function () {
+        rebuildPreviewCharMap();
+        previewRebuildTimer = null;
+      }, 150);
+    }
+
+    function syncPreviewCursor() {
+      if (!previewCharMap.length) rebuildPreviewCharMap();
+      if (!previewCharMap.length) return;
+      // Compute where music starts in the textarea and in the built ABC,
+      // then translate the cursor position to a built-ABC char offset.
+      var rawValue = textarea.value;
+      var builtAbc = buildSettingAbc(rawValue, tuneData);
+      var relPos = textarea.selectionStart - musicStartIn(rawValue);
+      var builtPos = musicStartIn(builtAbc) + relPos;
+      clearPreviewHighlight();
+      var best = null;
+      for (var i = 0; i < previewCharMap.length; i++) {
+        var e = previewCharMap[i];
+        if (e.start <= builtPos && (best === null || e.start > best.start)) best = e;
+      }
+      if (best && best.el) {
+        best.el.classList.add("abcjs-cursor-active");
+        previewCursorEl = best.el;
+      }
+    }
+
+    // Remove previous listeners if this form was opened before.
+    if (textarea._settingPreviewFn) textarea.removeEventListener("input", textarea._settingPreviewFn);
+    if (textarea._settingCursorFn) {
+      textarea.removeEventListener("keyup", textarea._settingCursorFn);
+      textarea.removeEventListener("click", textarea._settingCursorFn);
+    }
+    textarea._settingPreviewFn = updatePreview;
+    textarea._settingCursorFn = syncPreviewCursor;
+    textarea.addEventListener("input", updatePreview);
+    textarea.addEventListener("keyup", syncPreviewCursor);
+    textarea.addEventListener("click", syncPreviewCursor);
+
+    if (textarea.value.trim()) updatePreview();
+  }
+
+  // Expose to Alpine and templates
   window.selectSetting = selectSetting;
+  window.initSettingPreview = initSettingPreview;
 
   // ── init ───────────────────────────────────────────────────────────────────
 
@@ -301,7 +523,6 @@
     renderScore();
     initFormPreview();
 
-    // Re-apply the active ring after HTMX swaps the settings section
     document.addEventListener("htmx:afterSwap", function () {
       if (activeSettingId !== null) applyActiveCard(activeSettingId);
     });
