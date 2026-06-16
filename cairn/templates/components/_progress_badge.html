@@ -1,0 +1,22 @@
+{#
+  Standalone HTMX partial — renderable on its own (POST /progress/{id}) and
+  embeddable via {% include %} from any parent template.
+
+  Required context:
+    tune     — Tune ORM object (id used for the element id)
+    progress — StudentProgress ORM object, or None if not started
+#}
+{% set _colors = {
+  'just_learning':     'bg-slate-100 text-slate-600',
+  'getting_there':     'bg-blue-100 text-blue-700',
+  'nearly_there':      'bg-amber-100 text-amber-700',
+  'session_ready':     'bg-green-100 text-green-700',
+  'committed':         'bg-teal-100 text-teal-700',
+  'performance_ready': 'bg-purple-100 text-purple-700',
+  'solo_ready':        'bg-indigo-100 text-indigo-700',
+} %}
+{% set _color = _colors.get(progress.status.value, 'bg-gray-100 text-gray-500') if progress else 'bg-gray-100 text-gray-500' %}
+<span id="progress-badge-{{ tune.id }}"
+      class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ _color }}">
+  {{ progress.status.label if progress else 'Not started' }}
+</span>

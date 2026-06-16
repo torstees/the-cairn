@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Practice Progress — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold text-stone-800 mb-6">Practice Progress</h1>
+
+  {% if not pairs %}
+  <p class="text-stone-500">
+    No tunes in the library yet.
+    <a href="/tunes/new" class="text-stone-700 underline">Add a tune</a> to get started.
+  </p>
+  {% else %}
+  <div class="space-y-3">
+    {% for tune, progress in pairs %}
+    {% include "progress/_tune_card.html" %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -4,7 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, ProgressStatus, Role, StudentProgress, TuneType, User
 from cairn.schemas import TuneCreate
-from cairn.services.spaced_rep import MIN_EASE_FACTOR, _INITIAL_EASE_FACTOR, next_review, record_practice
+from cairn.services.spaced_rep import (
+    MIN_EASE_FACTOR,
+    _INITIAL_EASE_FACTOR,
+    get_user_progress,
+    next_review,
+    record_practice,
+    set_status,
+)
 from cairn.services.tunes import create_tune
 
 _ABC = "|:DEFA BAFA|DEFA BAFA:|"
@@ -236,3 +243,102 @@ async def test_record_practice_ease_factor_respects_floor(db: AsyncSession) -> N
     for _ in range(10):
         rec = await record_practice(db, u.id, t.id, confidence=1)
     assert rec.ease_factor >= MIN_EASE_FACTOR
+
+
+# ── get_user_progress ─────────────────────────────────────────────────────────
+
+async def test_get_user_progress_returns_all_tunes(db: AsyncSession) -> None:
+    u = await _user(db)
+    t1 = await _tune(db)
+    t2 = await create_tune(
+        db,
+        TuneCreate(title="Swallowtail Jig", tune_type=TuneType.jig,
+                   key_root=KeyRoot.G, key_mode=KeyMode.major, time_signature="6/8"),
+        abc_notation=_ABC,
+    )
+    pairs = await get_user_progress(db, u.id)
+    tune_ids = [t.id for t, _ in pairs]
+    assert t1.id in tune_ids
+    assert t2.id in tune_ids
+
+
+async def test_get_user_progress_none_before_first_practice(db: AsyncSession) -> None:
+    u = await _user(db)
+    await _tune(db)
+    pairs = await get_user_progress(db, u.id)
+    assert all(p is None for _, p in pairs)
+
+
+async def test_get_user_progress_shows_existing_record(db: AsyncSession) -> None:
+    u = await _user(db)
+    t = await _tune(db)
+    await record_practice(db, u.id, t.id, confidence=4)
+    pairs = await get_user_progress(db, u.id)
+    by_id = {tune.id: progress for tune, progress in pairs}
+    assert by_id[t.id] is not None
+    assert by_id[t.id].confidence == 4
+
+
+async def test_get_user_progress_empty_library(db: AsyncSession) -> None:
+    u = await _user(db)
+    pairs = await get_user_progress(db, u.id)
+    assert pairs == []
+
+
+async def test_get_user_progress_ordered_by_sort_title(db: AsyncSession) -> None:
+    u = await _user(db)
+    await create_tune(
+        db,
+        TuneCreate(title="The Merry Blacksmith", tune_type=TuneType.reel,
+                   key_root=KeyRoot.A, key_mode=KeyMode.major, time_signature="4/4"),
+        abc_notation=_ABC,
+    )
+    await create_tune(
+        db,
+        TuneCreate(title="Ashokan Farewell", tune_type=TuneType.waltz,
+                   key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="3/4"),
+        abc_notation=_ABC,
+    )
+    pairs = await get_user_progress(db, u.id)
+    titles = [t.title for t, _ in pairs]
+    # "Ashokan Farewell" sorts before "The Merry Blacksmith" (article stripped)
+    assert titles.index("Ashokan Farewell") < titles.index("The Merry Blacksmith")
+
+
+# ── set_status ────────────────────────────────────────────────────────────────
+
+async def test_set_status_creates_record_when_none_exists(db: AsyncSession) -> None:
+    u = await _user(db)
+    t = await _tune(db)
+    rec = await set_status(db, u.id, t.id, ProgressStatus.session_ready)
+    assert rec.status == ProgressStatus.session_ready
+    assert rec.user_id == u.id
+    assert rec.tune_id == t.id
+
+
+async def test_set_status_updates_existing_record(db: AsyncSession) -> None:
+    u = await _user(db)
+    t = await _tune(db)
+    await record_practice(db, u.id, t.id, confidence=5)
+    rec = await set_status(db, u.id, t.id, ProgressStatus.committed)
+    assert rec.status == ProgressStatus.committed
+
+
+async def test_set_status_preserves_spaced_rep_fields(db: AsyncSession) -> None:
+    u = await _user(db)
+    t = await _tune(db)
+    await record_practice(db, u.id, t.id, confidence=5)
+    original = await record_practice(db, u.id, t.id, confidence=5)
+    rec = await set_status(db, u.id, t.id, ProgressStatus.nearly_there)
+    # SR fields must not be touched by a manual status change
+    assert rec.interval_days == original.interval_days
+    assert rec.ease_factor == original.ease_factor
+
+
+async def test_set_status_new_record_has_sensible_defaults(db: AsyncSession) -> None:
+    u = await _user(db)
+    t = await _tune(db)
+    rec = await set_status(db, u.id, t.id, ProgressStatus.getting_there)
+    assert rec.confidence == 3
+    assert rec.interval_days == 1.0
+    assert rec.ease_factor == _INITIAL_EASE_FACTOR

@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import ProgressStatus, StudentProgress
+from cairn.models import ProgressStatus, StudentProgress, Tune
 
 MIN_EASE_FACTOR = 1.3
 _INITIAL_EASE_FACTOR = 2.5
@@ -88,6 +88,61 @@ async def record_practice(
         record.last_practiced = now
         record.next_suggested = now + timedelta(days=new_interval)
 
+    await db.commit()
+    await db.refresh(record)
+    return record
+
+
+async def get_user_progress(
+    db: AsyncSession,
+    user_id: int,
+) -> list[tuple[Tune, StudentProgress | None]]:
+    """Return every tune paired with the user's progress record (None if not started).
+
+    Ordered alphabetically by sort_title.
+    """
+    tunes_result = await db.execute(select(Tune).order_by(Tune.sort_title))
+    tunes = list(tunes_result.scalars().all())
+    if not tunes:
+        return []
+    progress_result = await db.execute(
+        select(StudentProgress).where(StudentProgress.user_id == user_id)
+    )
+    progress_by_tune_id: dict[int, StudentProgress] = {
+        p.tune_id: p for p in progress_result.scalars().all()
+    }
+    return [(tune, progress_by_tune_id.get(tune.id)) for tune in tunes]
+
+
+async def set_status(
+    db: AsyncSession,
+    user_id: int,
+    tune_id: int,
+    status: ProgressStatus,
+) -> StudentProgress:
+    """Manually set the ProgressStatus for a (user, tune) pair.
+
+    Creates a StudentProgress row with sensible defaults if one doesn't exist yet.
+    """
+    result = await db.execute(
+        select(StudentProgress).where(
+            StudentProgress.user_id == user_id,
+            StudentProgress.tune_id == tune_id,
+        )
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        record = StudentProgress(
+            user_id=user_id,
+            tune_id=tune_id,
+            status=status,
+            confidence=3,
+            interval_days=1.0,
+            ease_factor=_INITIAL_EASE_FACTOR,
+        )
+        db.add(record)
+    else:
+        record.status = status
     await db.commit()
     await db.refresh(record)
     return record
