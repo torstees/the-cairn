@@ -1,0 +1,78 @@
+{#
+  Standalone HTMX partial for a single tune's progress card.
+  Required context: tune, progress (or None), statuses, now
+#}
+{% set is_due = progress and progress.next_suggested and progress.next_suggested <= now %}
+<div id="progress-card-{{ tune.id }}" class="bg-white rounded-lg shadow-sm px-5 py-4">
+
+  {# Header row: title + status controls #}
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div class="min-w-0">
+      <div class="flex items-center gap-2">
+        <a href="/tunes/{{ tune.id }}"
+           class="font-medium text-stone-800 hover:text-stone-600 hover:underline">
+          {{ tune.title }}
+        </a>
+        {% if is_due %}
+        <span class="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">Due</span>
+        {% endif %}
+      </div>
+      <p class="text-xs text-stone-400 mt-0.5">{{ tune.tune_type.label }}</p>
+    </div>
+
+    <div class="flex items-center gap-3 shrink-0 flex-wrap">
+      {% include "components/_progress_badge.html" %}
+
+      {# Inline status selector — HTMX updates the badge above on change #}
+      <select name="status"
+              hx-post="/progress/{{ tune.id }}/status"
+              hx-target="#progress-badge-{{ tune.id }}"
+              hx-swap="outerHTML"
+              hx-trigger="change"
+              hx-include="this"
+              class="text-xs border border-stone-200 rounded px-2 py-1 text-stone-600 bg-white focus:outline-none focus:ring-1 focus:ring-stone-400">
+        {% for s in statuses %}
+        <option value="{{ s.value }}"
+                {% if progress and progress.status == s %}selected{% endif %}>
+          {{ s.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  {# Spaced-rep stats (only when practice has been recorded) #}
+  {% if progress and progress.last_practiced %}
+  <div class="mt-3 pt-3 border-t border-stone-100 flex items-center gap-4 flex-wrap text-xs text-stone-500">
+    <span>Last: {{ progress.last_practiced.strftime('%b %d') }}</span>
+    {% if progress.next_suggested %}
+    <span>Next: {{ progress.next_suggested.strftime('%b %d') }}</span>
+    {% endif %}
+    <span>Interval: {{ "%.0f"|format(progress.interval_days) }}d</span>
+    <span>Ease: {{ "%.2f"|format(progress.ease_factor) }}</span>
+  </div>
+  {% endif %}
+
+  {# Rate-practice buttons 1–5 — replace the whole card so stats update too #}
+  <div class="mt-3 flex items-center gap-2 flex-wrap">
+    <span class="text-xs text-stone-400">Rate:</span>
+    {% for c in [1, 2, 3, 4, 5] %}
+    <button type="button"
+            hx-post="/progress/{{ tune.id }}"
+            hx-target="#progress-card-{{ tune.id }}"
+            hx-swap="outerHTML"
+            hx-vals='{"confidence": {{ c }}}'
+            class="text-xs w-7 h-7 rounded-full border
+                   {% if progress and progress.confidence == c %}
+                   border-stone-500 bg-stone-100 font-semibold
+                   {% else %}
+                   border-stone-200 hover:bg-stone-50
+                   {% endif %}
+                   text-stone-600">
+      {{ c }}
+    </button>
+    {% endfor %}
+    <span class="text-xs text-stone-300">1=forgot · 5=perfect</span>
+  </div>
+
+</div>
