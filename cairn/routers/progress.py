@@ -41,10 +41,11 @@ async def progress_record(
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
     progress = await record_practice(db, _STUB_USER_ID, tune_id, confidence)
+    now = datetime.now(UTC).replace(tzinfo=None)
     return templates.TemplateResponse(
         request,
-        "components/_progress_badge.html",
-        {"tune": tune, "progress": progress},
+        "progress/_tune_card.html",
+        {"tune": tune, "progress": progress, "statuses": _STATUSES, "now": now},
     )
 
 
