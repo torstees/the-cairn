@@ -291,7 +291,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### 3. Progress Tracking
 
-- [ ] **3.1 — Spaced repetition service**
+- [x] **3.1 — Spaced repetition service**
   Create `cairn/services/spaced_rep.py`.
   Implement `next_review(confidence, interval_days, ease_factor) -> (float, float)`
   using a simplified SM-2 variant.
