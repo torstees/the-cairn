@@ -10,7 +10,14 @@
   <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
   <!-- Alpine.js v3.14.9 -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
-  <style>[x-cloak]{display:none!important}</style>
+  <style>
+    [x-cloak]{display:none!important}
+    .abcjs-cursor-active path,
+    .abcjs-cursor-active rect,
+    .abcjs-cursor-active polygon,
+    .abcjs-cursor-active ellipse,
+    .abcjs-cursor-active circle { fill: cornflowerblue !important; stroke: cornflowerblue !important; }
+  </style>
   <!-- abcjs v6.4.4 -->
   <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
 </head>
