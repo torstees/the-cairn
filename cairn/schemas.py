@@ -14,6 +14,7 @@ class _ReadBase(BaseModel):
 
 # ── Tune ──────────────────────────────────────────────────────────────────────
 
+
 class TuneCreate(BaseModel):
     title: str
     tune_type: TuneType
@@ -54,6 +55,7 @@ class TuneRead(_ReadBase):
 
 # ── TuneSetting ───────────────────────────────────────────────────────────────
 
+
 class TuneSettingCreate(BaseModel):
     tune_id: int
     label: str
@@ -91,6 +93,7 @@ class TuneSettingRead(_ReadBase):
 
 # ── TuneDifficulty ────────────────────────────────────────────────────────────
 
+
 class TuneDifficultyCreate(BaseModel):
     tune_id: int
     instrument: Instrument
@@ -111,6 +114,7 @@ class TuneDifficultyRead(_ReadBase):
 
 
 # ── TuneSet ───────────────────────────────────────────────────────────────────
+
 
 class TuneSetCreate(BaseModel):
     title: str
@@ -135,6 +139,7 @@ class TuneSetRead(_ReadBase):
 
 # ── TuneSetMember ─────────────────────────────────────────────────────────────
 
+
 class TuneSetMemberCreate(BaseModel):
     set_id: int
     tune_id: int
@@ -152,6 +157,7 @@ class TuneSetMemberRead(_ReadBase):
 
 
 # ── StudentProgress ───────────────────────────────────────────────────────────
+
 
 class StudentProgressCreate(BaseModel):
     user_id: int
@@ -188,6 +194,7 @@ class StudentProgressRead(_ReadBase):
 
 
 # ── WarmupItem ────────────────────────────────────────────────────────────────
+
 
 class WarmupItemCreate(BaseModel):
     title: str

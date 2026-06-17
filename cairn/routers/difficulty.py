@@ -17,9 +17,7 @@ def _ctx(tune):
 
 
 @router.get("/{tune_id}/difficulty")
-async def difficulty_show(
-    request: Request, tune_id: int, db: AsyncSession = Depends(get_db)
-) -> Response:
+async def difficulty_show(request: Request, tune_id: int, db: AsyncSession = Depends(get_db)) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")

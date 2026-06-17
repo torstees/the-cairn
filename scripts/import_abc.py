@@ -14,6 +14,7 @@ Skips:
 For files with multiple X: blocks the first becomes the core setting;
 additional blocks are added as alternate TuneSettings on the same tune.
 """
+
 import asyncio
 import re
 import sys
@@ -31,25 +32,41 @@ from cairn.services.tunes import create_setting, create_tune
 _MAPPED = frozenset("XTCOARMSZNK")
 
 _KEY_ROOT_MAP: dict[str, KeyRoot] = {
-    "c": KeyRoot.C, "c#": KeyRoot.C_sharp, "db": KeyRoot.D_flat,
-    "d": KeyRoot.D, "eb": KeyRoot.E_flat, "e": KeyRoot.E,
-    "f": KeyRoot.F, "f#": KeyRoot.F_sharp, "gb": KeyRoot.G_flat,
-    "g": KeyRoot.G, "ab": KeyRoot.A_flat, "a": KeyRoot.A,
-    "bb": KeyRoot.B_flat, "b": KeyRoot.B,
+    "c": KeyRoot.C,
+    "c#": KeyRoot.C_sharp,
+    "db": KeyRoot.D_flat,
+    "d": KeyRoot.D,
+    "eb": KeyRoot.E_flat,
+    "e": KeyRoot.E,
+    "f": KeyRoot.F,
+    "f#": KeyRoot.F_sharp,
+    "gb": KeyRoot.G_flat,
+    "g": KeyRoot.G,
+    "ab": KeyRoot.A_flat,
+    "a": KeyRoot.A,
+    "bb": KeyRoot.B_flat,
+    "b": KeyRoot.B,
 }
 
 _KEY_MODE_MAP: dict[str, KeyMode] = {
-    "": KeyMode.major, "maj": KeyMode.major, "major": KeyMode.major,
-    "m": KeyMode.minor, "min": KeyMode.minor, "minor": KeyMode.minor,
-    "dor": KeyMode.dorian, "dorian": KeyMode.dorian,
-    "mix": KeyMode.mixolydian, "mixolydian": KeyMode.mixolydian,
-    "lyd": KeyMode.lydian, "lydian": KeyMode.lydian,
+    "": KeyMode.major,
+    "maj": KeyMode.major,
+    "major": KeyMode.major,
+    "m": KeyMode.minor,
+    "min": KeyMode.minor,
+    "minor": KeyMode.minor,
+    "dor": KeyMode.dorian,
+    "dorian": KeyMode.dorian,
+    "mix": KeyMode.mixolydian,
+    "mixolydian": KeyMode.mixolydian,
+    "lyd": KeyMode.lydian,
+    "lydian": KeyMode.lydian,
 }
 
 
 def _parse_key(raw: str) -> tuple[KeyRoot, KeyMode] | None:
     """Parse K: values: 'Dmaj', 'Ador', 'Bbdor', 'A mixolydian', 'G', 'Bm', etc."""
-    m = re.match(r'^([A-Ga-g][b#]?)\s*(.*)', raw.strip())
+    m = re.match(r"^([A-Ga-g][b#]?)\s*(.*)", raw.strip())
     if not m:
         return None
     root = _KEY_ROOT_MAP.get(m.group(1).lower())
@@ -74,7 +91,7 @@ def _split_blocks(text: str) -> list[str]:
     blocks: list[str] = []
     current: list[str] = []
     for line in text.splitlines():
-        if re.match(r'^X\s*:', line) and current:
+        if re.match(r"^X\s*:", line) and current:
             blocks.append("\n".join(current))
             current = [line]
         else:
@@ -170,10 +187,7 @@ def _build_tune_create(headers: dict[str, str]) -> TuneCreate | None:
 
 
 async def main(abc_dir: Path) -> None:
-    files = sorted(
-        f for f in abc_dir.glob("*.abc")
-        if not f.name.startswith(("set-", "set_"))
-    )
+    files = sorted(f for f in abc_dir.glob("*.abc") if not f.name.startswith(("set-", "set_")))
     print(f"Found {len(files)} candidate files in {abc_dir}\n")
 
     imported = skipped_dup = skipped_err = 0
@@ -203,25 +217,21 @@ async def main(abc_dir: Path) -> None:
             tune_in = _build_tune_create(primary["headers"])
             if tune_in is None:
                 h = primary["headers"]
-                warnings.append(
-                    f"SKIP (fields)   {path.name}"
-                    f" — R:{h.get('R', '?')}  K:{h.get('K', '?')}"
-                )
+                warnings.append(f"SKIP (fields)   {path.name} — R:{h.get('R', '?')}  K:{h.get('K', '?')}")
                 skipped_err += 1
                 continue
 
             # Dedup by title
-            exists = (await db.execute(
-                select(Tune.id).where(Tune.title == tune_in.title)
-            )).scalar_one_or_none()
+            exists = (await db.execute(select(Tune.id).where(Tune.title == tune_in.title))).scalar_one_or_none()
             if exists is not None:
-                warnings.append(f"SKIP (dup)      {path.name} — \"{tune_in.title}\"")
+                warnings.append(f'SKIP (dup)      {path.name} — "{tune_in.title}"')
                 skipped_dup += 1
                 continue
 
             # Create tune + core setting
             tune = await create_tune(
-                db, tune_in,
+                db,
+                tune_in,
                 abc_notation=primary["abc_notation"],
                 setting_label="Standard",
             )
@@ -229,12 +239,14 @@ async def main(abc_dir: Path) -> None:
             # Patch source / source_notes onto the core setting if present
             ph = primary["headers"]
             if ph.get("S") or ph.get("Z"):
-                core = (await db.execute(
-                    select(TuneSetting).where(
-                        TuneSetting.tune_id == tune.id,
-                        TuneSetting.is_core.is_(True),
+                core = (
+                    await db.execute(
+                        select(TuneSetting).where(
+                            TuneSetting.tune_id == tune.id,
+                            TuneSetting.is_core.is_(True),
+                        )
                     )
-                )).scalar_one_or_none()
+                ).scalar_one_or_none()
                 if core:
                     core.source = ph.get("S") or None
                     core.source_notes = ph.get("Z") or None
@@ -243,11 +255,7 @@ async def main(abc_dir: Path) -> None:
             # Add alternate settings
             for i, alt in enumerate(alternates, 1):
                 alt_title = alt["headers"].get("T", "").strip()
-                label = (
-                    alt_title
-                    if alt_title and alt_title.lower() != tune_in.title.lower()
-                    else f"Alternate {i}"
-                )
+                label = alt_title if alt_title and alt_title.lower() != tune_in.title.lower() else f"Alternate {i}"
                 setting_in = TuneSettingCreate(
                     tune_id=tune.id,
                     label=label,
@@ -271,10 +279,7 @@ async def main(abc_dir: Path) -> None:
 
 
 if __name__ == "__main__":
-    abc_dir = (
-        Path(sys.argv[1]) if len(sys.argv) > 1
-        else Path(__file__).parent.parent / "!ABC"
-    )
+    abc_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent.parent / "!ABC"
     if not abc_dir.is_dir():
         print(f"Error: {abc_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
