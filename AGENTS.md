@@ -465,6 +465,16 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
 
 ---
 
+## Git Workflow
+
+- Always create a feature branch before committing (`git checkout -b fix/<slug>` or `feature/<slug>`)
+- Check the current branch with `git branch` before staging any files — never assume the branch
+- Push with `gh pr create` after committing; include the issue number in the PR body if applicable
+- **Never commit directly to `main`**
+- **Never merge or close a PR** — the user reviews, tests, and merges all PRs themselves
+
+---
+
 ## What the Agent Must Not Do
 
 - Do not install packages with `pip` — use `uv add`
