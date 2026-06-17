@@ -1,9 +1,10 @@
 import enum
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -61,6 +62,11 @@ class ProgressStatus(LabelledEnum):
     committed = "committed"
     performance_ready = "performance_ready"
     solo_ready = "solo_ready"
+
+
+class PracticeListType(LabelledEnum):
+    repertoire = "repertoire"
+    woodshed = "woodshed"
 
 
 class OrnamentationLevel(LabelledEnum):
@@ -257,6 +263,7 @@ class User(TimestampMixin, Base):
     primary_instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
 
     tune_boxes: Mapped[list["TuneBox"]] = relationship(back_populates="user")
+    practice_lists: Mapped[list["PracticeList"]] = relationship(back_populates="user")
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="user")
     practice_sessions: Mapped[list["PracticeSession"]] = relationship(back_populates="user")
 
@@ -295,6 +302,40 @@ class TuneBoxEntry(TimestampMixin, Base):
 
     box: Mapped["TuneBox"] = relationship(back_populates="entries")
     tune: Mapped["Tune"] = relationship(back_populates="box_entries")
+    setting: Mapped["TuneSetting | None"] = relationship()
+
+
+class PracticeList(TimestampMixin, Base):
+    __tablename__ = "practice_lists"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    list_type: Mapped[PracticeListType] = mapped_column(Enum(PracticeListType), nullable=False)
+    progress_goal: Mapped[ProgressStatus] = mapped_column(
+        Enum(ProgressStatus), default=ProgressStatus.committed, nullable=False
+    )
+    target_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="practice_lists")
+    box: Mapped["TuneBox"] = relationship()
+    entries: Mapped[list["TuneListEntry"]] = relationship(back_populates="practice_list", cascade="all, delete-orphan")
+
+
+class TuneListEntry(TimestampMixin, Base):
+    __tablename__ = "tune_list_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    list_id: Mapped[int] = mapped_column(ForeignKey("practice_lists.id"), nullable=False)
+    tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
+
+    __table_args__ = (UniqueConstraint("tune_id", "list_id", name="uq_tune_list_entry_tune_list"),)
+
+    practice_list: Mapped["PracticeList"] = relationship(back_populates="entries")
+    tune: Mapped["Tune"] = relationship()
     setting: Mapped["TuneSetting | None"] = relationship()
 
 
