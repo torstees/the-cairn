@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Tune Boxes — The Cairn{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-3xl font-bold text-stone-800">Tune Boxes</h1>
+  <a href="/boxes/new"
+     class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+    + New Box
+  </a>
+</div>
+
+{% if boxes %}
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  {% for box in boxes %}
+  <a href="/boxes/{{ box.id }}"
+     class="block bg-white rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow border border-stone-100">
+    <h2 class="text-lg font-semibold text-stone-800 mb-2">{{ box.name }}</h2>
+    <div class="flex flex-wrap gap-1.5 mb-3">
+      {% for bi in box.instruments %}
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-stone-100 text-stone-600">
+        {{ bi.instrument.label }}
+      </span>
+      {% endfor %}
+    </div>
+    <p class="text-sm text-stone-500">
+      {{ box.entries | length }} tune{{ 's' if box.entries | length != 1 else '' }}
+    </p>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-16 text-stone-400">
+  <p class="text-lg mb-2">No boxes yet.</p>
+  <p class="text-sm">Create a box to start organising your tunes by instrument.</p>
+</div>
+{% endif %}
+{% endblock %}

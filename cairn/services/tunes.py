@@ -7,12 +7,13 @@ from sqlalchemy.orm import selectinload
 from cairn.models import Instrument, OrnamentationLevel, Tune, TuneDifficulty, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
 
-_ARTICLE_RE = re.compile(r'^(?:the|a|an)\s+', re.IGNORECASE)
+_ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
 
 
 def sort_key(title: str) -> str:
     """Return the sort key for a title by stripping a leading article."""
-    return _ARTICLE_RE.sub('', title)
+    return _ARTICLE_RE.sub("", title)
+
 
 # Groupings are hardcoded for now; extracting to a user-editable DB table is a separate concern.
 TUNE_FAMILIES: dict[str, list[TuneType]] = {
@@ -80,9 +81,7 @@ async def create_tune(
 
 async def get_tune(db: AsyncSession, tune_id: int) -> Tune | None:
     result = await db.execute(
-        select(Tune)
-        .where(Tune.id == tune_id)
-        .options(selectinload(Tune.settings), selectinload(Tune.difficulties))
+        select(Tune).where(Tune.id == tune_id).options(selectinload(Tune.settings), selectinload(Tune.difficulties))
     )
     return result.scalar_one_or_none()
 
@@ -93,11 +92,7 @@ async def list_tunes(
     tune_type: TuneType | None = None,
     family: str | None = None,
 ) -> list[Tune]:
-    stmt = (
-        select(Tune)
-        .options(selectinload(Tune.settings), selectinload(Tune.difficulties))
-        .order_by(Tune.sort_title)
-    )
+    stmt = select(Tune).options(selectinload(Tune.settings), selectinload(Tune.difficulties)).order_by(Tune.sort_title)
     if tune_type is not None:
         stmt = stmt.where(Tune.tune_type == tune_type)
     elif family is not None:
@@ -120,7 +115,7 @@ async def update_tune(
         return None
     for field, value in tune_in.model_dump(exclude_unset=True).items():
         setattr(tune, field, value)
-    if 'title' in tune_in.model_fields_set:
+    if "title" in tune_in.model_fields_set:
         tune.sort_title = sort_key(tune.title)
     if abc_notation is not None:
         result = await db.execute(

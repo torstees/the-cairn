@@ -6,7 +6,14 @@ from cairn.dependencies import get_db
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
-from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, create_tune, delete_tune, get_tune, list_tunes, update_tune
+from cairn.services.tunes import (
+    FAMILY_LABELS,
+    create_tune,
+    delete_tune,
+    get_tune,
+    list_tunes,
+    update_tune,
+)
 from cairn.templating import templates
 
 router = APIRouter(prefix="/tunes", tags=["tunes"])
@@ -86,7 +93,8 @@ async def tune_detail(request: Request, tune_id: int, db: AsyncSession = Depends
     built_abc = build_abc(tune, core) if core else ""
     settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
     return templates.TemplateResponse(
-        request, "tunes/detail.html",
+        request,
+        "tunes/detail.html",
         {"tune": tune, "built_abc": built_abc, "settings_abc": settings_abc, **_SETTINGS_CTX},
     )
 

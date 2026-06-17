@@ -6,8 +6,8 @@ from cairn.models import Instrument, KeyMode, KeyRoot, ProgressStatus, Role, Stu
 from cairn.schemas import TuneCreate
 from cairn.services.boxes import create_box
 from cairn.services.spaced_rep import (
-    MIN_EASE_FACTOR,
     _INITIAL_EASE_FACTOR,
+    MIN_EASE_FACTOR,
     get_user_progress,
     next_review,
     record_practice,
@@ -19,6 +19,7 @@ _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────
+
 
 async def _user(db: AsyncSession) -> User:
     u = User(username="tester", email="tester@example.com", hashed_password="x", role=Role.student)
@@ -34,13 +35,19 @@ async def _box(db: AsyncSession, user_id: int) -> TuneBox:
 async def _tune(db: AsyncSession):
     return await create_tune(
         db,
-        TuneCreate(title="Morning Dew", tune_type=TuneType.reel,
-                   key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4"),
+        TuneCreate(
+            title="Morning Dew",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+        ),
         abc_notation=_ABC,
     )
 
 
 # ── next_review — pure unit tests (no DB) ─────────────────────────────────────
+
 
 def test_first_practice_interval_is_one_day():
     interval, _ = next_review(5, 0.0, _INITIAL_EASE_FACTOR)
@@ -136,6 +143,7 @@ def test_all_confidence_values_produce_valid_outputs():
 
 # ── record_practice — integration tests ───────────────────────────────────────
 
+
 async def test_record_practice_creates_record_on_first_call(db: AsyncSession) -> None:
     u = await _user(db)
     b = await _box(db, u.id)
@@ -218,12 +226,14 @@ async def test_record_practice_does_not_duplicate_rows(db: AsyncSession) -> None
     t = await _tune(db)
     await record_practice(db, u.id, b.id, t.id, confidence=4)
     await record_practice(db, u.id, b.id, t.id, confidence=4)
-    count = (await db.execute(
-        select(func.count()).where(
-            StudentProgress.user_id == u.id,
-            StudentProgress.tune_id == t.id,
+    count = (
+        await db.execute(
+            select(func.count()).where(
+                StudentProgress.user_id == u.id,
+                StudentProgress.tune_id == t.id,
+            )
         )
-    )).scalar()
+    ).scalar()
     assert count == 1
 
 
@@ -265,13 +275,19 @@ async def test_record_practice_ease_factor_respects_floor(db: AsyncSession) -> N
 
 # ── get_user_progress ─────────────────────────────────────────────────────────
 
+
 async def test_get_user_progress_returns_all_tunes(db: AsyncSession) -> None:
     u = await _user(db)
     t1 = await _tune(db)
     t2 = await create_tune(
         db,
-        TuneCreate(title="Swallowtail Jig", tune_type=TuneType.jig,
-                   key_root=KeyRoot.G, key_mode=KeyMode.major, time_signature="6/8"),
+        TuneCreate(
+            title="Swallowtail Jig",
+            tune_type=TuneType.jig,
+            key_root=KeyRoot.G,
+            key_mode=KeyMode.major,
+            time_signature="6/8",
+        ),
         abc_notation=_ABC,
     )
     pairs = await get_user_progress(db, u.id, 1)
@@ -308,14 +324,24 @@ async def test_get_user_progress_ordered_by_sort_title(db: AsyncSession) -> None
     u = await _user(db)
     await create_tune(
         db,
-        TuneCreate(title="The Merry Blacksmith", tune_type=TuneType.reel,
-                   key_root=KeyRoot.A, key_mode=KeyMode.major, time_signature="4/4"),
+        TuneCreate(
+            title="The Merry Blacksmith",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.A,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+        ),
         abc_notation=_ABC,
     )
     await create_tune(
         db,
-        TuneCreate(title="Ashokan Farewell", tune_type=TuneType.waltz,
-                   key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="3/4"),
+        TuneCreate(
+            title="Ashokan Farewell",
+            tune_type=TuneType.waltz,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="3/4",
+        ),
         abc_notation=_ABC,
     )
     pairs = await get_user_progress(db, u.id, 1)
@@ -325,6 +351,7 @@ async def test_get_user_progress_ordered_by_sort_title(db: AsyncSession) -> None
 
 
 # ── set_status ────────────────────────────────────────────────────────────────
+
 
 async def test_set_status_creates_record_when_none_exists(db: AsyncSession) -> None:
     u = await _user(db)

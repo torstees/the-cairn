@@ -115,9 +115,7 @@ async def get_user_progress(
             StudentProgress.box_id == box_id,
         )
     )
-    progress_by_tune_id: dict[int, StudentProgress] = {
-        p.tune_id: p for p in progress_result.scalars().all()
-    }
+    progress_by_tune_id: dict[int, StudentProgress] = {p.tune_id: p for p in progress_result.scalars().all()}
     return [(tune, progress_by_tune_id.get(tune.id)) for tune in tunes]
 
 

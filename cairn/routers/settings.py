@@ -28,15 +28,11 @@ def _settings_ctx(tune):
 
 
 @router.get("/{tune_id}/settings/new")
-async def setting_new(
-    request: Request, tune_id: int, db: AsyncSession = Depends(get_db)
-) -> Response:
+async def setting_new(request: Request, tune_id: int, db: AsyncSession = Depends(get_db)) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    return templates.TemplateResponse(
-        request, "tunes/partials/_settings.html", _settings_ctx(tune)
-    )
+    return templates.TemplateResponse(request, "tunes/partials/_settings.html", _settings_ctx(tune))
 
 
 @router.post("/{tune_id}/settings")
@@ -62,9 +58,7 @@ async def setting_create(
     if result is None:
         raise HTTPException(status_code=404, detail="Tune not found")
     tune = await get_tune(db, tune_id)
-    return templates.TemplateResponse(
-        request, "tunes/partials/_settings.html", _settings_ctx(tune)
-    )
+    return templates.TemplateResponse(request, "tunes/partials/_settings.html", _settings_ctx(tune))
 
 
 @router.post("/{tune_id}/settings/{setting_id}")
@@ -92,9 +86,7 @@ async def setting_update(
     if result is None:
         raise HTTPException(status_code=404, detail="Setting not found")
     tune = await get_tune(db, tune_id)
-    return templates.TemplateResponse(
-        request, "tunes/partials/_settings.html", _settings_ctx(tune)
-    )
+    return templates.TemplateResponse(request, "tunes/partials/_settings.html", _settings_ctx(tune))
 
 
 @router.post("/{tune_id}/settings/{setting_id}/set-core")
@@ -108,6 +100,4 @@ async def setting_set_core(
     if result is None:
         raise HTTPException(status_code=404, detail="Setting not found")
     tune = await get_tune(db, tune_id)
-    return templates.TemplateResponse(
-        request, "tunes/partials/_settings.html", _settings_ctx(tune)
-    )
+    return templates.TemplateResponse(request, "tunes/partials/_settings.html", _settings_ctx(tune))

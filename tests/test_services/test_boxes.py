@@ -18,6 +18,7 @@ _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
+
 async def _user(db: AsyncSession, username: str = "alice") -> User:
     u = User(
         username=username,
@@ -46,6 +47,7 @@ async def _tune(db: AsyncSession, title: str = "The Morning Dew") -> object:
 
 # ── create_box ────────────────────────────────────────────────────────────────
 
+
 async def test_create_box_returns_box_with_id(db: AsyncSession) -> None:
     u = await _user(db)
     box = await create_box(db, u.id, "Flute Box", [Instrument.flute])
@@ -67,6 +69,7 @@ async def test_create_box_requires_at_least_one_instrument(db: AsyncSession) -> 
 
 
 # ── add_tune ──────────────────────────────────────────────────────────────────
+
 
 async def test_add_tune_creates_entry(db: AsyncSession) -> None:
     u = await _user(db)
@@ -91,20 +94,8 @@ async def test_add_tune_auto_sets_setting_when_exactly_one_match(db: AsyncSessio
     u = await _user(db)
     box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
     t = await _tune(db)
-    # Add a fiddle-specific setting
-    fiddle_setting = await create_tune(
-        db,
-        TuneCreate(
-            title="Swallowtail Jig",
-            tune_type=TuneType.jig,
-            key_root=KeyRoot.G,
-            key_mode=KeyMode.major,
-            time_signature="6/8",
-        ),
-        abc_notation=_ABC,
-    )
-    # Directly attach a fiddle setting to `t`
     from cairn.models import OrnamentationLevel, TuneSetting
+
     fs = TuneSetting(
         tune_id=t.id,
         label="Fiddle arrangement",
@@ -125,15 +116,18 @@ async def test_add_tune_no_setting_when_multiple_instrument_matches(db: AsyncSes
     box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
     t = await _tune(db)
     from cairn.models import OrnamentationLevel, TuneSetting
+
     for label in ("Arrangement A", "Arrangement B"):
-        db.add(TuneSetting(
-            tune_id=t.id,
-            label=label,
-            abc_notation=_ABC,
-            is_core=False,
-            instrument=Instrument.fiddle,
-            ornamentation_level=OrnamentationLevel.none,
-        ))
+        db.add(
+            TuneSetting(
+                tune_id=t.id,
+                label=label,
+                abc_notation=_ABC,
+                is_core=False,
+                instrument=Instrument.fiddle,
+                ornamentation_level=OrnamentationLevel.none,
+            )
+        )
     await db.commit()
 
     entry = await add_tune(db, box.id, t.id)
@@ -141,6 +135,7 @@ async def test_add_tune_no_setting_when_multiple_instrument_matches(db: AsyncSes
 
 
 # ── set_preferred_setting ─────────────────────────────────────────────────────
+
 
 async def test_set_preferred_setting_updates_entry(db: AsyncSession) -> None:
     u = await _user(db)
@@ -150,6 +145,7 @@ async def test_set_preferred_setting_updates_entry(db: AsyncSession) -> None:
     assert entry.setting_id is None
 
     from cairn.models import OrnamentationLevel, TuneSetting
+
     fs = TuneSetting(
         tune_id=t.id,
         label="Fiddle ornamented",
@@ -168,6 +164,7 @@ async def test_set_preferred_setting_updates_entry(db: AsyncSession) -> None:
 
 # ── remove_tune ───────────────────────────────────────────────────────────────
 
+
 async def test_remove_tune_returns_true_and_deletes_entry(db: AsyncSession) -> None:
     u = await _user(db)
     box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
@@ -179,7 +176,9 @@ async def test_remove_tune_returns_true_and_deletes_entry(db: AsyncSession) -> N
 
     # Confirm gone
     from sqlalchemy import select
+
     from cairn.models import TuneBoxEntry
+
     count_result = await db.execute(
         select(TuneBoxEntry).where(
             TuneBoxEntry.box_id == box.id,
@@ -199,6 +198,7 @@ async def test_remove_tune_returns_false_when_not_in_box(db: AsyncSession) -> No
 
 
 # ── list_boxes ────────────────────────────────────────────────────────────────
+
 
 async def test_list_boxes_returns_boxes_for_user(db: AsyncSession) -> None:
     u = await _user(db)
@@ -237,6 +237,7 @@ async def test_list_boxes_empty_for_new_user(db: AsyncSession) -> None:
 
 
 # ── get_box ───────────────────────────────────────────────────────────────────
+
 
 async def test_get_box_returns_box(db: AsyncSession) -> None:
     u = await _user(db)

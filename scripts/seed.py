@@ -8,6 +8,7 @@ Usage:
 
 Skips tunes whose title already exists (safe to re-run).
 """
+
 import asyncio
 import json
 import sys
@@ -33,9 +34,7 @@ async def main(seed_path: Path) -> None:
         for rec in records:
             title = rec["title"]
 
-            exists = (await db.execute(
-                select(Tune.id).where(Tune.title == title)
-            )).scalar_one_or_none()
+            exists = (await db.execute(select(Tune.id).where(Tune.title == title))).scalar_one_or_none()
             if exists is not None:
                 print(f"  SKIP (dup)  {title!r}")
                 skipped += 1
@@ -62,19 +61,22 @@ async def main(seed_path: Path) -> None:
                     notes=rec.get("notes"),
                 )
                 tune = await create_tune(
-                    db, tune_in,
+                    db,
+                    tune_in,
                     abc_notation=core_setting["abc_notation"],
                     setting_label=core_setting["label"],
                 )
 
                 # Patch source/source_notes on the core setting
                 if core_setting.get("source") or core_setting.get("source_notes"):
-                    core_row = (await db.execute(
-                        select(TuneSetting).where(
-                            TuneSetting.tune_id == tune.id,
-                            TuneSetting.is_core.is_(True),
+                    core_row = (
+                        await db.execute(
+                            select(TuneSetting).where(
+                                TuneSetting.tune_id == tune.id,
+                                TuneSetting.is_core.is_(True),
+                            )
                         )
-                    )).scalar_one_or_none()
+                    ).scalar_one_or_none()
                     if core_row:
                         core_row.source = core_setting.get("source")
                         core_row.source_notes = core_setting.get("source_notes")
@@ -117,10 +119,7 @@ async def main(seed_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    seed_path = (
-        Path(sys.argv[1]) if len(sys.argv) > 1
-        else Path(__file__).parent.parent / "seeds" / "tunes.json"
-    )
+    seed_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent.parent / "seeds" / "tunes.json"
     if not seed_path.exists():
         print(f"Error: {seed_path} not found", file=sys.stderr)
         sys.exit(1)

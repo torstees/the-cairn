@@ -1,7 +1,18 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cairn.database import Base, TimestampMixin
@@ -149,7 +160,8 @@ class TuneSetting(TimestampMixin, Base):
     )
     source_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     mutation_notation: Mapped[str | None] = mapped_column(
-        Text, nullable=True
+        Text,
+        nullable=True,
         # Format TBD — see Phase 3 mutation notation design notes
         # Do not implement rendering until format is decided
     )
@@ -242,12 +254,8 @@ class TuneBox(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="tune_boxes")
-    instruments: Mapped[list["TuneBoxInstrument"]] = relationship(
-        back_populates="box", cascade="all, delete-orphan"
-    )
-    entries: Mapped[list["TuneBoxEntry"]] = relationship(
-        back_populates="box", cascade="all, delete-orphan"
-    )
+    instruments: Mapped[list["TuneBoxInstrument"]] = relationship(back_populates="box", cascade="all, delete-orphan")
+    entries: Mapped[list["TuneBoxEntry"]] = relationship(back_populates="box", cascade="all, delete-orphan")
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="box")
 
 
@@ -310,9 +318,7 @@ class PracticeSession(TimestampMixin, Base):
     total_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="practice_sessions")
-    items: Mapped[list["PracticeSessionItem"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
-    )
+    items: Mapped[list["PracticeSessionItem"]] = relationship(back_populates="session", cascade="all, delete-orphan")
 
 
 class PracticeSessionItem(TimestampMixin, Base):

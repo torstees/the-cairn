@@ -13,11 +13,11 @@ _ABC_MODE_SUFFIX: dict[str, str] = {
 # Q:1/4=N anchors tempo to quarter notes regardless of L:, avoiding ambiguity.
 _DEFAULT_TEMPO: dict[str, str] = {
     "reel": "Q:1/4=80",
-    "jig": "Q:3/8=80",       # counted in 2; dotted quarter = 80
+    "jig": "Q:3/8=80",  # counted in 2; dotted quarter = 80
     "slip_jig": "Q:3/8=80",  # counted in 3; dotted quarter = 80
     "hornpipe": "Q:1/4=70",
     "polka": "Q:1/4=90",
-    "slide": "Q:3/8=80",     # counted in 2; dotted quarter = 80
+    "slide": "Q:3/8=80",  # counted in 2; dotted quarter = 80
     "strathspey": "Q:1/4=70",
     "waltz": "Q:1/4=80",
     "air": "Q:1/4=60",
@@ -76,10 +76,7 @@ def build_abc(tune: Tune, setting: TuneSetting, x: int = 1) -> str:
         headers.append(f"A:{tune.region}")
     headers.append(f"R:{tune.tune_type.value}")
     headers.append(f"M:{tune.time_signature}")
-    has_q = any(
-        len(h.strip()) >= 2 and h.strip()[0].upper() == "Q" and h.strip()[1] == ":"
-        for h in user_headers
-    )
+    has_q = any(len(h.strip()) >= 2 and h.strip()[0].upper() == "Q" and h.strip()[1] == ":" for h in user_headers)
     if not has_q:
         headers.append(_DEFAULT_TEMPO.get(tune.tune_type.value, "Q:1/4=100"))
     if setting.source:

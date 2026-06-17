@@ -39,6 +39,7 @@ def _headers(result: str) -> list[str]:
 
 # ── canonical structure ───────────────────────────────────────────────────────
 
+
 def test_x_is_first_header() -> None:
     result = build_abc(_tune(), _setting())
     assert result.splitlines()[0] == "X:1"
@@ -67,6 +68,7 @@ def test_result_ends_with_newline() -> None:
 
 
 # ── DB-derived headers ────────────────────────────────────────────────────────
+
 
 def test_title_in_output() -> None:
     result = build_abc(_tune(title="Banish Misfortune"), _setting())
@@ -110,6 +112,7 @@ def test_key_sharp_root() -> None:
 
 # ── nullable fields omitted ───────────────────────────────────────────────────
 
+
 def test_nullable_tune_fields_omitted() -> None:
     tune = _tune(composer=None, origin=None, region=None, notes=None)
     result = build_abc(tune, _setting(source=None, source_notes=None, instrument=None))
@@ -148,6 +151,7 @@ def test_setting_source_notes_as_z_header() -> None:
 
 # ── N: header combinations ────────────────────────────────────────────────────
 
+
 def test_tune_notes_as_n_header() -> None:
     result = build_abc(_tune(notes="A lively Clare reel"), _setting())
     assert "N:A lively Clare reel" in result
@@ -181,6 +185,7 @@ def test_only_instrument_when_no_tune_notes() -> None:
 
 
 # ── user-supplied headers in abc_notation ─────────────────────────────────────
+
 
 def test_l_header_preserved() -> None:
     setting = _setting(abc_notation="L:1/8\n" + MUSIC)
@@ -222,6 +227,7 @@ def test_multiple_user_headers_preserved() -> None:
 
 
 # ── default tempo ─────────────────────────────────────────────────────────────
+
 
 def test_default_tempo_added_when_no_q() -> None:
     result = build_abc(_tune(tune_type=TuneType.reel), _setting())

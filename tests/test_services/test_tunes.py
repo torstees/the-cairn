@@ -21,13 +21,17 @@ ABC = "X:1\nT:Test\nM:4/4\nK:D\n|:DEFG|ABcd:|\n"
 
 def _tune_create(**kwargs) -> TuneCreate:
     defaults = dict(
-        title="The Morning Dew", tune_type=TuneType.reel,
-        key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4",
+        title="The Morning Dew",
+        tune_type=TuneType.reel,
+        key_root=KeyRoot.D,
+        key_mode=KeyMode.major,
+        time_signature="4/4",
     )
     return TuneCreate(**{**defaults, **kwargs})
 
 
 # ── create_tune ────────────────────────────────────────────────────────────────
+
 
 async def test_create_tune_returns_tune_with_id(db: AsyncSession) -> None:
     tune = await create_tune(db, _tune_create(), abc_notation=ABC)
@@ -63,6 +67,7 @@ async def test_create_tune_setting_label_custom(db: AsyncSession) -> None:
 
 # ── get_tune ──────────────────────────────────────────────────────────────────
 
+
 async def test_get_tune_returns_tune(db: AsyncSession) -> None:
     created = await create_tune(db, _tune_create(), abc_notation=ABC)
     found = await get_tune(db, created.id)
@@ -85,6 +90,7 @@ async def test_get_tune_returns_none_for_missing_id(db: AsyncSession) -> None:
 
 
 # ── list_tunes ────────────────────────────────────────────────────────────────
+
 
 async def test_list_tunes_returns_all(db: AsyncSession) -> None:
     await create_tune(db, _tune_create(title="Banish Misfortune"), abc_notation=ABC)
@@ -183,6 +189,7 @@ async def test_tune_families_cover_all_tune_types(db: AsyncSession) -> None:
 
 # ── update_tune ───────────────────────────────────────────────────────────────
 
+
 async def test_update_tune_changes_fields(db: AsyncSession) -> None:
     tune = await create_tune(db, _tune_create(), abc_notation=ABC)
     updated = await update_tune(
@@ -209,6 +216,7 @@ async def test_update_tune_returns_none_for_missing_id(db: AsyncSession) -> None
 
 # ── delete_tune ───────────────────────────────────────────────────────────────
 
+
 async def test_delete_tune_removes_tune(db: AsyncSession) -> None:
     tune = await create_tune(db, _tune_create(), abc_notation=ABC)
     result = await delete_tune(db, tune.id)
@@ -232,6 +240,7 @@ async def test_delete_tune_returns_false_for_missing_id(db: AsyncSession) -> Non
 
 # ── create_setting ────────────────────────────────────────────────────────────
 
+
 def _setting_create(tune_id: int, **kwargs) -> TuneSettingCreate:
     defaults = dict(
         tune_id=tune_id,
@@ -252,7 +261,8 @@ async def test_create_setting_is_never_core(db: AsyncSession) -> None:
 async def test_create_setting_stores_fields(db: AsyncSession) -> None:
     tune = await create_tune(db, _tune_create(), abc_notation=ABC)
     setting = await create_setting(
-        db, tune.id,
+        db,
+        tune.id,
         _setting_create(tune.id, label="Fiddle arrangement", instrument=Instrument.fiddle, source="Tommy Peoples"),
     )
     assert setting is not None
@@ -275,6 +285,7 @@ async def test_create_setting_tune_now_has_two_settings(db: AsyncSession) -> Non
 
 
 # ── set_core_setting ──────────────────────────────────────────────────────────
+
 
 async def test_set_core_promotes_target(db: AsyncSession) -> None:
     tune = await create_tune(db, _tune_create(), abc_notation=ABC)
@@ -303,9 +314,7 @@ async def test_set_core_exactly_one_core_after_swap(db: AsyncSession) -> None:
     new_s = await create_setting(db, tune.id, _setting_create(tune.id))
     assert new_s is not None
     await set_core_setting(db, tune.id, new_s.id)
-    result = await db.execute(
-        select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True))
-    )
+    result = await db.execute(select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True)))
     cores = result.scalars().all()
     assert len(cores) == 1
     assert cores[0].id == new_s.id
@@ -338,6 +347,7 @@ async def test_set_core_returns_none_for_missing_setting(db: AsyncSession) -> No
 
 
 # ── set_difficulty ────────────────────────────────────────────────────────────
+
 
 def _difficulty_create(tune_id: int, **kwargs) -> TuneDifficultyCreate:
     defaults = dict(tune_id=tune_id, instrument=Instrument.fiddle, difficulty=3)
