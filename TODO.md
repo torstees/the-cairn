@@ -481,6 +481,106 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ---
 
+### 7. Content Management
+
+Markdown-based content system for authored pages (onboarding, help, feature
+explanations) with a model flexible enough to serve Phase 4 lesson content
+without redesign.
+
+**Dependencies to add to `pyproject.toml`:**
+- `markdown` — rendering library
+- `python-frontmatter` — YAML front matter parsing
+
+- [ ] **7.1 — Content model, import pipeline, and service**
+  **New enum** in `cairn/models.py`:
+  `ContentType`: `page | lesson | tutorial | technique_guide`
+  (extend as Phase 4 content types become clear; start with `page` only).
+
+  **New model** in `cairn/models.py`:
+  ```
+  Content: id, slug (String 200, unique, indexed), title (String 200),
+           content_type (ContentType), body (Text — raw markdown),
+           visibility (ContentVisibility, default public),
+           created_by FK → users.id (nullable — null = system/built-in),
+           metadata (JSON, nullable — type-specific structured data)
+  ```
+  Include `TimestampMixin`. Generate Alembic migration.
+
+  **Service** `cairn/services/content.py`:
+  - `upsert_content(db, slug, title, content_type, body, visibility,
+    metadata=None, created_by=None) -> Content`
+    Insert or update by slug. Used by both the import script and future
+    in-app authoring routes.
+  - `get_content(db, slug) -> Content | None`
+  - `list_content(db, content_type=None) -> list[Content]`
+    Filters by content_type when provided, ordered by title.
+
+  **Import script** `scripts/import_content.py`:
+  Reads every `*.md` file under `content/` (create the directory).
+  Each file has a YAML front matter block; required keys:
+  `slug`, `title`, `content_type`. Optional: `visibility`, `metadata`.
+  Upserts each record into the DB via `upsert_content`.
+  Run via `uv run python scripts/import_content.py`.
+
+  **YAML front matter format:**
+  ```yaml
+  ---
+  slug: getting-started
+  title: Getting Started with The Cairn
+  content_type: page
+  visibility: public
+  ---
+  Markdown body here…
+  ```
+
+  **`make content` target** in `Makefile`:
+  Runs the import script. Should be mentioned in `AGENTS.md`.
+
+  Write tests in `tests/test_services/test_content.py` covering:
+  upsert creates, upsert updates by slug, get_content hit and miss,
+  list_content with and without type filter.
+
+- [ ] **7.2 — Content rendering and routes**
+  **Renderer** — add `render_markdown(body: str) -> str` to
+  `cairn/services/content.py`.
+  Uses `markdown.markdown()` with extensions:
+  `attr_list`, `tables`, `extra`, `nl2br`.
+  `attr_list` enables `{.class}` syntax on any element:
+  ```markdown
+  ![image](url){.w-1/2 .float-right .rounded-lg}
+  # Heading {.text-2xl}
+  ```
+  HTML passthrough is enabled by default in python-markdown — no extra
+  configuration needed. Authors may use raw HTML as an escape hatch for
+  layouts `attr_list` cannot express (e.g. flex containers).
+
+  **Router** `cairn/routers/content.py`, prefix `/pages`, tag `content`.
+  - `GET /pages/{slug}` — look up content by slug, render body, return
+    `content/page.html`. Return 404 if slug not found or visibility
+    is `private` (enforce `enrolled` and `public` only for Phase 1 since
+    there is no auth yet).
+
+  **Templates:**
+  - `cairn/templates/content/page.html` — extends `base.html`.
+    Renders `{{ rendered_body | safe }}` inside a `prose` container.
+    Use Tailwind's prose-style utility classes applied manually (no
+    Tailwind Typography plugin — CDN build doesn't include it).
+    Apply sensible defaults to the container:
+    `max-w-3xl mx-auto space-y-4 text-stone-700 leading-relaxed`.
+    Headings, links, tables, and images should look reasonable without
+    per-element classes when authors don't specify any.
+
+  Wire router into `cairn/main.py`.
+
+  **Seed file:** create `content/getting-started.md` as a placeholder page
+  so the import script and route have something to exercise.
+
+  Write a smoke test in `tests/test_routers/test_content.py`:
+  seed a `Content` record, `GET /pages/{slug}`, assert 200 and title
+  appears in the response.
+
+---
+
 ### Phase 1 Complete Checklist
 
 Before closing Phase 1:
