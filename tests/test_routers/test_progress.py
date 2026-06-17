@@ -2,7 +2,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, ProgressStatus, Role, TuneType, User
-from cairn.routers.progress import _STUB_USER_ID
+from cairn.routers.progress import _STUB_BOX_ID, _STUB_USER_ID
 from cairn.schemas import TuneCreate
 from cairn.services.spaced_rep import record_practice
 from cairn.services.tunes import create_tune
@@ -73,7 +73,7 @@ async def test_progress_set_status_404_for_unknown_tune(client: AsyncClient) -> 
 
 async def test_progress_set_status_updates_existing_record(client: AsyncClient, db: AsyncSession) -> None:
     u, t = await _seed(db)
-    await record_practice(db, u.id, t.id, confidence=5)
+    await record_practice(db, u.id, _STUB_BOX_ID, t.id, confidence=5)
     resp = await client.post(f"/progress/{t.id}/status", data={"status": "committed"})
     assert resp.status_code == 200
     assert "Committed" in resp.text
@@ -83,7 +83,7 @@ async def test_progress_index_shows_due_badge(client: AsyncClient, db: AsyncSess
     u, t = await _seed(db)
     # Record two practices to get a past next_suggested; we can't control the date
     # so we just check the page renders without error and contains the tune.
-    await record_practice(db, u.id, t.id, confidence=2)
+    await record_practice(db, u.id, _STUB_BOX_ID, t.id, confidence=2)
     resp = await client.get("/progress/")
     assert resp.status_code == 200
     assert "Morning Dew" in resp.text

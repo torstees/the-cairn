@@ -48,6 +48,7 @@ def next_review(
 async def record_practice(
     db: AsyncSession,
     user_id: int,
+    box_id: int,
     tune_id: int,
     confidence: int,
 ) -> StudentProgress:
@@ -61,6 +62,7 @@ async def record_practice(
     result = await db.execute(
         select(StudentProgress).where(
             StudentProgress.user_id == user_id,
+            StudentProgress.box_id == box_id,
             StudentProgress.tune_id == tune_id,
         )
     )
@@ -71,6 +73,7 @@ async def record_practice(
         new_interval, new_ef = next_review(confidence, 0.0, _INITIAL_EASE_FACTOR)
         record = StudentProgress(
             user_id=user_id,
+            box_id=box_id,
             tune_id=tune_id,
             status=ProgressStatus.just_learning,
             confidence=confidence,
@@ -96,8 +99,9 @@ async def record_practice(
 async def get_user_progress(
     db: AsyncSession,
     user_id: int,
+    box_id: int,
 ) -> list[tuple[Tune, StudentProgress | None]]:
-    """Return every tune paired with the user's progress record (None if not started).
+    """Return every tune paired with the user's progress for a specific box.
 
     Ordered alphabetically by sort_title.
     """
@@ -106,7 +110,10 @@ async def get_user_progress(
     if not tunes:
         return []
     progress_result = await db.execute(
-        select(StudentProgress).where(StudentProgress.user_id == user_id)
+        select(StudentProgress).where(
+            StudentProgress.user_id == user_id,
+            StudentProgress.box_id == box_id,
+        )
     )
     progress_by_tune_id: dict[int, StudentProgress] = {
         p.tune_id: p for p in progress_result.scalars().all()
@@ -117,16 +124,18 @@ async def get_user_progress(
 async def set_status(
     db: AsyncSession,
     user_id: int,
+    box_id: int,
     tune_id: int,
     status: ProgressStatus,
 ) -> StudentProgress:
-    """Manually set the ProgressStatus for a (user, tune) pair.
+    """Manually set the ProgressStatus for a (user, box, tune) triple.
 
     Creates a StudentProgress row with sensible defaults if one doesn't exist yet.
     """
     result = await db.execute(
         select(StudentProgress).where(
             StudentProgress.user_id == user_id,
+            StudentProgress.box_id == box_id,
             StudentProgress.tune_id == tune_id,
         )
     )
@@ -134,6 +143,7 @@ async def set_status(
     if record is None:
         record = StudentProgress(
             user_id=user_id,
+            box_id=box_id,
             tune_id=tune_id,
             status=status,
             confidence=3,

@@ -312,7 +312,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Used on tune detail and practice session views.
   Must be renderable as a standalone HTMX partial.
 
-- [ ] **3.4 — Migrate StudentProgress to per-box**
+- [x] **3.4 — Migrate StudentProgress to per-box**
   Add `box_id FK → tune_boxes.id` to `StudentProgress`.
   Change the unique constraint from `(user_id, tune_id)` to `(user_id, tune_id, box_id)`.
   Update all service functions that read or write `StudentProgress`:

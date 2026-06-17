@@ -134,7 +134,7 @@ def test_all_confidence_values_produce_valid_outputs():
 async def test_record_practice_creates_record_on_first_call(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, t.id, confidence=4)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=4)
     assert rec.id is not None
     assert rec.user_id == u.id
     assert rec.tune_id == t.id
@@ -143,21 +143,21 @@ async def test_record_practice_creates_record_on_first_call(db: AsyncSession) ->
 async def test_record_practice_first_call_sets_just_learning(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, t.id, confidence=5)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
     assert rec.status == ProgressStatus.just_learning
 
 
 async def test_record_practice_first_call_interval_is_one_day(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, t.id, confidence=5)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
     assert rec.interval_days == 1.0
 
 
 async def test_record_practice_first_call_sets_last_practiced(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, t.id, confidence=4)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=4)
     assert rec.last_practiced is not None
     assert rec.next_suggested is not None
 
@@ -165,7 +165,7 @@ async def test_record_practice_first_call_sets_last_practiced(db: AsyncSession) 
 async def test_record_practice_next_suggested_is_interval_ahead(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, t.id, confidence=4)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=4)
     delta = (rec.next_suggested - rec.last_practiced).total_seconds()
     assert abs(delta - rec.interval_days * 86400) < 2  # within 2 seconds
 
@@ -173,17 +173,17 @@ async def test_record_practice_next_suggested_is_interval_ahead(db: AsyncSession
 async def test_record_practice_second_call_interval_is_six_days(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    await record_practice(db, u.id, t.id, confidence=4)
-    rec = await record_practice(db, u.id, t.id, confidence=4)
+    await record_practice(db, u.id, 1, t.id, confidence=4)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=4)
     assert rec.interval_days == 6.0
 
 
 async def test_record_practice_interval_grows_over_time(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    await record_practice(db, u.id, t.id, confidence=5)
-    await record_practice(db, u.id, t.id, confidence=5)
-    rec = await record_practice(db, u.id, t.id, confidence=5)
+    await record_practice(db, u.id, 1, t.id, confidence=5)
+    await record_practice(db, u.id, 1, t.id, confidence=5)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
     assert rec.interval_days > 6.0
 
 
@@ -191,19 +191,19 @@ async def test_record_practice_low_confidence_resets_interval(db: AsyncSession) 
     u = await _user(db)
     t = await _tune(db)
     # Build up interval
-    await record_practice(db, u.id, t.id, confidence=5)
-    await record_practice(db, u.id, t.id, confidence=5)
-    await record_practice(db, u.id, t.id, confidence=5)
+    await record_practice(db, u.id, 1, t.id, confidence=5)
+    await record_practice(db, u.id, 1, t.id, confidence=5)
+    await record_practice(db, u.id, 1, t.id, confidence=5)
     # Then fail
-    rec = await record_practice(db, u.id, t.id, confidence=2)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=2)
     assert rec.interval_days == 1.0
 
 
 async def test_record_practice_does_not_duplicate_rows(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    await record_practice(db, u.id, t.id, confidence=4)
-    await record_practice(db, u.id, t.id, confidence=4)
+    await record_practice(db, u.id, 1, t.id, confidence=4)
+    await record_practice(db, u.id, 1, t.id, confidence=4)
     count = (await db.execute(
         select(func.count()).where(
             StudentProgress.user_id == u.id,
@@ -216,16 +216,16 @@ async def test_record_practice_does_not_duplicate_rows(db: AsyncSession) -> None
 async def test_record_practice_updates_confidence(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    await record_practice(db, u.id, t.id, confidence=3)
-    rec = await record_practice(db, u.id, t.id, confidence=5)
+    await record_practice(db, u.id, 1, t.id, confidence=3)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
     assert rec.confidence == 5
 
 
 async def test_record_practice_status_unchanged_on_update(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    await record_practice(db, u.id, t.id, confidence=5)
-    rec = await record_practice(db, u.id, t.id, confidence=5)
+    await record_practice(db, u.id, 1, t.id, confidence=5)
+    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
     # Status stays just_learning — manual advancement via separate route
     assert rec.status == ProgressStatus.just_learning
 
@@ -233,7 +233,7 @@ async def test_record_practice_status_unchanged_on_update(db: AsyncSession) -> N
 async def test_record_practice_ease_factor_decreases_on_poor_recall(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    rec1 = await record_practice(db, u.id, t.id, confidence=1)
+    rec1 = await record_practice(db, u.id, 1, t.id, confidence=1)
     assert rec1.ease_factor < _INITIAL_EASE_FACTOR
 
 
@@ -241,7 +241,7 @@ async def test_record_practice_ease_factor_respects_floor(db: AsyncSession) -> N
     u = await _user(db)
     t = await _tune(db)
     for _ in range(10):
-        rec = await record_practice(db, u.id, t.id, confidence=1)
+        rec = await record_practice(db, u.id, 1, t.id, confidence=1)
     assert rec.ease_factor >= MIN_EASE_FACTOR
 
 
@@ -256,7 +256,7 @@ async def test_get_user_progress_returns_all_tunes(db: AsyncSession) -> None:
                    key_root=KeyRoot.G, key_mode=KeyMode.major, time_signature="6/8"),
         abc_notation=_ABC,
     )
-    pairs = await get_user_progress(db, u.id)
+    pairs = await get_user_progress(db, u.id, 1)
     tune_ids = [t.id for t, _ in pairs]
     assert t1.id in tune_ids
     assert t2.id in tune_ids
@@ -265,15 +265,15 @@ async def test_get_user_progress_returns_all_tunes(db: AsyncSession) -> None:
 async def test_get_user_progress_none_before_first_practice(db: AsyncSession) -> None:
     u = await _user(db)
     await _tune(db)
-    pairs = await get_user_progress(db, u.id)
+    pairs = await get_user_progress(db, u.id, 1)
     assert all(p is None for _, p in pairs)
 
 
 async def test_get_user_progress_shows_existing_record(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    await record_practice(db, u.id, t.id, confidence=4)
-    pairs = await get_user_progress(db, u.id)
+    await record_practice(db, u.id, 1, t.id, confidence=4)
+    pairs = await get_user_progress(db, u.id, 1)
     by_id = {tune.id: progress for tune, progress in pairs}
     assert by_id[t.id] is not None
     assert by_id[t.id].confidence == 4
@@ -281,7 +281,7 @@ async def test_get_user_progress_shows_existing_record(db: AsyncSession) -> None
 
 async def test_get_user_progress_empty_library(db: AsyncSession) -> None:
     u = await _user(db)
-    pairs = await get_user_progress(db, u.id)
+    pairs = await get_user_progress(db, u.id, 1)
     assert pairs == []
 
 
@@ -299,7 +299,7 @@ async def test_get_user_progress_ordered_by_sort_title(db: AsyncSession) -> None
                    key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="3/4"),
         abc_notation=_ABC,
     )
-    pairs = await get_user_progress(db, u.id)
+    pairs = await get_user_progress(db, u.id, 1)
     titles = [t.title for t, _ in pairs]
     # "Ashokan Farewell" sorts before "The Merry Blacksmith" (article stripped)
     assert titles.index("Ashokan Farewell") < titles.index("The Merry Blacksmith")
@@ -310,7 +310,7 @@ async def test_get_user_progress_ordered_by_sort_title(db: AsyncSession) -> None
 async def test_set_status_creates_record_when_none_exists(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    rec = await set_status(db, u.id, t.id, ProgressStatus.session_ready)
+    rec = await set_status(db, u.id, 1, t.id, ProgressStatus.session_ready)
     assert rec.status == ProgressStatus.session_ready
     assert rec.user_id == u.id
     assert rec.tune_id == t.id
@@ -319,17 +319,17 @@ async def test_set_status_creates_record_when_none_exists(db: AsyncSession) -> N
 async def test_set_status_updates_existing_record(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    await record_practice(db, u.id, t.id, confidence=5)
-    rec = await set_status(db, u.id, t.id, ProgressStatus.committed)
+    await record_practice(db, u.id, 1, t.id, confidence=5)
+    rec = await set_status(db, u.id, 1, t.id, ProgressStatus.committed)
     assert rec.status == ProgressStatus.committed
 
 
 async def test_set_status_preserves_spaced_rep_fields(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    await record_practice(db, u.id, t.id, confidence=5)
-    original = await record_practice(db, u.id, t.id, confidence=5)
-    rec = await set_status(db, u.id, t.id, ProgressStatus.nearly_there)
+    await record_practice(db, u.id, 1, t.id, confidence=5)
+    original = await record_practice(db, u.id, 1, t.id, confidence=5)
+    rec = await set_status(db, u.id, 1, t.id, ProgressStatus.nearly_there)
     # SR fields must not be touched by a manual status change
     assert rec.interval_days == original.interval_days
     assert rec.ease_factor == original.ease_factor
@@ -338,7 +338,7 @@ async def test_set_status_preserves_spaced_rep_fields(db: AsyncSession) -> None:
 async def test_set_status_new_record_has_sensible_defaults(db: AsyncSession) -> None:
     u = await _user(db)
     t = await _tune(db)
-    rec = await set_status(db, u.id, t.id, ProgressStatus.getting_there)
+    rec = await set_status(db, u.id, 1, t.id, ProgressStatus.getting_there)
     assert rec.confidence == 3
     assert rec.interval_days == 1.0
     assert rec.ease_factor == _INITIAL_EASE_FACTOR
