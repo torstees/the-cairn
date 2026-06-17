@@ -1,18 +1,26 @@
 {% extends "base.html" %}
-{% block title %}New Practice List — The Cairn{% endblock %}
+{% block title %}{% if practice_list %}Edit {{ practice_list.name }}{% else %}New Practice List{% endif %} — The Cairn{% endblock %}
 
 {% block content %}
 <div class="max-w-lg mx-auto">
   <div class="flex items-center gap-3 mb-6">
-    <a href="/lists" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Lists</a>
-    <h1 class="text-3xl font-bold text-stone-800">New Practice List</h1>
+    <a href="{% if practice_list %}/lists/{{ practice_list.id }}{% else %}/lists{% endif %}"
+       class="text-stone-500 hover:text-stone-700 text-sm">
+      &larr; {% if practice_list %}{{ practice_list.name }}{% else %}Lists{% endif %}
+    </a>
+    <h1 class="text-3xl font-bold text-stone-800">
+      {% if practice_list %}Edit List{% else %}New Practice List{% endif %}
+    </h1>
   </div>
 
-  <form method="POST" action="/lists" class="bg-white rounded-lg shadow-sm p-6 space-y-5">
+  <form method="POST"
+        action="{% if practice_list %}/lists/{{ practice_list.id }}{% else %}/lists{% endif %}"
+        class="bg-white rounded-lg shadow-sm p-6 space-y-5">
 
     <div>
       <label class="block text-sm font-medium text-stone-700 mb-1" for="name">Name</label>
       <input id="name" name="name" type="text" required
+             value="{{ practice_list.name if practice_list else '' }}"
              placeholder="e.g. Session Repertoire, Woodshed Tunes"
              class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
     </div>
@@ -22,7 +30,10 @@
       <select id="list_type" name="list_type"
               class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
         {% for lt in list_types %}
-        <option value="{{ lt.value }}">{{ lt.label }}</option>
+        <option value="{{ lt.value }}"
+                {% if practice_list and practice_list.list_type == lt %}selected{% endif %}>
+          {{ lt.label }}
+        </option>
         {% endfor %}
       </select>
       <p class="text-xs text-stone-400 mt-1">
@@ -32,7 +43,13 @@
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-stone-700 mb-1" for="box_id">Tune Box</label>
+      <label class="block text-sm font-medium text-stone-700 mb-1">Tune Box</label>
+      {% if practice_list %}
+      <p class="text-sm text-stone-700 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg">
+        {{ practice_list.box.name if practice_list.box else "Box #" ~ practice_list.box_id }}
+      </p>
+      <p class="text-xs text-stone-400 mt-1">The box cannot be changed after the list is created.</p>
+      {% else %}
       <select id="box_id" name="box_id" required
               class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
         <option value="">— select a box —</option>
@@ -41,6 +58,7 @@
         {% endfor %}
       </select>
       <p class="text-xs text-stone-400 mt-1">The box this list is drawn from.</p>
+      {% endif %}
     </div>
 
     <div>
@@ -48,7 +66,9 @@
       <select id="progress_goal" name="progress_goal"
               class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
         {% for status in progress_statuses %}
-        <option value="{{ status.value }}" {% if status.value == "committed" %}selected{% endif %}>
+        <option value="{{ status.value }}"
+                {% if practice_list and practice_list.progress_goal == status %}selected
+                {% elif not practice_list and status.value == "committed" %}selected{% endif %}>
           {{ status.label }}
         </option>
         {% endfor %}
@@ -61,6 +81,7 @@
         Target Date <span class="text-stone-400 font-normal">(optional)</span>
       </label>
       <input id="target_date" name="target_date" type="date"
+             value="{{ practice_list.target_date if practice_list and practice_list.target_date else '' }}"
              class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
     </div>
 
@@ -71,9 +92,9 @@
     <div class="flex gap-3 pt-2">
       <button type="submit"
               class="bg-stone-700 hover:bg-stone-600 text-white px-5 py-2 rounded-lg font-medium">
-        Create List
+        {% if practice_list %}Save Changes{% else %}Create List{% endif %}
       </button>
-      <a href="/lists"
+      <a href="{% if practice_list %}/lists/{{ practice_list.id }}{% else %}/lists{% endif %}"
          class="px-5 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 font-medium">
         Cancel
       </a>

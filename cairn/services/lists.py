@@ -80,11 +80,35 @@ async def add_tune_to_list(
     return entry
 
 
+async def update_list(
+    db: AsyncSession,
+    list_id: int,
+    name: str,
+    list_type: PracticeListType,
+    progress_goal: ProgressStatus,
+    target_date: date | None,
+) -> PracticeList | None:
+    practice_list = await db.get(PracticeList, list_id)
+    if practice_list is None:
+        return None
+    practice_list.name = name.strip()
+    practice_list.list_type = list_type
+    practice_list.progress_goal = progress_goal
+    practice_list.target_date = target_date
+    db.add(practice_list)
+    await db.commit()
+    await db.refresh(practice_list)
+    return practice_list
+
+
 async def get_list(db: AsyncSession, list_id: int) -> PracticeList | None:
     stmt = (
         select(PracticeList)
         .where(PracticeList.id == list_id)
-        .options(selectinload(PracticeList.entries).selectinload(TuneListEntry.tune))
+        .options(
+            selectinload(PracticeList.entries).selectinload(TuneListEntry.tune),
+            selectinload(PracticeList.box),
+        )
     )
     result = await db.execute(stmt)
     return result.scalar_one_or_none()

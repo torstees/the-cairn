@@ -14,7 +14,13 @@
         {% if practice_list.target_date %}&middot; Target: {{ practice_list.target_date }}{% endif %}
       </p>
     </div>
-    {% include "lists/partials/_activation.html" %}
+    <div class="flex items-center gap-3 shrink-0">
+      <a href="/lists/{{ practice_list.id }}/edit"
+         class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
+        Edit
+      </a>
+      {% include "lists/partials/_activation.html" %}
+    </div>
   </div>
 
   {# ── Tune list ──────────────────────────────────────────────────────────── #}

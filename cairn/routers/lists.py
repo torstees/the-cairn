@@ -14,6 +14,7 @@ from cairn.services.lists import (
     get_list_entry,
     list_lists,
     remove_tune_from_list,
+    update_list,
 )
 from cairn.services.boxes import list_boxes
 from cairn.services.tunes import list_tunes
@@ -80,6 +81,46 @@ async def list_create(
         target_date=parsed_date,
     )
     return RedirectResponse(f"/lists/{practice_list.id}", status_code=303)
+
+
+@router.get("/{list_id}/edit")
+async def list_edit(
+    request: Request,
+    list_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    practice_list = await get_list(db, list_id)
+    if practice_list is None:
+        raise HTTPException(status_code=404, detail="List not found")
+    return templates.TemplateResponse(
+        request,
+        "lists/form.html",
+        {
+            "practice_list": practice_list,
+            "list_types": _LIST_TYPES,
+            "progress_statuses": _PROGRESS_STATUSES,
+            "boxes": None,
+            "error": None,
+        },
+    )
+
+
+@router.post("/{list_id}")
+async def list_update(
+    request: Request,
+    list_id: int,
+    db: AsyncSession = Depends(get_db),
+    name: str = Form(...),
+    list_type: PracticeListType = Form(...),
+    progress_goal: ProgressStatus = Form(default=ProgressStatus.committed),
+    target_date: str = Form(default=""),
+) -> Response:
+    from datetime import date
+    parsed_date = date.fromisoformat(target_date) if target_date else None
+    practice_list = await update_list(db, list_id, name, list_type, progress_goal, parsed_date)
+    if practice_list is None:
+        raise HTTPException(status_code=404, detail="List not found")
+    return RedirectResponse(f"/lists/{list_id}", status_code=303)
 
 
 @router.get("/{list_id}")
