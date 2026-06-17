@@ -66,6 +66,13 @@
     <template id="abc-source">{{ built_abc }}</template>
     {# Hidden render target — used by audio synth so BPM changes don't alter the visible score #}
     <div id="abc-audio" hidden></div>
+    {% if active_setting_id %}
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.selectSetting) window.selectSetting({{ active_setting_id }});
+      });
+    </script>
+    {% endif %}
   </section>
   {% endif %}
 
