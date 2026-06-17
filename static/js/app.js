@@ -208,13 +208,15 @@
 
     render(abcString);
 
-    var preferredId = abcSource.dataset.activeSettingId ? parseInt(abcSource.dataset.activeSettingId, 10) : null;
-    var activeCard = preferredId
-      ? document.querySelector('[data-setting-id="' + preferredId + '"]')
-      : (document.querySelector("[data-setting-id][data-is-core='true']") || document.querySelector("[data-setting-id]"));
-    if (activeCard) {
-      activeSettingId = parseInt(activeCard.dataset.settingId, 10);
+    var coreCard = document.querySelector("[data-setting-id][data-is-core='true']") ||
+                   document.querySelector("[data-setting-id]");
+    if (coreCard) {
+      activeSettingId = parseInt(coreCard.dataset.settingId, 10);
       applyActiveCard(activeSettingId);
+    }
+    var preferredId = abcSource.dataset.activeSettingId ? parseInt(abcSource.dataset.activeSettingId, 10) : null;
+    if (preferredId && preferredId !== activeSettingId) {
+      selectSetting(preferredId);
     }
 
     var btn = document.getElementById("abc-play");
