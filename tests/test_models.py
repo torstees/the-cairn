@@ -140,6 +140,7 @@ async def test_student_progress(db: AsyncSession) -> None:
     progress = StudentProgress(
         user_id=user.id,
         tune_id=tune.id,
+        box_id=1,
         status=ProgressStatus.just_learning,
         confidence=3,
         interval_days=1.0,

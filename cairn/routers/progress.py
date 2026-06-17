@@ -10,8 +10,9 @@ from cairn.templating import templates
 
 router = APIRouter(prefix="/progress", tags=["progress"])
 
-# Phase 1 stub: single-user app. Replace with request.user.id once auth lands.
+# Phase 1 stubs — replace with real auth + TuneBox selection once those land.
 _STUB_USER_ID = 1
+_STUB_BOX_ID = 1
 
 _STATUSES = list(ProgressStatus)
 
@@ -21,7 +22,7 @@ async def progress_index(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    pairs = await get_user_progress(db, _STUB_USER_ID)
+    pairs = await get_user_progress(db, _STUB_USER_ID, _STUB_BOX_ID)
     now = datetime.now(UTC).replace(tzinfo=None)  # naive UTC to match DB-stored datetimes
     return templates.TemplateResponse(
         request,
@@ -40,7 +41,7 @@ async def progress_record(
     tune = await db.get(Tune, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    progress = await record_practice(db, _STUB_USER_ID, tune_id, confidence)
+    progress = await record_practice(db, _STUB_USER_ID, _STUB_BOX_ID, tune_id, confidence)
     now = datetime.now(UTC).replace(tzinfo=None)
     return templates.TemplateResponse(
         request,
@@ -59,7 +60,7 @@ async def progress_set_status(
     tune = await db.get(Tune, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    progress = await set_status(db, _STUB_USER_ID, tune_id, status)
+    progress = await set_status(db, _STUB_USER_ID, _STUB_BOX_ID, tune_id, status)
     return templates.TemplateResponse(
         request,
         "components/_progress_badge.html",

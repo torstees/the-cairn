@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cairn.database import Base, TimestampMixin
@@ -238,6 +238,8 @@ class StudentProgress(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    # box_id FK to tune_boxes.id will be added in task 4.1; plain int for now
+    box_id: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[ProgressStatus] = mapped_column(Enum(ProgressStatus), nullable=False)
     confidence: Mapped[int] = mapped_column(Integer, nullable=False)
     interval_days: Mapped[float] = mapped_column(Float, nullable=False)
@@ -248,6 +250,7 @@ class StudentProgress(TimestampMixin, Base):
 
     __table_args__ = (
         CheckConstraint("confidence >= 1 AND confidence <= 5", name="ck_student_progress_confidence_range"),
+        UniqueConstraint("user_id", "tune_id", "box_id", name="uq_student_progress_user_tune_box"),
     )
 
     user: Mapped["User"] = relationship(back_populates="progress_records")
