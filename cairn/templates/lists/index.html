@@ -26,6 +26,7 @@
       &middot; Goal: {{ pl.progress_goal.label }}
       {% if pl.target_date %}&middot; Target: {{ pl.target_date }}{% endif %}
     </p>
+    <p class="text-xs text-stone-400 mb-2">{{ pl.box.name }}</p>
     <p class="text-sm text-stone-500">
       {{ pl.entries | length }} tune{{ 's' if pl.entries | length != 1 else '' }}
     </p>

@@ -118,7 +118,10 @@ async def list_lists(db: AsyncSession, user_id: int) -> list[PracticeList]:
     stmt = (
         select(PracticeList)
         .where(PracticeList.user_id == user_id)
-        .options(selectinload(PracticeList.entries).selectinload(TuneListEntry.tune))
+        .options(
+            selectinload(PracticeList.entries).selectinload(TuneListEntry.tune),
+            selectinload(PracticeList.box),
+        )
         .order_by(PracticeList.name)
     )
     result = await db.execute(stmt)
