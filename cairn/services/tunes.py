@@ -91,7 +91,8 @@ async def get_tune(db: AsyncSession, tune_id: int) -> Tune | None:
 async def add_alias(db: AsyncSession, tune_id: int, name: str, notes: str | None = None) -> TuneAlias | None:
     if await db.get(Tune, tune_id) is None:
         return None
-    alias = TuneAlias(tune_id=tune_id, name=name.strip(), notes=notes or None)
+    stripped = name.strip()
+    alias = TuneAlias(tune_id=tune_id, name=stripped, sort_name=sort_key(stripped), notes=notes or None)
     db.add(alias)
     await db.commit()
     await db.refresh(alias)

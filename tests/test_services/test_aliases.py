@@ -62,7 +62,18 @@ async def test_aliases_ordered_by_name(db: AsyncSession) -> None:
     await add_alias(db, t.id, "Apple Tune")
     loaded = await get_tune(db, t.id)
     names = [a.name for a in loaded.aliases]
-    assert names == sorted(names)
+    assert names == ["Apple Tune", "Zebra Tune"]
+
+
+async def test_aliases_ordering_ignores_articles(db: AsyncSession) -> None:
+    t = await _tune(db)
+    await add_alias(db, t.id, "The Morning Star")
+    await add_alias(db, t.id, "A Wandering Tune")
+    await add_alias(db, t.id, "Banks of the Lee")
+    loaded = await get_tune(db, t.id)
+    names = [a.name for a in loaded.aliases]
+    # sorts as: "Banks…", "Morning Star" (strip "The "), "Wandering…" (strip "A ")
+    assert names == ["Banks of the Lee", "The Morning Star", "A Wandering Tune"]
 
 
 async def test_remove_alias_returns_true_and_deletes(db: AsyncSession) -> None:

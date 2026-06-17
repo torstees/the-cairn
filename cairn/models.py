@@ -139,7 +139,7 @@ class Tune(TimestampMixin, Base):
 
     settings: Mapped[list["TuneSetting"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     aliases: Mapped[list["TuneAlias"]] = relationship(
-        back_populates="tune", cascade="all, delete-orphan", order_by="TuneAlias.name"
+        back_populates="tune", cascade="all, delete-orphan", order_by="TuneAlias.sort_name"
     )
     difficulties: Mapped[list["TuneDifficulty"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     set_members: Mapped[list["TuneSetMember"]] = relationship(back_populates="tune")
@@ -178,6 +178,7 @@ class TuneAlias(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    sort_name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     tune: Mapped["Tune"] = relationship(back_populates="aliases")
