@@ -80,6 +80,15 @@ async def add_tune_to_list(
     return entry
 
 
+async def delete_list(db: AsyncSession, list_id: int) -> bool:
+    practice_list = await db.get(PracticeList, list_id)
+    if practice_list is None:
+        return False
+    await db.delete(practice_list)
+    await db.commit()
+    return True
+
+
 async def update_list(
     db: AsyncSession,
     list_id: int,

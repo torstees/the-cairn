@@ -19,6 +19,11 @@
          class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
         Edit
       </a>
+      <button hx-delete="/lists/{{ practice_list.id }}"
+              hx-confirm="Delete &ldquo;{{ practice_list.name }}&rdquo;? This will remove the list and all its tune entries."
+              class="border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-medium">
+        Delete
+      </button>
       {% include "lists/partials/_activation.html" %}
     </div>
   </div>

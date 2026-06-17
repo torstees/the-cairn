@@ -10,6 +10,7 @@ from cairn.services.lists import (
     add_tune_to_list,
     create_list,
     deactivate_list,
+    delete_list,
     get_list,
     get_list_entry,
     list_lists,
@@ -196,6 +197,17 @@ async def list_add_tune(
         "lists/partials/_entry_row.html",
         {"entry": entry, "list_id": list_id},
     )
+
+
+@router.delete("/{list_id}")
+async def list_delete(
+    list_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    deleted = await delete_list(db, list_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="List not found")
+    return Response(status_code=200, headers={"HX-Redirect": "/lists"})
 
 
 @router.delete("/{list_id}/tunes/{tune_id}")
