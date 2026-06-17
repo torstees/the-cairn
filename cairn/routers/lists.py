@@ -15,6 +15,7 @@ from cairn.services.lists import (
     list_lists,
     remove_tune_from_list,
 )
+from cairn.services.boxes import list_boxes
 from cairn.services.tunes import list_tunes
 from cairn.templating import templates
 
@@ -39,7 +40,11 @@ async def list_index(
 
 
 @router.get("/new")
-async def list_new(request: Request) -> Response:
+async def list_new(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    boxes = await list_boxes(db, _STUB_USER_ID)
     return templates.TemplateResponse(
         request,
         "lists/form.html",
@@ -47,6 +52,7 @@ async def list_new(request: Request) -> Response:
             "practice_list": None,
             "list_types": _LIST_TYPES,
             "progress_statuses": _PROGRESS_STATUSES,
+            "boxes": boxes,
             "error": None,
         },
     )

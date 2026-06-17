@@ -50,14 +50,16 @@
   <section>
     <h2 class="text-xl font-semibold text-stone-700 mb-3">Add a Tune</h2>
     <div class="bg-white rounded-lg shadow-sm p-4">
-      <form hx-post="/lists/{{ practice_list.id }}/tunes"
+      <form x-data="{ selectedId: '' }"
+            hx-post="/lists/{{ practice_list.id }}/tunes"
             hx-target="#list-entries-body"
             hx-swap="beforeend"
-            hx-on::after-request="if(event.detail.successful){ this.reset(); }"
+            hx-on::after-request="if(event.detail.successful){ this.reset(); selectedId = ''; }"
             class="flex gap-3 items-end flex-wrap">
         <div class="flex-1 min-w-48">
           <label class="block text-xs font-medium text-stone-500 mb-1" for="tune_id">Tune</label>
           <select id="tune_id" name="tune_id"
+                  x-model="selectedId"
                   class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
             <option value="">— select —</option>
             {% for tune in addable_tunes %}
@@ -66,7 +68,8 @@
           </select>
         </div>
         <button type="submit"
-                class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                :disabled="!selectedId"
+                class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
           Add
         </button>
       </form>

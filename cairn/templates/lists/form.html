@@ -33,8 +33,13 @@
 
     <div>
       <label class="block text-sm font-medium text-stone-700 mb-1" for="box_id">Tune Box</label>
-      <input id="box_id" name="box_id" type="number" required placeholder="Box ID"
-             class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+      <select id="box_id" name="box_id" required
+              class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
+        <option value="">— select a box —</option>
+        {% for box in boxes %}
+        <option value="{{ box.id }}">{{ box.name }}</option>
+        {% endfor %}
+      </select>
       <p class="text-xs text-stone-400 mt-1">The box this list is drawn from.</p>
     </div>
 
