@@ -60,7 +60,7 @@
       <form hx-post="/boxes/{{ box.id }}/tunes"
             hx-target="#box-tunes-body"
             hx-swap="beforeend"
-            hx-on::after-request="this.reset()"
+            hx-on::after-request="if(event.detail.successful){var s=this.querySelector('[name=tune_id]');if(s&&s.value)s.remove(s.selectedIndex);}this.reset();"
             class="flex gap-3 items-end flex-wrap">
         <div class="flex-1 min-w-48">
           <label class="block text-xs font-medium text-stone-500 mb-1" for="tune_id">Tune</label>
