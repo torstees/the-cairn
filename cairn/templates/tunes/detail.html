@@ -68,6 +68,9 @@
     <div id="abc-audio" hidden></div>
   </section>
   {% endif %}
+  {% if active_setting_id %}
+  <script>window.__cairnActiveSettingId = {{ active_setting_id }};</script>
+  {% endif %}
 
   {% include "tunes/partials/_settings.html" %}
 

@@ -214,6 +214,9 @@
       activeSettingId = parseInt(coreCard.dataset.settingId, 10);
       applyActiveCard(activeSettingId);
     }
+    if (window.__cairnActiveSettingId && window.__cairnActiveSettingId !== activeSettingId) {
+      selectSetting(window.__cairnActiveSettingId);
+    }
 
     var btn = document.getElementById("abc-play");
     var tempoSlider = document.getElementById("abc-tempo");

@@ -6,6 +6,7 @@ from cairn.dependencies import get_db
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
+from cairn.services.boxes import get_box_entry
 from cairn.services.tunes import (
     FAMILY_LABELS,
     create_tune,
@@ -85,17 +86,37 @@ async def tune_create(
 
 
 @router.get("/{tune_id}")
-async def tune_detail(request: Request, tune_id: int, db: AsyncSession = Depends(get_db)) -> Response:
+async def tune_detail(
+    request: Request,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    box_id: int | None = Query(default=None),
+) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    core = next((s for s in tune.settings if s.is_core and s.instrument is None), None)
-    built_abc = build_abc(tune, core) if core else ""
+
+    active_setting = None
+    if box_id is not None:
+        entry = await get_box_entry(db, box_id, tune_id)
+        if entry and entry.setting_id is not None:
+            active_setting = entry.setting
+
+    if active_setting is None:
+        active_setting = next((s for s in tune.settings if s.is_core and s.instrument is None), None)
+
+    built_abc = build_abc(tune, active_setting) if active_setting else ""
     settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
     return templates.TemplateResponse(
         request,
         "tunes/detail.html",
-        {"tune": tune, "built_abc": built_abc, "settings_abc": settings_abc, **_SETTINGS_CTX},
+        {
+            "tune": tune,
+            "built_abc": built_abc,
+            "settings_abc": settings_abc,
+            "active_setting_id": active_setting.id if active_setting else None,
+            **_SETTINGS_CTX,
+        },
     )
 
 
