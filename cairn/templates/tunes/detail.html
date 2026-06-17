@@ -63,16 +63,9 @@
         </div>
       </details>
     </div>
-    <template id="abc-source">{{ built_abc }}</template>
+    <template id="abc-source"{% if active_setting_id %} data-active-setting-id="{{ active_setting_id }}"{% endif %}>{{ built_abc }}</template>
     {# Hidden render target — used by audio synth so BPM changes don't alter the visible score #}
     <div id="abc-audio" hidden></div>
-    {% if active_setting_id %}
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        if (window.selectSetting) window.selectSetting({{ active_setting_id }});
-      });
-    </script>
-    {% endif %}
   </section>
   {% endif %}
 
