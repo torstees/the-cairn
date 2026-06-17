@@ -9,10 +9,12 @@ from cairn.services.abc_utils import build_abc
 from cairn.services.boxes import get_box, get_box_entry
 from cairn.services.tunes import (
     FAMILY_LABELS,
+    add_alias,
     create_tune,
     delete_tune,
     get_tune,
     list_tunes,
+    remove_alias,
     update_tune,
 )
 from cairn.templating import templates
@@ -174,3 +176,32 @@ async def tune_delete(tune_id: int, db: AsyncSession = Depends(get_db)) -> Respo
     if not deleted:
         raise HTTPException(status_code=404, detail="Tune not found")
     return Response(status_code=200)
+
+
+@router.post("/{tune_id}/aliases")
+async def alias_add(
+    request: Request,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    name: str = Form(...),
+    notes: str = Form(default=""),
+) -> Response:
+    alias = await add_alias(db, tune_id, name, notes or None)
+    if alias is None:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    tune = await get_tune(db, tune_id)
+    return templates.TemplateResponse(request, "tunes/partials/_aliases.html", {"tune": tune})
+
+
+@router.delete("/{tune_id}/aliases/{alias_id}")
+async def alias_remove(
+    request: Request,
+    tune_id: int,
+    alias_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    removed = await remove_alias(db, alias_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Alias not found")
+    tune = await get_tune(db, tune_id)
+    return templates.TemplateResponse(request, "tunes/partials/_aliases.html", {"tune": tune})

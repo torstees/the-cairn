@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Instrument, OrnamentationLevel, Tune, TuneDifficulty, TuneSetting, TuneType
+from cairn.models import Instrument, OrnamentationLevel, Tune, TuneAlias, TuneDifficulty, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
 
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
@@ -81,9 +81,30 @@ async def create_tune(
 
 async def get_tune(db: AsyncSession, tune_id: int) -> Tune | None:
     result = await db.execute(
-        select(Tune).where(Tune.id == tune_id).options(selectinload(Tune.settings), selectinload(Tune.difficulties))
+        select(Tune)
+        .where(Tune.id == tune_id)
+        .options(selectinload(Tune.settings), selectinload(Tune.difficulties), selectinload(Tune.aliases))
     )
     return result.scalar_one_or_none()
+
+
+async def add_alias(db: AsyncSession, tune_id: int, name: str, notes: str | None = None) -> TuneAlias | None:
+    if await db.get(Tune, tune_id) is None:
+        return None
+    alias = TuneAlias(tune_id=tune_id, name=name.strip(), notes=notes or None)
+    db.add(alias)
+    await db.commit()
+    await db.refresh(alias)
+    return alias
+
+
+async def remove_alias(db: AsyncSession, alias_id: int) -> bool:
+    alias = await db.get(TuneAlias, alias_id)
+    if alias is None:
+        return False
+    await db.delete(alias)
+    await db.commit()
+    return True
 
 
 async def list_tunes(
