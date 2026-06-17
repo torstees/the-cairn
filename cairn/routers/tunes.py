@@ -6,7 +6,7 @@ from cairn.dependencies import get_db
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
-from cairn.services.boxes import get_box_entry
+from cairn.services.boxes import get_box, get_box_entry
 from cairn.services.tunes import (
     FAMILY_LABELS,
     create_tune,
@@ -97,8 +97,9 @@ async def tune_detail(
         raise HTTPException(status_code=404, detail="Tune not found")
 
     active_setting = None
+    box = None
     if box_id is not None:
-        entry = await get_box_entry(db, box_id, tune_id)
+        box, entry = await get_box(db, box_id), await get_box_entry(db, box_id, tune_id)
         if entry and entry.setting_id is not None:
             active_setting = entry.setting
 
@@ -115,6 +116,8 @@ async def tune_detail(
             "built_abc": built_abc,
             "settings_abc": settings_abc,
             "active_setting_id": active_setting.id if active_setting else None,
+            "box": box,
+            "box_id": box_id,
             **_SETTINGS_CTX,
         },
     )
