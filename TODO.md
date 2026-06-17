@@ -330,7 +330,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### 4. Tune Box and Practice Lists
 
-- [ ] **4.1 — TuneBox models and CRUD service**
+- [x] **4.1 — TuneBox models and CRUD service**
   New models in `cairn/models.py`:
 
   `TuneBox`: id, user_id FK, name (str).

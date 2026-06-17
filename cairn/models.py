@@ -129,6 +129,7 @@ class Tune(TimestampMixin, Base):
     settings: Mapped[list["TuneSetting"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     difficulties: Mapped[list["TuneDifficulty"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     set_members: Mapped[list["TuneSetMember"]] = relationship(back_populates="tune")
+    box_entries: Mapped[list["TuneBoxEntry"]] = relationship(back_populates="tune")
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="tune")
     session_items: Mapped[list["PracticeSessionItem"]] = relationship(back_populates="tune")
 
@@ -228,8 +229,50 @@ class User(TimestampMixin, Base):
     role: Mapped[Role] = mapped_column(Enum(Role), nullable=False)
     primary_instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
 
+    tune_boxes: Mapped[list["TuneBox"]] = relationship(back_populates="user")
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="user")
     practice_sessions: Mapped[list["PracticeSession"]] = relationship(back_populates="user")
+
+
+class TuneBox(TimestampMixin, Base):
+    __tablename__ = "tune_boxes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="tune_boxes")
+    instruments: Mapped[list["TuneBoxInstrument"]] = relationship(
+        back_populates="box", cascade="all, delete-orphan"
+    )
+    entries: Mapped[list["TuneBoxEntry"]] = relationship(
+        back_populates="box", cascade="all, delete-orphan"
+    )
+    progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="box")
+
+
+class TuneBoxInstrument(TimestampMixin, Base):
+    __tablename__ = "tune_box_instruments"
+
+    box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), primary_key=True)
+    instrument: Mapped[Instrument] = mapped_column(Enum(Instrument), primary_key=True)
+
+    box: Mapped["TuneBox"] = relationship(back_populates="instruments")
+
+
+class TuneBoxEntry(TimestampMixin, Base):
+    __tablename__ = "tune_box_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), nullable=False)
+    tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
+
+    __table_args__ = (UniqueConstraint("box_id", "tune_id", name="uq_tune_box_entry_box_tune"),)
+
+    box: Mapped["TuneBox"] = relationship(back_populates="entries")
+    tune: Mapped["Tune"] = relationship(back_populates="box_entries")
+    setting: Mapped["TuneSetting | None"] = relationship()
 
 
 class StudentProgress(TimestampMixin, Base):
@@ -238,8 +281,7 @@ class StudentProgress(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
-    # box_id FK to tune_boxes.id will be added in task 4.1; plain int for now
-    box_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), nullable=False)
     status: Mapped[ProgressStatus] = mapped_column(Enum(ProgressStatus), nullable=False)
     confidence: Mapped[int] = mapped_column(Integer, nullable=False)
     interval_days: Mapped[float] = mapped_column(Float, nullable=False)
@@ -255,6 +297,7 @@ class StudentProgress(TimestampMixin, Base):
 
     user: Mapped["User"] = relationship(back_populates="progress_records")
     tune: Mapped["Tune"] = relationship(back_populates="progress_records")
+    box: Mapped["TuneBox"] = relationship(back_populates="progress_records")
 
 
 class PracticeSession(TimestampMixin, Base):

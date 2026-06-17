@@ -1,9 +1,10 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import KeyMode, KeyRoot, ProgressStatus, Role, TuneType, User
+from cairn.models import Instrument, KeyMode, KeyRoot, ProgressStatus, Role, TuneType, User
 from cairn.routers.progress import _STUB_BOX_ID, _STUB_USER_ID
 from cairn.schemas import TuneCreate
+from cairn.services.boxes import create_box
 from cairn.services.spaced_rep import record_practice
 from cairn.services.tunes import create_tune
 
@@ -11,11 +12,13 @@ _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
 
 async def _seed(db: AsyncSession):
-    """Create the stub user (id=1) and one tune; return (user, tune)."""
+    """Create the stub user (id=1), a TuneBox (id=1), and one tune; return (user, tune)."""
     u = User(username="tester", email="t@example.com", hashed_password="x", role=Role.student)
     db.add(u)
     await db.flush()
     assert u.id == _STUB_USER_ID, "Stub user id must match _STUB_USER_ID"
+    b = await create_box(db, u.id, "Session Box", [Instrument.flute])
+    assert b.id == _STUB_BOX_ID, "Stub box id must match _STUB_BOX_ID"
     t = await create_tune(
         db,
         TuneCreate(title="Morning Dew", tune_type=TuneType.reel,

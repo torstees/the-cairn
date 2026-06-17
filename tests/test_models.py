@@ -23,6 +23,7 @@ from cairn.models import (
     WarmupItem,
     WarmupType,
 )
+from cairn.services.boxes import create_box
 
 
 def _user(**kwargs) -> User:
@@ -137,10 +138,12 @@ async def test_student_progress(db: AsyncSession) -> None:
     db.add_all([user, tune])
     await db.flush()
 
+    box = await create_box(db, user.id, "Session Box", [Instrument.flute])
+
     progress = StudentProgress(
         user_id=user.id,
         tune_id=tune.id,
-        box_id=1,
+        box_id=box.id,
         status=ProgressStatus.just_learning,
         confidence=3,
         interval_days=1.0,
