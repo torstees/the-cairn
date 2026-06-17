@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}New Practice List — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="/lists" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Lists</a>
+    <h1 class="text-3xl font-bold text-stone-800">New Practice List</h1>
+  </div>
+
+  <form method="POST" action="/lists" class="bg-white rounded-lg shadow-sm p-6 space-y-5">
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-1" for="name">Name</label>
+      <input id="name" name="name" type="text" required
+             placeholder="e.g. Session Repertoire, Woodshed Tunes"
+             class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-1" for="list_type">Type</label>
+      <select id="list_type" name="list_type"
+              class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
+        {% for lt in list_types %}
+        <option value="{{ lt.value }}">{{ lt.label }}</option>
+        {% endfor %}
+      </select>
+      <p class="text-xs text-stone-400 mt-1">
+        <strong>Repertoire</strong> — tunes you're maintaining for sessions.
+        <strong>Woodshed</strong> — tunes you're actively drilling to get up to speed.
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-1" for="box_id">Tune Box</label>
+      <input id="box_id" name="box_id" type="number" required placeholder="Box ID"
+             class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+      <p class="text-xs text-stone-400 mt-1">The box this list is drawn from.</p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-1" for="progress_goal">Progress Goal</label>
+      <select id="progress_goal" name="progress_goal"
+              class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
+        {% for status in progress_statuses %}
+        <option value="{{ status.value }}" {% if status.value == "committed" %}selected{% endif %}>
+          {{ status.label }}
+        </option>
+        {% endfor %}
+      </select>
+      <p class="text-xs text-stone-400 mt-1">Tunes at or above this level are considered learned.</p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-1" for="target_date">
+        Target Date <span class="text-stone-400 font-normal">(optional)</span>
+      </label>
+      <input id="target_date" name="target_date" type="date"
+             class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+    </div>
+
+    {% if error %}
+    <p class="text-sm text-red-600">{{ error }}</p>
+    {% endif %}
+
+    <div class="flex gap-3 pt-2">
+      <button type="submit"
+              class="bg-stone-700 hover:bg-stone-600 text-white px-5 py-2 rounded-lg font-medium">
+        Create List
+      </button>
+      <a href="/lists"
+         class="px-5 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 font-medium">
+        Cancel
+      </a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

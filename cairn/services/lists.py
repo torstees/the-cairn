@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import PracticeList, PracticeListType, ProgressStatus, TuneListEntry
+from cairn.models import PracticeList, PracticeListType, ProgressStatus, Tune, TuneListEntry
 
 
 async def create_list(
@@ -78,6 +78,37 @@ async def add_tune_to_list(
     await db.commit()
     await db.refresh(entry)
     return entry
+
+
+async def get_list(db: AsyncSession, list_id: int) -> PracticeList | None:
+    stmt = (
+        select(PracticeList)
+        .where(PracticeList.id == list_id)
+        .options(selectinload(PracticeList.entries).selectinload(TuneListEntry.tune))
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def list_lists(db: AsyncSession, user_id: int) -> list[PracticeList]:
+    stmt = (
+        select(PracticeList)
+        .where(PracticeList.user_id == user_id)
+        .options(selectinload(PracticeList.entries).selectinload(TuneListEntry.tune))
+        .order_by(PracticeList.name)
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_list_entry(db: AsyncSession, list_id: int, tune_id: int) -> TuneListEntry | None:
+    stmt = (
+        select(TuneListEntry)
+        .where(TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id)
+        .options(selectinload(TuneListEntry.tune))
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def remove_tune_from_list(db: AsyncSession, list_id: int, tune_id: int) -> bool:
