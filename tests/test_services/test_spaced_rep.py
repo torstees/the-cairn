@@ -2,8 +2,9 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import KeyMode, KeyRoot, ProgressStatus, Role, StudentProgress, TuneType, User
+from cairn.models import Instrument, KeyMode, KeyRoot, ProgressStatus, Role, StudentProgress, TuneBox, TuneType, User
 from cairn.schemas import TuneCreate
+from cairn.services.boxes import create_box
 from cairn.services.spaced_rep import (
     MIN_EASE_FACTOR,
     _INITIAL_EASE_FACTOR,
@@ -24,6 +25,10 @@ async def _user(db: AsyncSession) -> User:
     db.add(u)
     await db.flush()
     return u
+
+
+async def _box(db: AsyncSession, user_id: int) -> TuneBox:
+    return await create_box(db, user_id, "Session Box", [Instrument.fiddle])
 
 
 async def _tune(db: AsyncSession):
@@ -133,8 +138,9 @@ def test_all_confidence_values_produce_valid_outputs():
 
 async def test_record_practice_creates_record_on_first_call(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=4)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=4)
     assert rec.id is not None
     assert rec.user_id == u.id
     assert rec.tune_id == t.id
@@ -142,68 +148,76 @@ async def test_record_practice_creates_record_on_first_call(db: AsyncSession) ->
 
 async def test_record_practice_first_call_sets_just_learning(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=5)
     assert rec.status == ProgressStatus.just_learning
 
 
 async def test_record_practice_first_call_interval_is_one_day(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=5)
     assert rec.interval_days == 1.0
 
 
 async def test_record_practice_first_call_sets_last_practiced(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=4)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=4)
     assert rec.last_practiced is not None
     assert rec.next_suggested is not None
 
 
 async def test_record_practice_next_suggested_is_interval_ahead(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=4)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=4)
     delta = (rec.next_suggested - rec.last_practiced).total_seconds()
     assert abs(delta - rec.interval_days * 86400) < 2  # within 2 seconds
 
 
 async def test_record_practice_second_call_interval_is_six_days(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    await record_practice(db, u.id, 1, t.id, confidence=4)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=4)
+    await record_practice(db, u.id, b.id, t.id, confidence=4)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=4)
     assert rec.interval_days == 6.0
 
 
 async def test_record_practice_interval_grows_over_time(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    await record_practice(db, u.id, 1, t.id, confidence=5)
-    await record_practice(db, u.id, 1, t.id, confidence=5)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
+    await record_practice(db, u.id, b.id, t.id, confidence=5)
+    await record_practice(db, u.id, b.id, t.id, confidence=5)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=5)
     assert rec.interval_days > 6.0
 
 
 async def test_record_practice_low_confidence_resets_interval(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
     # Build up interval
-    await record_practice(db, u.id, 1, t.id, confidence=5)
-    await record_practice(db, u.id, 1, t.id, confidence=5)
-    await record_practice(db, u.id, 1, t.id, confidence=5)
+    await record_practice(db, u.id, b.id, t.id, confidence=5)
+    await record_practice(db, u.id, b.id, t.id, confidence=5)
+    await record_practice(db, u.id, b.id, t.id, confidence=5)
     # Then fail
-    rec = await record_practice(db, u.id, 1, t.id, confidence=2)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=2)
     assert rec.interval_days == 1.0
 
 
 async def test_record_practice_does_not_duplicate_rows(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    await record_practice(db, u.id, 1, t.id, confidence=4)
-    await record_practice(db, u.id, 1, t.id, confidence=4)
+    await record_practice(db, u.id, b.id, t.id, confidence=4)
+    await record_practice(db, u.id, b.id, t.id, confidence=4)
     count = (await db.execute(
         select(func.count()).where(
             StudentProgress.user_id == u.id,
@@ -215,33 +229,37 @@ async def test_record_practice_does_not_duplicate_rows(db: AsyncSession) -> None
 
 async def test_record_practice_updates_confidence(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    await record_practice(db, u.id, 1, t.id, confidence=3)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
+    await record_practice(db, u.id, b.id, t.id, confidence=3)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=5)
     assert rec.confidence == 5
 
 
 async def test_record_practice_status_unchanged_on_update(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    await record_practice(db, u.id, 1, t.id, confidence=5)
-    rec = await record_practice(db, u.id, 1, t.id, confidence=5)
+    await record_practice(db, u.id, b.id, t.id, confidence=5)
+    rec = await record_practice(db, u.id, b.id, t.id, confidence=5)
     # Status stays just_learning — manual advancement via separate route
     assert rec.status == ProgressStatus.just_learning
 
 
 async def test_record_practice_ease_factor_decreases_on_poor_recall(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    rec1 = await record_practice(db, u.id, 1, t.id, confidence=1)
+    rec1 = await record_practice(db, u.id, b.id, t.id, confidence=1)
     assert rec1.ease_factor < _INITIAL_EASE_FACTOR
 
 
 async def test_record_practice_ease_factor_respects_floor(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
     for _ in range(10):
-        rec = await record_practice(db, u.id, 1, t.id, confidence=1)
+        rec = await record_practice(db, u.id, b.id, t.id, confidence=1)
     assert rec.ease_factor >= MIN_EASE_FACTOR
 
 
@@ -271,9 +289,10 @@ async def test_get_user_progress_none_before_first_practice(db: AsyncSession) ->
 
 async def test_get_user_progress_shows_existing_record(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    await record_practice(db, u.id, 1, t.id, confidence=4)
-    pairs = await get_user_progress(db, u.id, 1)
+    await record_practice(db, u.id, b.id, t.id, confidence=4)
+    pairs = await get_user_progress(db, u.id, b.id)
     by_id = {tune.id: progress for tune, progress in pairs}
     assert by_id[t.id] is not None
     assert by_id[t.id].confidence == 4
@@ -309,8 +328,9 @@ async def test_get_user_progress_ordered_by_sort_title(db: AsyncSession) -> None
 
 async def test_set_status_creates_record_when_none_exists(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    rec = await set_status(db, u.id, 1, t.id, ProgressStatus.session_ready)
+    rec = await set_status(db, u.id, b.id, t.id, ProgressStatus.session_ready)
     assert rec.status == ProgressStatus.session_ready
     assert rec.user_id == u.id
     assert rec.tune_id == t.id
@@ -318,18 +338,20 @@ async def test_set_status_creates_record_when_none_exists(db: AsyncSession) -> N
 
 async def test_set_status_updates_existing_record(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    await record_practice(db, u.id, 1, t.id, confidence=5)
-    rec = await set_status(db, u.id, 1, t.id, ProgressStatus.committed)
+    await record_practice(db, u.id, b.id, t.id, confidence=5)
+    rec = await set_status(db, u.id, b.id, t.id, ProgressStatus.committed)
     assert rec.status == ProgressStatus.committed
 
 
 async def test_set_status_preserves_spaced_rep_fields(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    await record_practice(db, u.id, 1, t.id, confidence=5)
-    original = await record_practice(db, u.id, 1, t.id, confidence=5)
-    rec = await set_status(db, u.id, 1, t.id, ProgressStatus.nearly_there)
+    await record_practice(db, u.id, b.id, t.id, confidence=5)
+    original = await record_practice(db, u.id, b.id, t.id, confidence=5)
+    rec = await set_status(db, u.id, b.id, t.id, ProgressStatus.nearly_there)
     # SR fields must not be touched by a manual status change
     assert rec.interval_days == original.interval_days
     assert rec.ease_factor == original.ease_factor
@@ -337,8 +359,9 @@ async def test_set_status_preserves_spaced_rep_fields(db: AsyncSession) -> None:
 
 async def test_set_status_new_record_has_sensible_defaults(db: AsyncSession) -> None:
     u = await _user(db)
+    b = await _box(db, u.id)
     t = await _tune(db)
-    rec = await set_status(db, u.id, 1, t.id, ProgressStatus.getting_there)
+    rec = await set_status(db, u.id, b.id, t.id, ProgressStatus.getting_there)
     assert rec.confidence == 3
     assert rec.interval_days == 1.0
     assert rec.ease_factor == _INITIAL_EASE_FACTOR

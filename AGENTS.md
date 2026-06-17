@@ -74,6 +74,7 @@ cairn/
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── spaced_rep.py      # Spaced repetition scheduling logic
+│   │   ├── boxes.py           # TuneBox + TuneBoxEntry CRUD
 │   │   ├── session_plan.py    # Practice session builder
 │   │   └── abc_utils.py       # ABC notation helpers
 │   └── templates/
