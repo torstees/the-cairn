@@ -65,6 +65,8 @@ cairn/
 │   │   ├── __init__.py
 │   │   ├── tunes.py           # Tune + TuneSetting CRUD
 │   │   ├── sets.py            # TuneSet CRUD
+│   │   ├── boxes.py           # TuneBox + TuneBoxEntry management
+│   │   ├── lists.py           # PracticeList + TuneListEntry management
 │   │   ├── practice.py        # Practice session planning + recording
 │   │   ├── progress.py        # StudentProgress updates
 │   │   ├── warmups.py         # WarmupItem library
@@ -241,9 +243,87 @@ Mixed-meter sets (e.g. jig into reel) are valid but must have `flow_difficulty`
 set manually. The auto-generator must never produce mixed-meter sets.
 
 ### StudentProgress
-Progress is always per student per tune — never global to a tune.
-The `next_suggested` field drives the spaced repetition retention queue.
-`bars_to_show` is derived from `status`, not stored.
+Progress is per **(student, tune, TuneBox)** — never global to a tune.
+Unique constraint: `(user_id, tune_id, box_id)`.
+The `next_suggested` field drives the spaced repetition retention queue,
+scoped to the TuneBox. `bars_to_show` is derived from `status`, not stored.
+
+### TuneBox
+
+A `TuneBox` is a named, instrument-scoped catalog of tunes a student currently
+works on or intends to learn. Each user may have multiple TuneBoxes (e.g. "Flute"
+covering flute + tin_whistle, "Accordion" covering accordion). All session
+planning, progress tracking, and practice list membership is scoped to a TuneBox.
+
+A TuneBox has one or more associated `Instrument` values via `TuneBoxInstrument`.
+Instruments that share technique (e.g. flute and tin_whistle) can share a box.
+
+Tunes are added to a box via `TuneBoxEntry`, which carries an optional preferred
+`TuneSetting` for that instrument context. On adding a tune, if exactly one
+existing `TuneSetting` has an `instrument` matching any of the box's instruments,
+auto-set it as the `TuneBoxEntry.setting_id`. If zero or multiple match, leave null.
+
+**Setting resolution order** (most to least specific):
+1. `TuneListEntry.setting_id` — active practice list override
+2. `TuneBoxEntry.setting_id` — box-level preferred setting
+3. First `TuneSetting` where `instrument` ∈ box's instrument list — auto-match
+4. Core setting (`is_core = True`, `instrument = None`) — fallback
+
+### SettingProgress
+
+Tracks progress on a specific `TuneSetting` (a particular version or arrangement)
+within a box context. Created when a student tags a tune to a practice list with
+a setting override and needs to start that version from scratch.
+
+Unique constraint: `(user_id, setting_id, box_id)`.
+
+`SettingProgress.status` always starts **below** the parent `StudentProgress.status`
+for the same `(user, tune, box)` — the student is behind on this specific version.
+When practice advances `SettingProgress.status` to equal `StudentProgress.status`,
+the record is retired (it becomes redundant). The student may also retire it manually.
+
+**Effective status rule**: when building session queues for a list where
+`TuneListEntry.setting_id` is set, look for a `SettingProgress(user, setting, box)`
+record first. If one exists, use its `status`. Otherwise fall back to
+`StudentProgress(user, tune, box).status`.
+
+### PracticeList
+
+A named, intentional group of tunes within a TuneBox used to focus a practice
+session. A PracticeList always belongs to exactly one TuneBox. Only one list per
+user may be `is_active = True` at a time — enforced at the application layer.
+A tune may appear on multiple lists simultaneously.
+
+List membership is recorded in `TuneListEntry`, which carries:
+- `setting_id` (nullable) — which setting to display during sessions using this
+  list; also determines which `SettingProgress` record to use for effective status.
+
+**Two list types:**
+
+*Repertoire* — goal-driven learning list. Auto-removes a tune's `TuneListEntry`
+when its effective status reaches or exceeds the list's `progress_goal`. This check
+runs against **every** Repertoire list the tune belongs to whenever progress changes;
+a tune may be removed from multiple lists in a single operation. Woodshed entries
+are never auto-removed.
+
+*Woodshed* — intensive focus list. Tunes are never auto-removed. Once a tune's
+effective status reaches `progress_goal` it leaves the learning queue but becomes
+a high-priority retention tune for sessions using that list. Woodshed-tagged tunes
+in the retention queue bypass the SM-2 `next_suggested` gate and are weighted to
+the top; untagged box tunes still require `next_suggested ≤ now`.
+
+`progress_goal` must be strictly above `just_learning`. Default: `committed`.
+
+**Session queue logic** (all scoped to the active TuneBox):
+
+| Session type | Learning queue | Retention queue |
+|---|---|---|
+| Repertoire list | List entries where effective_status < goal; ordered by proximity to goal | Full box, status ≥ goal, next_suggested ≤ now; exclude session learning tunes |
+| Woodshed list | List entries where effective_status < goal | Full box, status ≥ goal; woodshed-tagged tunes bypass SM-2 gate and are top-weighted; exclude session learning tunes |
+| No active list | Full box, status < `committed`, weighted by proximity to `committed` | Full box, status ≥ `committed`, next_suggested ≤ now |
+
+SM-2 fields (`interval_days`, `ease_factor`) update normally in all cases, including
+when a Woodshed session triggers practice ahead of the scheduled interval.
 
 ### Difficulty
 Difficulty is always per instrument. Never put a single difficulty score
@@ -306,11 +386,13 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
     with `instrument` set explicitly. Never mark an instrument-specific
     setting as `is_core = True`.
 
-2. **Progress is per student per tune.** Never modify a `Tune` record to
-   reflect a student's progress.
+2. **Progress is per student, per tune, per TuneBox.** The unique constraint on
+   `StudentProgress` is `(user_id, tune_id, box_id)`. Never modify a `Tune`
+   record to reflect a student's progress.
 
 3. **Spaced repetition state lives in `StudentProgress`** (`next_suggested`,
-   `interval_days`, `ease_factor`). Never compute next review date in a route handler.
+   `interval_days`, `ease_factor`), scoped to a TuneBox.
+   Never compute next review date in a route handler.
 
 4. **ABC notation is never mutated to add ornamentation.** Ornamented versions
    are always separate `TuneSetting` records or derived at render time.
@@ -340,6 +422,29 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
     The field exists as a placeholder only. Do not implement any
     rendering, parsing, or transformation logic for `mutation_notation`
     until the format is decided in Phase 3. Store as raw text only.
+
+12. **A TuneBox must have at least one instrument.** Enforce at the service
+    layer; never create a TuneBox without at least one `TuneBoxInstrument` entry.
+
+13. **Only one PracticeList per user may be `is_active = True` at any time.**
+    Enforce at the application layer when activating a list.
+
+14. **Repertoire auto-removal is triggered by any effective-status change**,
+    not only explicit manual status updates. When `record_practice` or
+    `set_status` is called, check every Repertoire list the tune belongs to
+    (within the same box) and remove entries whose goal is now met.
+
+15. **`SettingProgress.status` is always ≤ `StudentProgress.status`** for the
+    same `(user, tune, box)`. A `SettingProgress` record that has caught up to
+    the parent progress should be retired, not left in place.
+
+16. **Session queue building is always scoped to the active TuneBox.**
+    Never mix tunes from different boxes in a single session.
+
+17. **Practice list type determines retention queue behaviour, not just learning
+    queue behaviour.** See the session queue table in the PracticeList section.
+    Implement retention builders as separate strategies, not one function with
+    conditional overrides.
 
 ---
 

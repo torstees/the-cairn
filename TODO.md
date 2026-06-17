@@ -312,40 +312,168 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Used on tune detail and practice session views.
   Must be renderable as a standalone HTMX partial.
 
+- [ ] **3.4 — Migrate StudentProgress to per-box**
+  Add `box_id FK → tune_boxes.id` to `StudentProgress`.
+  Change the unique constraint from `(user_id, tune_id)` to `(user_id, tune_id, box_id)`.
+  Update all service functions that read or write `StudentProgress`:
+  `record_practice`, `get_user_progress`, `set_status` in `spaced_rep.py`, and
+  any callers in `cairn/routers/progress.py`.
+  Update all affected tests in `tests/test_services/test_spaced_rep.py` and
+  `tests/test_routers/test_progress.py` — fixtures must now create a TuneBox
+  and pass `box_id` wherever a `StudentProgress` record is created or queried.
+  Generate an Alembic migration.
+  Safe to delete `cairn.db` and re-run `make migrate` — no production data exists.
+  **Do not implement TuneBox models in this task** — use a plain integer stub
+  (e.g. `box_id=1`) in tests until task 4.1 adds the real model.
+
 ---
 
-### 4. Practice Session Planner
+### 4. Tune Box and Practice Lists
 
-- [ ] **4.1 — Session plan service**
+- [ ] **4.1 — TuneBox models and CRUD service**
+  New models in `cairn/models.py`:
+
+  `TuneBox`: id, user_id FK, name (str).
+
+  `TuneBoxInstrument`: box_id FK, instrument (Instrument enum).
+  Composite primary key `(box_id, instrument)`. A box must have ≥ 1 instrument.
+
+  `TuneBoxEntry`: id, box_id FK, tune_id FK, setting_id FK (nullable —
+  preferred TuneSetting for this box context). Unique `(box_id, tune_id)`.
+
+  Service functions in `cairn/services/boxes.py`:
+  - `create_box(db, user_id, name, instruments) -> TuneBox`
+    Must create at least one `TuneBoxInstrument` in the same transaction.
+  - `add_tune(db, box_id, tune_id) -> TuneBoxEntry`
+    Auto-set `setting_id` if exactly one existing TuneSetting matches a box
+    instrument; leave null otherwise.
+  - `set_preferred_setting(db, box_id, tune_id, setting_id) -> TuneBoxEntry`
+  - `remove_tune(db, box_id, tune_id) -> bool`
+  - `list_boxes(db, user_id) -> list[TuneBox]`
+  - `get_box(db, box_id) -> TuneBox | None`
+
+  Generate Alembic migration.
+  Write tests in `tests/test_services/test_boxes.py`.
+  After this task, update the `box_id` stubs from task 3.4 to use real TuneBox ids.
+
+- [ ] **4.2 — TuneBox routes and templates**
+  Router: `cairn/routers/boxes.py`, prefix `/boxes`.
+  Routes:
+  - `GET /boxes` — list user's boxes → `boxes/index.html`
+  - `GET /boxes/new` — create box form → `boxes/form.html`
+  - `POST /boxes` — create box + instruments → redirect to box detail
+  - `GET /boxes/{id}` — box detail with tune list → `boxes/detail.html`
+  - `POST /boxes/{id}/tunes` — add a tune to the box (HTMX, returns tune row partial)
+  - `DELETE /boxes/{id}/tunes/{tune_id}` — remove tune (HTMX)
+  - `POST /boxes/{id}/tunes/{tune_id}/setting` — set preferred setting (HTMX)
+  Add a "Boxes" link to `base.html` nav.
+
+- [ ] **4.3 — PracticeList and TuneListEntry models and CRUD service**
+  New models in `cairn/models.py`:
+
+  `PracticeListType` enum: `repertoire | woodshed` (with `.label`).
+
+  `PracticeList`: id, user_id FK, box_id FK, name (str), list_type
+  (PracticeListType), progress_goal (ProgressStatus, must be > just_learning,
+  default committed), target_date (date, nullable), is_active (bool, default False).
+
+  `TuneListEntry`: id, tune_id FK, list_id FK, setting_id FK (nullable —
+  session display override; also selects the SettingProgress record to use).
+  Unique `(tune_id, list_id)`.
+
+  Service functions in `cairn/services/lists.py`:
+  - `create_list(db, user_id, box_id, name, list_type, progress_goal, target_date) -> PracticeList`
+  - `activate_list(db, user_id, list_id) -> PracticeList`
+    Deactivates any currently active list for this user first.
+  - `deactivate_list(db, user_id) -> None`
+  - `add_tune_to_list(db, list_id, tune_id, setting_id) -> TuneListEntry`
+  - `remove_tune_from_list(db, list_id, tune_id) -> bool`
+  - `get_active_list(db, user_id) -> PracticeList | None`
+
+  Generate Alembic migration.
+  Write tests in `tests/test_services/test_lists.py`.
+
+- [ ] **4.4 — PracticeList routes and templates**
+  Router: `cairn/routers/lists.py`, prefix `/lists`.
+  Routes:
+  - `GET /lists` — all lists for current user → `lists/index.html`
+  - `GET /lists/new` — create list form → `lists/form.html`
+  - `POST /lists` — create list → redirect to list detail
+  - `GET /lists/{id}` — list detail with tune membership → `lists/detail.html`
+  - `POST /lists/{id}/activate` — set as active list (HTMX)
+  - `POST /lists/{id}/deactivate` — deactivate (HTMX)
+  - `POST /lists/{id}/tunes` — add tune to list (HTMX)
+  - `DELETE /lists/{id}/tunes/{tune_id}` — remove from list (HTMX)
+  Add a "Lists" link to `base.html` nav.
+
+- [ ] **4.5 — SettingProgress model and service integration**
+  New model in `cairn/models.py`:
+
+  `SettingProgress`: id, user_id FK, setting_id FK, box_id FK, status
+  (ProgressStatus). Unique `(user_id, setting_id, box_id)`.
+
+  Add to `cairn/services/spaced_rep.py`:
+  - `get_effective_status(db, user_id, tune_id, box_id, setting_id | None) -> ProgressStatus`
+    Returns `SettingProgress.status` if a setting_id is given and a record exists;
+    otherwise `StudentProgress.status`; otherwise `just_learning`.
+  - `retire_setting_progress(db, user_id, setting_id, box_id) -> None`
+
+  Update `record_practice` to also advance `SettingProgress` when the active
+  list entry has a `setting_id`. Retire the `SettingProgress` record automatically
+  if its status catches up to `StudentProgress.status`.
+
+  Update Repertoire auto-removal in `set_status` / `record_practice` to use
+  `get_effective_status` rather than raw `StudentProgress.status`.
+
+  Generate Alembic migration.
+  Add tests in `tests/test_services/test_spaced_rep.py`.
+
+---
+
+### 5. Practice Session Planner
+
+- [ ] **5.1 — Session plan service**
   Create `cairn/services/session_plan.py`.
-  Implement `build_session(db, user_id, total_minutes) -> list[PracticeSessionItem]`.
+  Implement `build_session(db, user_id, box_id, total_minutes) -> list[PracticeSessionItem]`.
   Logic:
   - Allocate ~10% to warmup (at least 1 item)
-  - Allocate remaining time across learning tunes (status < committed) and
-    retention tunes (next_suggested <= now), weighted by status
-  - Lower status = longer slot (see AGENTS.md progress table)
+  - Resolve the active PracticeList for this user (may be None)
+  - Build learning and retention queues per the session queue logic in AGENTS.md:
+    - Repertoire list: learning = list entries with effective_status < goal;
+      retention = full box, status ≥ goal, next_suggested ≤ now, minus learning tunes
+    - Woodshed list: learning = list entries with effective_status < goal;
+      retention = full box, status ≥ goal; woodshed-tagged tunes bypass SM-2 gate
+      and are top-weighted; minus learning tunes
+    - No active list: learning = box tunes with status < committed, weighted by
+      proximity to committed; retention = box tunes with status ≥ committed,
+      next_suggested ≤ now
+  - Lower status = longer learning slot (see AGENTS.md progress table)
   - Never include mixed-meter auto-generated sets
-  Write tests covering short sessions (15 min), standard sessions (45 min),
-  and edge cases (no tunes due for retention, all tunes committed).
+  Write tests covering: short session (15 min), standard session (45 min), Repertoire
+  list active, Woodshed list active, no active list, no tunes due for retention,
+  all tunes committed.
 
-- [ ] **4.2 — Practice session routes and templates**
+- [ ] **5.2 — Practice session routes and templates**
   Router: `cairn/routers/practice.py`, prefix `/practice`.
   Routes:
-  - `GET /practice/plan` — form to enter total minutes → `practice/plan.html`
-  - `POST /practice/plan` — generate and display session plan → `practice/session.html`
+  - `GET /practice/plan` — form to enter total minutes and select active box →
+    `practice/plan.html`
+  - `POST /practice/plan` — generate and display session plan →
+    `practice/session.html`; show active practice list name if one is set
   - `POST /practice/session/{id}/item/{item_id}/complete` — mark item done (HTMX)
   - `POST /practice/session/{id}/finish` — close session, record total time
 
-- [ ] **4.3 — Dashboard**
+- [ ] **5.3 — Dashboard**
   Create `cairn/templates/dashboard.html` as the root `/` route.
-  Show: tunes due for retention today, current learning tunes with status,
-  a "Start Practice" button linking to `/practice/plan`.
+  Show: active TuneBox name, active PracticeList name (if any), tunes due for
+  retention today, current learning tunes with status, a "Start Practice" button
+  linking to `/practice/plan`.
 
 ---
 
-### 5. Warmup Library
+### 6. Warmup Library
 
-- [ ] **5.1 — Warmup CRUD**
+- [ ] **6.1 — Warmup CRUD**
   Router: `cairn/routers/warmups.py`, prefix `/warmups`.
   Basic CRUD for `WarmupItem`: list, create, edit, delete.
   Content field renders as ABC notation if `warmup_type == scale or snippet`,
@@ -361,7 +489,9 @@ Before closing Phase 1:
 - [ ] `make test` passes with no failures
 - [ ] Dashboard loads and reflects real data
 - [ ] A tune can be created with ABC notation and rendered in the browser
-- [ ] A practice session can be planned, worked through, and finished
+- [ ] A TuneBox can be created and tunes added to it with a preferred setting
+- [ ] A PracticeList can be created, activated, and tunes tagged to it
+- [ ] A practice session can be planned (with active box and optional list), worked through, and finished
 - [ ] Progress can be manually updated and affects the next session plan
 - [ ] No business logic lives in any route handler
 
