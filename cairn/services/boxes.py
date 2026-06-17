@@ -1,7 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from cairn.models import Instrument, TuneBox, TuneBoxEntry, TuneBoxInstrument, TuneSetting
+from cairn.models import Instrument, Tune, TuneBox, TuneBoxEntry, TuneBoxInstrument, TuneSetting
 
 
 async def create_box(
@@ -27,9 +28,7 @@ async def add_tune(
     box_id: int,
     tune_id: int,
 ) -> TuneBoxEntry:
-    instruments_result = await db.execute(
-        select(TuneBoxInstrument).where(TuneBoxInstrument.box_id == box_id)
-    )
+    instruments_result = await db.execute(select(TuneBoxInstrument).where(TuneBoxInstrument.box_id == box_id))
     box_instruments = {row.instrument for row in instruments_result.scalars().all()}
 
     settings_result = await db.execute(
@@ -52,7 +51,7 @@ async def set_preferred_setting(
     db: AsyncSession,
     box_id: int,
     tune_id: int,
-    setting_id: int,
+    setting_id: int | None,
 ) -> TuneBoxEntry:
     result = await db.execute(
         select(TuneBoxEntry).where(
@@ -91,7 +90,13 @@ async def list_boxes(
     user_id: int,
 ) -> list[TuneBox]:
     result = await db.execute(
-        select(TuneBox).where(TuneBox.user_id == user_id).order_by(TuneBox.name)
+        select(TuneBox)
+        .where(TuneBox.user_id == user_id)
+        .order_by(TuneBox.name)
+        .options(
+            selectinload(TuneBox.instruments),
+            selectinload(TuneBox.entries),
+        )
     )
     return list(result.scalars().all())
 
@@ -101,3 +106,35 @@ async def get_box(
     box_id: int,
 ) -> TuneBox | None:
     return await db.get(TuneBox, box_id)
+
+
+async def get_box_detail(
+    db: AsyncSession,
+    box_id: int,
+) -> TuneBox | None:
+    result = await db.execute(
+        select(TuneBox)
+        .where(TuneBox.id == box_id)
+        .options(
+            selectinload(TuneBox.instruments),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.tune).selectinload(Tune.settings),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.setting),
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_box_entry(
+    db: AsyncSession,
+    box_id: int,
+    tune_id: int,
+) -> TuneBoxEntry | None:
+    result = await db.execute(
+        select(TuneBoxEntry)
+        .where(TuneBoxEntry.box_id == box_id, TuneBoxEntry.tune_id == tune_id)
+        .options(
+            selectinload(TuneBoxEntry.tune).selectinload(Tune.settings),
+            selectinload(TuneBoxEntry.setting),
+        )
+    )
+    return result.scalar_one_or_none()

@@ -1,7 +1,7 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, ProgressStatus, Role, TuneType, User
+from cairn.models import Instrument, KeyMode, KeyRoot, Role, TuneType, User
 from cairn.routers.progress import _STUB_BOX_ID, _STUB_USER_ID
 from cairn.schemas import TuneCreate
 from cairn.services.boxes import create_box
@@ -21,8 +21,13 @@ async def _seed(db: AsyncSession):
     assert b.id == _STUB_BOX_ID, "Stub box id must match _STUB_BOX_ID"
     t = await create_tune(
         db,
-        TuneCreate(title="Morning Dew", tune_type=TuneType.reel,
-                   key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4"),
+        TuneCreate(
+            title="Morning Dew",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+        ),
         abc_notation=_ABC,
     )
     return u, t

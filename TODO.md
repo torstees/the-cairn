@@ -356,7 +356,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Write tests in `tests/test_services/test_boxes.py`.
   After this task, update the `box_id` stubs from task 3.4 to use real TuneBox ids.
 
-- [ ] **4.2 — TuneBox routes and templates**
+- [x] **4.2 — TuneBox routes and templates**
   Router: `cairn/routers/boxes.py`, prefix `/boxes`.
   Routes:
   - `GET /boxes` — list user's boxes → `boxes/index.html`

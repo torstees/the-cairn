@@ -1,0 +1,43 @@
+<tr id="box-tune-{{ entry.tune_id }}" class="border-b border-stone-100 hover:bg-stone-50">
+  <td class="py-3 px-4">
+    <a href="/tunes/{{ entry.tune.id }}"
+       class="font-medium text-stone-800 hover:text-stone-600">
+      {{ entry.tune.title }}
+    </a>
+    <p class="text-xs text-stone-400 mt-0.5">
+      {{ entry.tune.tune_type.label }}
+      &middot; {{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}
+    </p>
+  </td>
+  <td class="py-3 px-4">
+    {% set non_core = entry.tune.settings | selectattr('is_core', 'false') | list %}
+    {% if non_core %}
+    <select name="setting_id"
+            hx-post="/boxes/{{ box_id }}/tunes/{{ entry.tune_id }}/setting"
+            hx-target="#box-tune-{{ entry.tune_id }}"
+            hx-swap="outerHTML"
+            hx-trigger="change"
+            class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+      <option value="">Default (core setting)</option>
+      {% for s in entry.tune.settings %}
+      {% if not s.is_core %}
+      <option value="{{ s.id }}" {% if entry.setting_id == s.id %}selected{% endif %}>
+        {{ s.label }}{% if s.instrument %} ({{ s.instrument.label }}){% endif %}
+      </option>
+      {% endif %}
+      {% endfor %}
+    </select>
+    {% else %}
+    <span class="text-xs text-stone-400">Core setting only</span>
+    {% endif %}
+  </td>
+  <td class="py-3 px-4 text-right">
+    <button hx-delete="/boxes/{{ box_id }}/tunes/{{ entry.tune_id }}"
+            hx-target="#box-tune-{{ entry.tune_id }}"
+            hx-swap="delete"
+            hx-confirm="Remove {{ entry.tune.title }} from this box?"
+            class="text-sm text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-50">
+      Remove
+    </button>
+  </td>
+</tr>
