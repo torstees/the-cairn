@@ -214,9 +214,8 @@
       activeSettingId = parseInt(coreCard.dataset.settingId, 10);
       applyActiveCard(activeSettingId);
     }
-    var preferredId = abcSource.dataset.activeSettingId ? parseInt(abcSource.dataset.activeSettingId, 10) : null;
-    if (preferredId && preferredId !== activeSettingId) {
-      selectSetting(preferredId);
+    if (window.__cairnActiveSettingId && window.__cairnActiveSettingId !== activeSettingId) {
+      selectSetting(window.__cairnActiveSettingId);
     }
 
     var btn = document.getElementById("abc-play");

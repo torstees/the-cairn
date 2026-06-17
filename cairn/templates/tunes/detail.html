@@ -63,10 +63,13 @@
         </div>
       </details>
     </div>
-    <template id="abc-source"{% if active_setting_id %} data-active-setting-id="{{ active_setting_id }}"{% endif %}>{{ built_abc }}</template>
+    <template id="abc-source">{{ built_abc }}</template>
     {# Hidden render target — used by audio synth so BPM changes don't alter the visible score #}
     <div id="abc-audio" hidden></div>
   </section>
+  {% endif %}
+  {% if active_setting_id %}
+  <script>window.__cairnActiveSettingId = {{ active_setting_id }};</script>
   {% endif %}
 
   {% include "tunes/partials/_settings.html" %}
