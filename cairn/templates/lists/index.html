@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Practice Lists — The Cairn{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-3xl font-bold text-stone-800">Practice Lists</h1>
+  <a href="/lists/new"
+     class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+    + New List
+  </a>
+</div>
+
+{% if practice_lists %}
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  {% for pl in practice_lists %}
+  <a href="/lists/{{ pl.id }}"
+     class="block bg-white rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow border border-stone-100 relative">
+    {% if pl.is_active %}
+    <span class="absolute top-3 right-3 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+      Active
+    </span>
+    {% endif %}
+    <h2 class="text-lg font-semibold text-stone-800 mb-1 pr-16">{{ pl.name }}</h2>
+    <p class="text-xs text-stone-500 mb-3">
+      {{ pl.list_type.label }}
+      &middot; Goal: {{ pl.progress_goal.label }}
+      {% if pl.target_date %}&middot; Target: {{ pl.target_date }}{% endif %}
+    </p>
+    <p class="text-xs text-stone-400 mb-2">{{ pl.box.name }}</p>
+    <p class="text-sm text-stone-500">
+      {{ pl.entries | length }} tune{{ 's' if pl.entries | length != 1 else '' }}
+    </p>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-16 text-stone-400">
+  <p class="text-lg mb-2">No practice lists yet.</p>
+  <p class="text-sm">Create a list to organise tunes you're working on or maintaining.</p>
+</div>
+{% endif %}
+{% endblock %}

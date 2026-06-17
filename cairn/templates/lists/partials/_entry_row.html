@@ -1,0 +1,15 @@
+<tr id="entry-row-{{ entry.tune_id }}">
+  <td class="py-2 px-4 text-stone-800">
+    <a href="/tunes/{{ entry.tune.id }}" class="hover:underline">{{ entry.tune.title }}</a>
+  </td>
+  <td class="py-2 px-4 text-stone-500 text-xs">{{ entry.tune.tune_type.label }}</td>
+  <td class="py-2 px-4 text-right">
+    <button hx-delete="/lists/{{ list_id }}/tunes/{{ entry.tune_id }}"
+            hx-target="#entry-row-{{ entry.tune_id }}"
+            hx-swap="delete"
+            hx-confirm="Remove {{ entry.tune.title }} from this list?"
+            class="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-50">
+      Remove
+    </button>
+  </td>
+</tr>
