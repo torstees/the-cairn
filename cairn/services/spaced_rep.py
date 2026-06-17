@@ -3,10 +3,18 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import ProgressStatus, StudentProgress, Tune
+from cairn.models import (
+    PracticeListType,
+    ProgressStatus,
+    SettingProgress,
+    StudentProgress,
+    Tune,
+    TuneListEntry,
+)
 
 MIN_EASE_FACTOR = 1.3
 _INITIAL_EASE_FACTOR = 2.5
+_STATUS_ORDER = list(ProgressStatus)
 
 
 def next_review(
@@ -45,6 +53,143 @@ def next_review(
     return (new_interval, new_ef)
 
 
+async def get_effective_status(
+    db: AsyncSession,
+    user_id: int,
+    tune_id: int,
+    box_id: int,
+    setting_id: int | None,
+) -> ProgressStatus:
+    """Return the most specific progress status available.
+
+    Checks SettingProgress first (if setting_id given), then StudentProgress,
+    then defaults to just_learning.
+    """
+    if setting_id is not None:
+        result = await db.execute(
+            select(SettingProgress).where(
+                SettingProgress.user_id == user_id,
+                SettingProgress.setting_id == setting_id,
+                SettingProgress.box_id == box_id,
+            )
+        )
+        sp = result.scalar_one_or_none()
+        if sp is not None:
+            return sp.status
+
+    result = await db.execute(
+        select(StudentProgress).where(
+            StudentProgress.user_id == user_id,
+            StudentProgress.tune_id == tune_id,
+            StudentProgress.box_id == box_id,
+        )
+    )
+    progress = result.scalar_one_or_none()
+    if progress is not None:
+        return progress.status
+
+    return ProgressStatus.just_learning
+
+
+async def retire_setting_progress(
+    db: AsyncSession,
+    user_id: int,
+    setting_id: int,
+    box_id: int,
+) -> None:
+    """Delete a SettingProgress record, if it exists."""
+    result = await db.execute(
+        select(SettingProgress).where(
+            SettingProgress.user_id == user_id,
+            SettingProgress.setting_id == setting_id,
+            SettingProgress.box_id == box_id,
+        )
+    )
+    sp = result.scalar_one_or_none()
+    if sp is not None:
+        await db.delete(sp)
+        await db.commit()
+
+
+async def _advance_setting_progress(
+    db: AsyncSession,
+    user_id: int,
+    setting_id: int,
+    box_id: int,
+    confidence: int,
+    ceiling: ProgressStatus,
+) -> None:
+    """Upsert a SettingProgress record and advance/drop its status based on confidence.
+
+    confidence >= 4 advances status one step (capped below ceiling).
+    confidence < 3 drops status one step (floor: just_learning).
+    Retires the record if status reaches or exceeds ceiling.
+
+    No-ops when ceiling is just_learning — there is no room to track below the floor.
+    """
+    ceiling_idx = _STATUS_ORDER.index(ceiling)
+    if ceiling_idx == 0:
+        return
+
+    result = await db.execute(
+        select(SettingProgress).where(
+            SettingProgress.user_id == user_id,
+            SettingProgress.setting_id == setting_id,
+            SettingProgress.box_id == box_id,
+        )
+    )
+    sp = result.scalar_one_or_none()
+
+    if sp is None:
+        sp = SettingProgress(
+            user_id=user_id,
+            setting_id=setting_id,
+            box_id=box_id,
+            status=ProgressStatus.just_learning,
+        )
+        db.add(sp)
+        await db.flush()  # assign id before potential delete
+
+    current_idx = _STATUS_ORDER.index(sp.status)
+
+    if confidence >= 4 and current_idx < ceiling_idx:
+        sp.status = _STATUS_ORDER[current_idx + 1]
+    elif confidence < 3 and current_idx > 0:
+        sp.status = _STATUS_ORDER[current_idx - 1]
+
+    if _STATUS_ORDER.index(sp.status) >= ceiling_idx:
+        await db.delete(sp)
+
+    await db.commit()
+
+
+async def _check_repertoire_removal(
+    db: AsyncSession,
+    user_id: int,
+    tune_id: int,
+    box_id: int,
+) -> None:
+    """Remove a tune from the active Repertoire list if its effective status meets the goal."""
+    from cairn.services.lists import get_active_list, remove_tune_from_list
+
+    active_list = await get_active_list(db, user_id)
+    if (
+        active_list is None
+        or active_list.box_id != box_id
+        or active_list.list_type != PracticeListType.repertoire
+    ):
+        return
+
+    list_entry = next((e for e in active_list.entries if e.tune_id == tune_id), None)
+    if list_entry is None:
+        return
+
+    effective = await get_effective_status(db, user_id, tune_id, box_id, list_entry.setting_id)
+    goal_idx = _STATUS_ORDER.index(active_list.progress_goal)
+    if _STATUS_ORDER.index(effective) >= goal_idx:
+        await remove_tune_from_list(db, active_list.id, tune_id)
+
+
 async def record_practice(
     db: AsyncSession,
     user_id: int,
@@ -58,6 +203,9 @@ async def record_practice(
     and updates it on all subsequent calls.  Status advancement is intentionally
     left to the manual route (POST /progress/{tune_id}/status) — this function
     only manages the spaced-repetition fields.
+
+    Also advances SettingProgress when the active list has a setting entry for
+    this tune, and checks Repertoire auto-removal.
     """
     result = await db.execute(
         select(StudentProgress).where(
@@ -93,6 +241,23 @@ async def record_practice(
 
     await db.commit()
     await db.refresh(record)
+
+    # Advance SettingProgress if the active list has a setting entry for this tune
+    from cairn.services.lists import get_active_list
+
+    active_list = await get_active_list(db, user_id)
+    if active_list is not None and active_list.box_id == box_id:
+        list_entry = next(
+            (e for e in active_list.entries if e.tune_id == tune_id and e.setting_id is not None),
+            None,
+        )
+        if list_entry is not None:
+            await _advance_setting_progress(
+                db, user_id, list_entry.setting_id, box_id, confidence, record.status
+            )
+
+        await _check_repertoire_removal(db, user_id, tune_id, box_id)
+
     return record
 
 
@@ -129,6 +294,7 @@ async def set_status(
     """Manually set the ProgressStatus for a (user, box, tune) triple.
 
     Creates a StudentProgress row with sensible defaults if one doesn't exist yet.
+    Checks Repertoire auto-removal after updating.
     """
     result = await db.execute(
         select(StudentProgress).where(
@@ -153,4 +319,7 @@ async def set_status(
         record.status = status
     await db.commit()
     await db.refresh(record)
+
+    await _check_repertoire_removal(db, user_id, tune_id, box_id)
+
     return record

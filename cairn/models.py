@@ -339,6 +339,22 @@ class TuneListEntry(TimestampMixin, Base):
     setting: Mapped["TuneSetting | None"] = relationship()
 
 
+class SettingProgress(TimestampMixin, Base):
+    __tablename__ = "setting_progress"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    setting_id: Mapped[int] = mapped_column(ForeignKey("tune_settings.id"), nullable=False)
+    box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), nullable=False)
+    status: Mapped[ProgressStatus] = mapped_column(Enum(ProgressStatus), nullable=False)
+
+    __table_args__ = (UniqueConstraint("user_id", "setting_id", "box_id", name="uq_setting_progress_user_setting_box"),)
+
+    user: Mapped["User"] = relationship()
+    setting: Mapped["TuneSetting"] = relationship()
+    box: Mapped["TuneBox"] = relationship()
+
+
 class StudentProgress(TimestampMixin, Base):
     __tablename__ = "student_progress"
 
