@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
@@ -77,10 +79,14 @@ async def box_detail(
     entry_tune_ids = {e.tune_id for e in box.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
+    addable_tunes_json = json.dumps([
+        {"id": t.id, "label": f"{t.title} — {t.tune_type.label}"}
+        for t in addable_tunes
+    ])
     return templates.TemplateResponse(
         request,
         "boxes/detail.html",
-        {"box": box, "addable_tunes": addable_tunes},
+        {"box": box, "addable_tunes": addable_tunes, "addable_tunes_json": addable_tunes_json},
     )
 
 
