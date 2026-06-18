@@ -62,6 +62,7 @@
     window.__cairnAddableTunes = {{ addable_tunes_json | safe }};
     window.__cairnSettings     = {{ settings_by_tune_id | safe }};
     window.__cairnBoxSettings  = {{ box_setting_by_tune_id | safe }};
+    window.__cairnBoxTuneIds   = new Set({{ box_tune_ids_json | safe }});
   </script>
   <section>
     <h2 class="text-xl font-semibold text-stone-700 mb-3">Add a Tune</h2>
@@ -77,9 +78,12 @@
                selectedId: null,
                selectedSettingId: '',
                open: false,
+               boxOnly: true,
                get filtered() {
                  const q = this.query.toLowerCase();
-                 return (q ? this.tunes.filter(t => t.label.toLowerCase().includes(q)) : this.tunes).slice(0, 50);
+                 let list = q ? this.tunes.filter(t => t.label.toLowerCase().includes(q)) : this.tunes;
+                 if (this.boxOnly) list = list.filter(t => window.__cairnBoxTuneIds.has(t.id));
+                 return list.slice(0, 50);
                },
                get availableSettings() { return (window.__cairnSettings[this.selectedId] || []); },
                pick(tune) {
@@ -94,6 +98,10 @@
              @cairn-tune-added.window="tunes=tunes.filter(t=>t.id!==$event.detail.id); query=''; selectedId=null; selectedSettingId=''; open=false"
              @cairn-tune-removed.window="tunes=[...tunes,{id:$event.detail.id,label:$event.detail.label}].sort((a,b)=>a.label.localeCompare(b.label))"
              class="contents">
+          <label class="w-full flex items-center gap-2 text-sm text-stone-600 mb-3 cursor-pointer select-none">
+            <input type="checkbox" x-model="boxOnly" class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+            Only in {{ box_name }}?
+          </label>
           <div class="flex-1 min-w-48 relative" @click.outside="open=false">
             <label class="block text-xs font-medium text-stone-500 mb-1">Tune</label>
             <input type="text"
