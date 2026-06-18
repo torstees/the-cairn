@@ -142,7 +142,7 @@ async def box_set_setting(
     entry = await get_box_entry(db, box_id, tune_id)
 
     affected = []
-    if old_setting_id is not None and old_setting_id != sid:
+    if old_setting_id != sid:
         affected = await find_list_entries_by_setting(db, tune_id, box_id, old_setting_id)
 
     if not affected:

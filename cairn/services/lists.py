@@ -175,7 +175,7 @@ async def find_list_entries_by_setting(
     db: AsyncSession,
     tune_id: int,
     box_id: int,
-    setting_id: int,
+    setting_id: int | None,
 ) -> list[TuneListEntry]:
     stmt = (
         select(TuneListEntry)

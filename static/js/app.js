@@ -527,6 +527,24 @@
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
 
+  window.cairnApplySettingChange = function (btn) {
+    var form = btn.closest("form");
+    if (!form) return;
+    var url = btn.dataset.url;
+    if (!url) return;
+    var fd = new FormData(form);
+    btn.disabled = true;
+    fetch(url, {method: "POST", body: fd})
+      .then(function (r) {
+        if (r.ok) {
+          var m = document.getElementById("box-setting-modal");
+          if (m) m.innerHTML = "";
+        }
+      })
+      .catch(function () {})
+      .finally(function () { btn.disabled = false; });
+  };
+
   // ── init ───────────────────────────────────────────────────────────────────
 
   document.addEventListener("DOMContentLoaded", function () {
