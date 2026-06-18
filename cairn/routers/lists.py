@@ -151,11 +151,13 @@ async def list_detail(
         for t in addable_tunes
     })
     box = await get_box_detail(db, practice_list.box_id)
+    box_entries = box.entries if box else []
     box_setting_by_tune_id = json.dumps({
         e.tune_id: e.setting_id
-        for e in (box.entries if box else [])
+        for e in box_entries
         if e.setting_id is not None
     })
+    box_tune_ids_json = json.dumps([e.tune_id for e in box_entries])
     return templates.TemplateResponse(
         request,
         "lists/detail.html",
@@ -165,6 +167,8 @@ async def list_detail(
             "addable_tunes_json": addable_tunes_json,
             "settings_by_tune_id": settings_by_tune_id,
             "box_setting_by_tune_id": box_setting_by_tune_id,
+            "box_tune_ids_json": box_tune_ids_json,
+            "box_name": box.name if box else "",
         },
     )
 
