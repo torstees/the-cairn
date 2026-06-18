@@ -527,24 +527,6 @@
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
 
-  window.cairnApplySettingChange = function (btn) {
-    var form = btn.closest("form");
-    if (!form) return;
-    var url = btn.dataset.url;
-    if (!url) return;
-    var fd = new FormData(form);
-    btn.disabled = true;
-    fetch(url, {method: "POST", body: fd})
-      .then(function (r) {
-        if (r.ok) {
-          var m = document.getElementById("box-setting-modal");
-          if (m) m.innerHTML = "";
-        }
-      })
-      .catch(function () {})
-      .finally(function () { btn.disabled = false; });
-  };
-
   // ── init ───────────────────────────────────────────────────────────────────
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -556,6 +538,31 @@
         var m = document.getElementById("box-setting-modal");
         if (m && m.innerHTML.trim()) m.innerHTML = "";
       }
+    });
+
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-propagate-url]");
+      if (!btn) return;
+      var url = btn.dataset.propagateUrl;
+      var form = btn.closest("form");
+      var params = new URLSearchParams();
+      if (form) {
+        var si = form.querySelector('input[name="setting_id"]');
+        if (si) params.append("setting_id", si.value);
+        form.querySelectorAll('input[name="list_ids"]:checked').forEach(function (cb) {
+          params.append("list_ids", cb.value);
+        });
+      }
+      btn.disabled = true;
+      fetch(url, { method: "POST", body: params })
+        .then(function (r) {
+          if (r.ok) {
+            var m = document.getElementById("box-setting-modal");
+            if (m) m.innerHTML = "";
+          }
+        })
+        .catch(function () {})
+        .finally(function () { btn.disabled = false; });
     });
 
     document.addEventListener("htmx:afterSwap", function () {
