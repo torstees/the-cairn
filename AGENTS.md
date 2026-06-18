@@ -518,6 +518,8 @@ A task is complete when:
 7. All new enums have a `.label` property
 8. No rule in "What the Agent Must Not Do" has been violated
 9. The agent has not split `models.py` unless the split rule threshold was reached
+10. The corresponding `TODO.md` item is marked `[x]`
+11. `DESIGN.md` is updated if the task changes the architecture, data model, key patterns, or domain invariants
 
 ---
 
