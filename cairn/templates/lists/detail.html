@@ -92,6 +92,7 @@
                }
              }"
              @cairn-tune-added.window="tunes=tunes.filter(t=>t.id!==$event.detail.id); query=''; selectedId=null; selectedSettingId=''; open=false"
+             @cairn-tune-removed.window="tunes=[...tunes,{id:$event.detail.id,label:$event.detail.label}].sort((a,b)=>a.label.localeCompare(b.label))"
              class="contents">
           <div class="flex-1 min-w-48 relative" @click.outside="open=false">
             <label class="block text-xs font-medium text-stone-500 mb-1">Tune</label>
