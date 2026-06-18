@@ -63,87 +63,151 @@
     window.__cairnSettings     = {{ settings_by_tune_id | safe }};
     window.__cairnBoxSettings  = {{ box_setting_by_tune_id | safe }};
     window.__cairnBoxTuneIds   = new Set({{ box_tune_ids_json | safe }});
+    window.__cairnBoxName      = {{ box_name | tojson }};
   </script>
-  <section>
+  <section x-data="{
+             tunes: window.__cairnAddableTunes || [],
+             query: '',
+             selectedId: null,
+             selectedSettingId: '',
+             open: false,
+             boxOnly: true,
+             showModal: false,
+             dontAskAgain: false,
+             get pref() { return localStorage.getItem('cairn-box-add-pref') || 'ask'; },
+             setPref(v) { localStorage.setItem('cairn-box-add-pref', v); },
+             get filtered() {
+               const q = this.query.toLowerCase();
+               let list = q ? this.tunes.filter(t => t.label.toLowerCase().includes(q)) : this.tunes;
+               if (this.boxOnly) list = list.filter(t => window.__cairnBoxTuneIds.has(t.id));
+               return list.slice(0, 50);
+             },
+             get availableSettings() { return window.__cairnSettings[this.selectedId] || []; },
+             get modalMessage() {
+               return '“' + this.query + '” is not in ' + (window.__cairnBoxName || 'the box') + '. Add it to the box as well?';
+             },
+             pick(tune) {
+               this.selectedId = tune.id;
+               this.query = tune.label;
+               this.open = false;
+               const boxPref = window.__cairnBoxSettings[tune.id];
+               const avail = window.__cairnSettings[tune.id] || [];
+               this.selectedSettingId = (boxPref && avail.some(s => s.id === boxPref)) ? String(boxPref) : '';
+             },
+             async addToBox() {
+               const fd = new FormData();
+               fd.append('tune_id', this.selectedId);
+               await fetch('/boxes/{{ practice_list.box_id }}/tunes', {method: 'POST', body: fd}).catch(() => {});
+               window.__cairnBoxTuneIds.add(this.selectedId);
+             },
+             async submitListAdd() {
+               const tuneId = this.selectedId;
+               await htmx.ajax('POST', '/lists/{{ practice_list.id }}/tunes', {
+                 target: '#list-entries-body',
+                 swap: 'beforeend',
+                 values: {tune_id: tuneId, setting_id: this.selectedSettingId || ''},
+               });
+               window.dispatchEvent(new CustomEvent('cairn-tune-added', {detail: {id: tuneId}}));
+             },
+             async handleAdd() {
+               if (!this.selectedId) return;
+               if (window.__cairnBoxTuneIds.has(this.selectedId) || this.pref === 'never') {
+                 await this.submitListAdd(); return;
+               }
+               if (this.pref === 'always') {
+                 await this.addToBox(); await this.submitListAdd(); return;
+               }
+               this.dontAskAgain = false;
+               this.showModal = true;
+             },
+             async confirmYes() {
+               if (this.dontAskAgain) this.setPref('always');
+               this.showModal = false;
+               await this.addToBox();
+               await this.submitListAdd();
+             },
+             async confirmNo() {
+               if (this.dontAskAgain) this.setPref('never');
+               this.showModal = false;
+               await this.submitListAdd();
+             },
+             cancelModal() { this.showModal = false; }
+           }"
+           @cairn-tune-added.window="tunes=tunes.filter(t=>t.id!==$event.detail.id); query=''; selectedId=null; selectedSettingId=''; open=false"
+           @cairn-tune-removed.window="tunes=[...tunes,{id:$event.detail.id,label:$event.detail.label}].sort((a,b)=>a.label.localeCompare(b.label))"
+           @keydown.escape.window="if(showModal) cancelModal()">
     <h2 class="text-xl font-semibold text-stone-700 mb-3">Add a Tune</h2>
     <div class="bg-white rounded-lg shadow-sm p-4">
-      <form hx-post="/lists/{{ practice_list.id }}/tunes"
-            hx-target="#list-entries-body"
-            hx-swap="beforeend"
-            hx-on::after-request="if(event.detail.successful){ var n=this.querySelector('[name=tune_id]'); if(n&&n.value) window.dispatchEvent(new CustomEvent('cairn-tune-added',{detail:{id:parseInt(n.value)}})); }"
-            class="flex gap-3 items-end flex-wrap">
-        <div x-data="{
-               tunes: window.__cairnAddableTunes || [],
-               query: '',
-               selectedId: null,
-               selectedSettingId: '',
-               open: false,
-               boxOnly: true,
-               get filtered() {
-                 const q = this.query.toLowerCase();
-                 let list = q ? this.tunes.filter(t => t.label.toLowerCase().includes(q)) : this.tunes;
-                 if (this.boxOnly) list = list.filter(t => window.__cairnBoxTuneIds.has(t.id));
-                 return list.slice(0, 50);
-               },
-               get availableSettings() { return (window.__cairnSettings[this.selectedId] || []); },
-               pick(tune) {
-                 this.selectedId = tune.id;
-                 this.query = tune.label;
-                 this.open = false;
-                 const boxPref = window.__cairnBoxSettings[tune.id];
-                 const avail = window.__cairnSettings[tune.id] || [];
-                 this.selectedSettingId = (boxPref && avail.some(s => s.id === boxPref)) ? String(boxPref) : '';
-               }
-             }"
-             @cairn-tune-added.window="tunes=tunes.filter(t=>t.id!==$event.detail.id); query=''; selectedId=null; selectedSettingId=''; open=false"
-             @cairn-tune-removed.window="tunes=[...tunes,{id:$event.detail.id,label:$event.detail.label}].sort((a,b)=>a.label.localeCompare(b.label))"
-             class="contents">
-          <label class="w-full flex items-center gap-2 text-sm text-stone-600 mb-3 cursor-pointer select-none">
-            <input type="checkbox" x-model="boxOnly" class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
-            Only in {{ box_name }}?
+      <form @submit.prevent="handleAdd()" class="flex gap-3 items-end flex-wrap">
+        <label class="w-full flex items-center gap-2 text-sm text-stone-600 mb-3 cursor-pointer select-none">
+          <input type="checkbox" x-model="boxOnly" class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+          Only in {{ box_name }}?
+        </label>
+        <div class="flex-1 min-w-48 relative" @click.outside="open=false">
+          <label class="block text-xs font-medium text-stone-500 mb-1">Tune</label>
+          <input type="text"
+                 x-model="query"
+                 @focus="open=true"
+                 @input="open=true; selectedId=null; selectedSettingId=''"
+                 @keydown.enter.prevent="open && filtered.length && pick(filtered[0])"
+                 @keydown.escape.stop="open=false"
+                 autocomplete="off"
+                 placeholder="Search tunes…"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400">
+          <input type="hidden" name="tune_id" :value="selectedId ?? ''">
+          <ul x-show="open && filtered.length > 0"
+              x-cloak
+              class="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+            <template x-for="tune in filtered" :key="tune.id">
+              <li @click="pick(tune)"
+                  class="px-3 py-2 text-sm text-stone-800 hover:bg-stone-100 cursor-pointer"
+                  x-text="tune.label"></li>
+            </template>
+          </ul>
+        </div>
+        <div class="flex-1 min-w-40" x-show="availableSettings.length > 0" x-cloak>
+          <label class="block text-xs font-medium text-stone-500 mb-1">
+            Setting <span class="font-normal text-stone-400">(optional)</span>
           </label>
-          <div class="flex-1 min-w-48 relative" @click.outside="open=false">
-            <label class="block text-xs font-medium text-stone-500 mb-1">Tune</label>
-            <input type="text"
-                   x-model="query"
-                   @focus="open=true"
-                   @input="open=true; selectedId=null; selectedSettingId=''"
-                   @keydown.enter.prevent="open && filtered.length && pick(filtered[0])"
-                   @keydown.escape="open=false"
-                   autocomplete="off"
-                   placeholder="Search tunes…"
-                   class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400">
-            <input type="hidden" name="tune_id" :value="selectedId ?? ''">
-            <ul x-show="open && filtered.length > 0"
-                x-cloak
-                class="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
-              <template x-for="tune in filtered" :key="tune.id">
-                <li @click="pick(tune)"
-                    class="px-3 py-2 text-sm text-stone-800 hover:bg-stone-100 cursor-pointer"
-                    x-text="tune.label"></li>
-              </template>
-            </ul>
-          </div>
-          <div class="flex-1 min-w-40" x-show="availableSettings.length > 0" x-cloak>
-            <label class="block text-xs font-medium text-stone-500 mb-1">
-              Setting <span class="font-normal text-stone-400">(optional)</span>
-            </label>
-            <select name="setting_id"
-                    x-model="selectedSettingId"
-                    class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
-              <option value="">— core setting —</option>
-              <template x-for="s in availableSettings" :key="s.id">
-                <option :value="s.id" x-text="s.label"></option>
-              </template>
-            </select>
-          </div>
-          <button type="submit"
-                  :disabled="!selectedId"
-                  class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-            Add
+          <select name="setting_id"
+                  x-model="selectedSettingId"
+                  class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
+            <option value="">— core setting —</option>
+            <template x-for="s in availableSettings" :key="s.id">
+              <option :value="s.id" x-text="s.label"></option>
+            </template>
+          </select>
+        </div>
+        <button type="submit"
+                :disabled="!selectedId"
+                class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+          Add
+        </button>
+      </form>
+    </div>
+
+    {# Box-add confirmation modal #}
+    <div x-show="showModal"
+         x-cloak
+         @click.self="cancelModal()"
+         class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4 w-full">
+        <p class="text-stone-800 mb-4" x-text="modalMessage"></p>
+        <label class="flex items-center gap-2 text-sm text-stone-500 mb-5 cursor-pointer select-none">
+          <input type="checkbox" x-model="dontAskAgain" class="rounded border-stone-300">
+          Don't ask me again
+        </label>
+        <div class="flex gap-3 justify-end">
+          <button @click="confirmNo()"
+                  class="px-4 py-2 text-sm font-medium text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">
+            No, list only
+          </button>
+          <button @click="confirmYes()"
+                  class="px-4 py-2 text-sm font-medium text-white bg-stone-700 rounded-lg hover:bg-stone-600">
+            Yes, add to box
           </button>
         </div>
-      </form>
+      </div>
     </div>
   </section>
   {% else %}
