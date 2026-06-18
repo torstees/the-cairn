@@ -1,0 +1,38 @@
+<div id="box-setting-modal" hx-swap-oob="true">
+  <div x-data="{ open: true }"
+       x-show="open"
+       @click.self="open=false"
+       @keydown.escape.window="open=false"
+       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 w-full">
+      <h3 class="text-lg font-semibold text-stone-800 mb-2">Update list settings?</h3>
+      <p class="text-sm text-stone-600 mb-4">
+        You changed the preferred setting for <strong>{{ tune_title }}</strong> in
+        <strong>{{ box_name }}</strong>. The following lists also have that setting pinned:
+      </p>
+      <form hx-post="/boxes/{{ box_id }}/tunes/{{ tune_id }}/propagate-setting"
+            hx-swap="none"
+            @submit="open=false">
+        <input type="hidden" name="setting_id" value="{{ new_setting_id if new_setting_id is not none else '' }}">
+        {% for entry in affected_entries %}
+        <label class="flex items-center gap-2 text-sm text-stone-700 mb-2 cursor-pointer select-none">
+          <input type="checkbox" name="list_ids" value="{{ entry.list_id }}" checked
+                 class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+          {{ entry.practice_list.name }}
+        </label>
+        {% endfor %}
+        <div class="flex gap-3 justify-end mt-5">
+          <button type="button"
+                  @click="open=false"
+                  class="px-4 py-2 text-sm font-medium text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 text-sm font-medium text-white bg-stone-700 rounded-lg hover:bg-stone-600">
+            Apply to selected
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

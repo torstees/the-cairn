@@ -171,6 +171,46 @@ async def update_list_entry_setting(
     return await get_list_entry(db, list_id, tune_id)
 
 
+async def find_list_entries_by_setting(
+    db: AsyncSession,
+    tune_id: int,
+    box_id: int,
+    setting_id: int,
+) -> list[TuneListEntry]:
+    stmt = (
+        select(TuneListEntry)
+        .join(PracticeList, TuneListEntry.list_id == PracticeList.id)
+        .where(
+            TuneListEntry.tune_id == tune_id,
+            TuneListEntry.setting_id == setting_id,
+            PracticeList.box_id == box_id,
+        )
+        .options(selectinload(TuneListEntry.practice_list))
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def bulk_update_list_entry_setting(
+    db: AsyncSession,
+    tune_id: int,
+    list_ids: list[int],
+    setting_id: int | None,
+) -> None:
+    for list_id in list_ids:
+        result = await db.execute(
+            select(TuneListEntry).where(
+                TuneListEntry.list_id == list_id,
+                TuneListEntry.tune_id == tune_id,
+            )
+        )
+        entry = result.scalar_one_or_none()
+        if entry is not None:
+            entry.setting_id = setting_id
+            db.add(entry)
+    await db.commit()
+
+
 async def remove_tune_from_list(db: AsyncSession, list_id: int, tune_id: int) -> bool:
     stmt = select(TuneListEntry).where(
         TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id
