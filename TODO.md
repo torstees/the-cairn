@@ -406,7 +406,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   - `DELETE /lists/{id}/tunes/{tune_id}` — remove from list (HTMX)
   Add a "Lists" link to `base.html` nav.
 
-- [ ] **4.5 — SettingProgress model and service integration**
+- [x] **4.5 — SettingProgress model and service integration**
   New model in `cairn/models.py`:
 
   `SettingProgress`: id, user_id FK, setting_id FK, box_id FK, status
@@ -427,6 +427,15 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
   Generate Alembic migration.
   Add tests in `tests/test_services/test_spaced_rep.py`.
+
+- [ ] **4.5b — Setting picker for list entries**
+  Update the add-tune form on `lists/detail.html` to include an optional setting
+  dropdown alongside the tune picker. When the tune selection changes, an HTMX
+  request fetches the non-core settings for that tune and populates the setting
+  dropdown (hidden if the tune has no non-core settings). The selected setting is
+  submitted with `tune_id` in `POST /lists/{id}/tunes` and stored as
+  `TuneListEntry.setting_id`. No new service functions needed — `add_tune_to_list`
+  already accepts `setting_id`.
 
 ---
 
