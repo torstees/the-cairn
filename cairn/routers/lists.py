@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
@@ -16,8 +18,9 @@ from cairn.services.lists import (
     list_lists,
     remove_tune_from_list,
     update_list,
+    update_list_entry_setting,
 )
-from cairn.services.boxes import list_boxes
+from cairn.services.boxes import get_box_detail, list_boxes
 from cairn.services.tunes import list_tunes
 from cairn.templating import templates
 
@@ -136,17 +139,32 @@ async def list_detail(
     entry_tune_ids = {e.tune_id for e in practice_list.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
-    settings_by_tune_id = {
-        t.id: [{"id": s.id, "label": s.label} for s in t.settings if not s.is_core]
+    addable_tunes_json = json.dumps([
+        {"id": t.id, "label": f"{t.title} — {t.tune_type.label}"}
         for t in addable_tunes
-    }
+    ])
+    settings_by_tune_id = json.dumps({
+        t.id: [
+            {"id": s.id, "label": s.label + (f" ({s.instrument.label})" if s.instrument else "")}
+            for s in t.settings if not s.is_core
+        ]
+        for t in addable_tunes
+    })
+    box = await get_box_detail(db, practice_list.box_id)
+    box_setting_by_tune_id = json.dumps({
+        e.tune_id: e.setting_id
+        for e in (box.entries if box else [])
+        if e.setting_id is not None
+    })
     return templates.TemplateResponse(
         request,
         "lists/detail.html",
         {
             "practice_list": practice_list,
             "addable_tunes": addable_tunes,
+            "addable_tunes_json": addable_tunes_json,
             "settings_by_tune_id": settings_by_tune_id,
+            "box_setting_by_tune_id": box_setting_by_tune_id,
         },
     )
 
@@ -202,6 +220,25 @@ async def list_add_tune(
     except IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Tune already in list") from exc
     entry = await get_list_entry(db, list_id, tune_id)
+    return templates.TemplateResponse(
+        request,
+        "lists/partials/_entry_row.html",
+        {"entry": entry, "list_id": list_id},
+    )
+
+
+@router.post("/{list_id}/tunes/{tune_id}/setting")
+async def list_set_entry_setting(
+    request: Request,
+    list_id: int,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    setting_id: str = Form(default=""),
+) -> Response:
+    sid = int(setting_id) if setting_id else None
+    entry = await update_list_entry_setting(db, list_id, tune_id, sid)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Entry not found")
     return templates.TemplateResponse(
         request,
         "lists/partials/_entry_row.html",
