@@ -533,6 +533,13 @@
     renderScore();
     initFormPreview();
 
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        var m = document.getElementById("box-setting-modal");
+        if (m && m.innerHTML.trim()) m.innerHTML = "";
+      }
+    });
+
     document.addEventListener("htmx:afterSwap", function () {
       if (activeSettingId !== null) {
         // Re-render the main score from the refreshed abc-setting-{id} template

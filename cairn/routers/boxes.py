@@ -177,4 +177,4 @@ async def box_propagate_setting(
 ) -> Response:
     sid = int(setting_id) if setting_id else None
     await bulk_update_list_entry_setting(db, tune_id, list_ids, sid)
-    return Response(status_code=204)
+    return Response(content='<div id="box-setting-modal"></div>', media_type="text/html")
