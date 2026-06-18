@@ -39,7 +39,7 @@
         <thead class="bg-stone-50 border-b border-stone-200">
           <tr>
             <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Tune</th>
-            <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Type</th>
+            <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Setting</th>
             <th class="py-2 px-4"></th>
           </tr>
         </thead>
@@ -58,31 +58,82 @@
 
   {# ── Add tune ───────────────────────────────────────────────────────────── #}
   {% if addable_tunes %}
+  <script>
+    window.__cairnAddableTunes = {{ addable_tunes_json | safe }};
+    window.__cairnSettings     = {{ settings_by_tune_id | safe }};
+    window.__cairnBoxSettings  = {{ box_setting_by_tune_id | safe }};
+  </script>
   <section>
     <h2 class="text-xl font-semibold text-stone-700 mb-3">Add a Tune</h2>
     <div class="bg-white rounded-lg shadow-sm p-4">
-      <form x-data="{ selectedId: '' }"
-            hx-post="/lists/{{ practice_list.id }}/tunes"
+      <form hx-post="/lists/{{ practice_list.id }}/tunes"
             hx-target="#list-entries-body"
             hx-swap="beforeend"
-            hx-on::after-request="if(event.detail.successful){ this.reset(); selectedId = ''; }"
+            hx-on::after-request="if(event.detail.successful){ var n=this.querySelector('[name=tune_id]'); if(n&&n.value) window.dispatchEvent(new CustomEvent('cairn-tune-added',{detail:{id:parseInt(n.value)}})); }"
             class="flex gap-3 items-end flex-wrap">
-        <div class="flex-1 min-w-48">
-          <label class="block text-xs font-medium text-stone-500 mb-1" for="tune_id">Tune</label>
-          <select id="tune_id" name="tune_id"
-                  x-model="selectedId"
-                  class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
-            <option value="">— select —</option>
-            {% for tune in addable_tunes %}
-            <option value="{{ tune.id }}">{{ tune.title }} — {{ tune.tune_type.label }}</option>
-            {% endfor %}
-          </select>
+        <div x-data="{
+               tunes: window.__cairnAddableTunes || [],
+               query: '',
+               selectedId: null,
+               selectedSettingId: '',
+               open: false,
+               get filtered() {
+                 const q = this.query.toLowerCase();
+                 return (q ? this.tunes.filter(t => t.label.toLowerCase().includes(q)) : this.tunes).slice(0, 50);
+               },
+               get availableSettings() { return (window.__cairnSettings[this.selectedId] || []); },
+               pick(tune) {
+                 this.selectedId = tune.id;
+                 this.query = tune.label;
+                 this.open = false;
+                 const boxPref = window.__cairnBoxSettings[tune.id];
+                 const avail = window.__cairnSettings[tune.id] || [];
+                 this.selectedSettingId = (boxPref && avail.some(s => s.id === boxPref)) ? String(boxPref) : '';
+               }
+             }"
+             @cairn-tune-added.window="tunes=tunes.filter(t=>t.id!==$event.detail.id); query=''; selectedId=null; selectedSettingId=''; open=false"
+             class="contents">
+          <div class="flex-1 min-w-48 relative" @click.outside="open=false">
+            <label class="block text-xs font-medium text-stone-500 mb-1">Tune</label>
+            <input type="text"
+                   x-model="query"
+                   @focus="open=true"
+                   @input="open=true; selectedId=null; selectedSettingId=''"
+                   @keydown.enter.prevent="open && filtered.length && pick(filtered[0])"
+                   @keydown.escape="open=false"
+                   autocomplete="off"
+                   placeholder="Search tunes…"
+                   class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400">
+            <input type="hidden" name="tune_id" :value="selectedId ?? ''">
+            <ul x-show="open && filtered.length > 0"
+                x-cloak
+                class="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+              <template x-for="tune in filtered" :key="tune.id">
+                <li @click="pick(tune)"
+                    class="px-3 py-2 text-sm text-stone-800 hover:bg-stone-100 cursor-pointer"
+                    x-text="tune.label"></li>
+              </template>
+            </ul>
+          </div>
+          <div class="flex-1 min-w-40" x-show="availableSettings.length > 0" x-cloak>
+            <label class="block text-xs font-medium text-stone-500 mb-1">
+              Setting <span class="font-normal text-stone-400">(optional)</span>
+            </label>
+            <select name="setting_id"
+                    x-model="selectedSettingId"
+                    class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
+              <option value="">— core setting —</option>
+              <template x-for="s in availableSettings" :key="s.id">
+                <option :value="s.id" x-text="s.label"></option>
+              </template>
+            </select>
+          </div>
+          <button type="submit"
+                  :disabled="!selectedId"
+                  class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+            Add
+          </button>
         </div>
-        <button type="submit"
-                :disabled="!selectedId"
-                class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-          Add
-        </button>
       </form>
     </div>
   </section>

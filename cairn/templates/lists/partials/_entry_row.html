@@ -1,9 +1,31 @@
-<tr id="entry-row-{{ entry.tune_id }}">
-  <td class="py-2 px-4 text-stone-800">
-    <a href="/tunes/{{ entry.tune.id }}" class="hover:underline">{{ entry.tune.title }}</a>
+<tr id="entry-row-{{ entry.tune_id }}" class="border-b border-stone-100 hover:bg-stone-50">
+  <td class="py-3 px-4 text-stone-800">
+    <a href="/tunes/{{ entry.tune.id }}" class="font-medium hover:underline">{{ entry.tune.title }}</a>
+    <p class="text-xs text-stone-400 mt-0.5">{{ entry.tune.tune_type.label }}</p>
   </td>
-  <td class="py-2 px-4 text-stone-500 text-xs">{{ entry.tune.tune_type.label }}</td>
-  <td class="py-2 px-4 text-right">
+  <td class="py-3 px-4">
+    {% set non_core = entry.tune.settings | selectattr('is_core', 'false') | list %}
+    {% if non_core %}
+    <select name="setting_id"
+            hx-post="/lists/{{ list_id }}/tunes/{{ entry.tune_id }}/setting"
+            hx-target="#entry-row-{{ entry.tune_id }}"
+            hx-swap="outerHTML"
+            hx-trigger="change"
+            class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+      <option value="">Core setting</option>
+      {% for s in entry.tune.settings %}
+      {% if not s.is_core %}
+      <option value="{{ s.id }}" {% if entry.setting_id == s.id %}selected{% endif %}>
+        {{ s.label }}{% if s.instrument %} ({{ s.instrument.label }}){% endif %}
+      </option>
+      {% endif %}
+      {% endfor %}
+    </select>
+    {% else %}
+    <span class="text-xs text-stone-400">—</span>
+    {% endif %}
+  </td>
+  <td class="py-3 px-4 text-right">
     <button hx-delete="/lists/{{ list_id }}/tunes/{{ entry.tune_id }}"
             hx-target="#entry-row-{{ entry.tune_id }}"
             hx-swap="delete"
