@@ -1,7 +1,4 @@
-<tr id="entry-row-{{ entry.tune_id }}"
-    data-tune-id="{{ entry.tune_id }}"
-    data-tune-label="{{ entry.tune.title }} — {{ entry.tune.tune_type.label }}"
-    class="border-b border-stone-100 hover:bg-stone-50">
+<tr id="entry-row-{{ entry.tune_id }}" class="border-b border-stone-100 hover:bg-stone-50">
   <td class="py-3 px-4 text-stone-800">
     <a href="/tunes/{{ entry.tune.id }}" class="font-medium hover:underline">{{ entry.tune.title }}</a>
     <p class="text-xs text-stone-400 mt-0.5">{{ entry.tune.tune_type.label }}</p>
@@ -33,7 +30,7 @@
             hx-target="#entry-row-{{ entry.tune_id }}"
             hx-swap="delete"
             hx-confirm="Remove {{ entry.tune.title }} from this list?"
-            hx-on::after-request="if(event.detail.successful){ const r=this.closest('tr'); window.dispatchEvent(new CustomEvent('cairn-tune-removed',{detail:{id:parseInt(r.dataset.tuneId),label:r.dataset.tuneLabel}})); }"
+            hx-on::after-request="if(event.detail.successful){ window.dispatchEvent(new CustomEvent('cairn-tune-removed',{detail:{id:{{ entry.tune_id }},label:{{ (entry.tune.title + ' — ' + entry.tune.tune_type.label) | tojson }}}})); }"
             class="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-50">
       Remove
     </button>
