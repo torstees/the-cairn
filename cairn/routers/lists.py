@@ -136,10 +136,18 @@ async def list_detail(
     entry_tune_ids = {e.tune_id for e in practice_list.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
+    settings_by_tune_id = {
+        t.id: [{"id": s.id, "label": s.label} for s in t.settings if not s.is_core]
+        for t in addable_tunes
+    }
     return templates.TemplateResponse(
         request,
         "lists/detail.html",
-        {"practice_list": practice_list, "addable_tunes": addable_tunes},
+        {
+            "practice_list": practice_list,
+            "addable_tunes": addable_tunes,
+            "settings_by_tune_id": settings_by_tune_id,
+        },
     )
 
 
@@ -183,12 +191,14 @@ async def list_add_tune(
     list_id: int,
     db: AsyncSession = Depends(get_db),
     tune_id: int = Form(...),
+    setting_id: str = Form(default=""),
 ) -> Response:
     practice_list = await get_list(db, list_id)
     if practice_list is None:
         raise HTTPException(status_code=404, detail="List not found")
+    parsed_setting_id = int(setting_id) if setting_id else None
     try:
-        await add_tune_to_list(db, list_id, tune_id)
+        await add_tune_to_list(db, list_id, tune_id, setting_id=parsed_setting_id)
     except IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Tune already in list") from exc
     entry = await get_list_entry(db, list_id, tune_id)

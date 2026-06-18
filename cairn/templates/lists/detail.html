@@ -58,24 +58,43 @@
 
   {# ── Add tune ───────────────────────────────────────────────────────────── #}
   {% if addable_tunes %}
+  <script>window.__cairnSettings = {{ settings_by_tune_id | tojson }};</script>
   <section>
     <h2 class="text-xl font-semibold text-stone-700 mb-3">Add a Tune</h2>
     <div class="bg-white rounded-lg shadow-sm p-4">
-      <form x-data="{ selectedId: '' }"
+      <form x-data="{
+              selectedId: '',
+              selectedSettingId: '',
+              get availableSettings() { return window.__cairnSettings[this.selectedId] || []; }
+            }"
             hx-post="/lists/{{ practice_list.id }}/tunes"
             hx-target="#list-entries-body"
             hx-swap="beforeend"
-            hx-on::after-request="if(event.detail.successful){ this.reset(); selectedId = ''; }"
+            hx-on::after-request="if(event.detail.successful){ this.reset(); selectedId = ''; selectedSettingId = ''; }"
             class="flex gap-3 items-end flex-wrap">
         <div class="flex-1 min-w-48">
           <label class="block text-xs font-medium text-stone-500 mb-1" for="tune_id">Tune</label>
           <select id="tune_id" name="tune_id"
                   x-model="selectedId"
+                  @change="selectedSettingId = ''"
                   class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
             <option value="">— select —</option>
             {% for tune in addable_tunes %}
             <option value="{{ tune.id }}">{{ tune.title }} — {{ tune.tune_type.label }}</option>
             {% endfor %}
+          </select>
+        </div>
+        <div class="flex-1 min-w-40" x-show="availableSettings.length > 0" x-cloak>
+          <label class="block text-xs font-medium text-stone-500 mb-1" for="setting_id">
+            Setting <span class="font-normal text-stone-400">(optional)</span>
+          </label>
+          <select id="setting_id" name="setting_id"
+                  x-model="selectedSettingId"
+                  class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
+            <option value="">— any setting —</option>
+            <template x-for="s in availableSettings" :key="s.id">
+              <option :value="s.id" x-text="s.label"></option>
+            </template>
           </select>
         </div>
         <button type="submit"
