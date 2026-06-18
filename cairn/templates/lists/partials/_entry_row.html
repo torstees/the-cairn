@@ -1,9 +1,11 @@
 <tr id="entry-row-{{ entry.tune_id }}"
+    data-tune-label="{{ entry.tune.title }} — {{ entry.tune.tune_type.label }}"
     x-data="{
       remove() {
-        if (!confirm('Remove {{ entry.tune.title | replace("'", "\\'") }} from this list?')) return;
-        window.dispatchEvent(new CustomEvent('cairn-tune-removed', {detail: {id: {{ entry.tune_id }}, label: {{ (entry.tune.title + ' — ' + entry.tune.tune_type.label) | tojson }}}}));
-        htmx.ajax('DELETE', '/lists/{{ list_id }}/tunes/{{ entry.tune_id }}', {target: '#entry-row-{{ entry.tune_id }}', swap: 'delete'});
+        const title = $el.querySelector('a').textContent;
+        if (!confirm('Remove ' + title + ' from this list?')) return;
+        window.dispatchEvent(new CustomEvent('cairn-tune-removed', {detail: {id: {{ entry.tune_id }}, label: $el.dataset.tuneLabel}}));
+        htmx.ajax('DELETE', '/lists/{{ list_id }}/tunes/{{ entry.tune_id }}', {target: $el, swap: 'delete'});
       }
     }"
     class="border-b border-stone-100 hover:bg-stone-50">
