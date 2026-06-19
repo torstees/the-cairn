@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 from sqlalchemy import select, update
@@ -5,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from cairn.models import PracticeList, PracticeListType, ProgressStatus, Tune, TuneListEntry
+
+logger = logging.getLogger(__name__)
 
 
 async def create_list(
@@ -158,9 +161,7 @@ async def update_list_entry_setting(
     setting_id: int | None,
 ) -> TuneListEntry | None:
     result = await db.execute(
-        select(TuneListEntry).where(
-            TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id
-        )
+        select(TuneListEntry).where(TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id)
     )
     entry = result.scalar_one_or_none()
     if entry is None:
@@ -198,9 +199,8 @@ async def bulk_update_list_entry_setting(
     setting_id: int | None,
 ) -> None:
     if not list_ids:
-        print(f"DEBUG bulk_update: no list_ids, skipping", flush=True)
         return
-    print(f"DEBUG bulk_update: tune={tune_id} list_ids={list_ids} setting_id={setting_id!r}", flush=True)
+    logger.debug("bulk update setting: tune=%s lists=%s setting_id=%r", tune_id, list_ids, setting_id)
     stmt = (
         update(TuneListEntry)
         .where(
@@ -211,14 +211,12 @@ async def bulk_update_list_entry_setting(
         .execution_options(synchronize_session=False)
     )
     result = await db.execute(stmt)
-    print(f"DEBUG bulk_update: rows affected={result.rowcount}", flush=True)
+    logger.debug("bulk update setting: %s row(s) affected", result.rowcount)
     await db.commit()
 
 
 async def remove_tune_from_list(db: AsyncSession, list_id: int, tune_id: int) -> bool:
-    stmt = select(TuneListEntry).where(
-        TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id
-    )
+    stmt = select(TuneListEntry).where(TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id)
     result = await db.execute(stmt)
     entry = result.scalar_one_or_none()
     if entry is None:

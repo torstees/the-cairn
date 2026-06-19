@@ -465,6 +465,50 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
 
 ---
 
+## Logging
+
+Logging is configured in `cairn/logging_config.py` and initialised once at startup in `main.py`.
+
+### Per-module logger
+
+Every module that logs gets its own logger at the top of the file:
+
+```python
+import logging
+logger = logging.getLogger(__name__)
+```
+
+Never call `logging.info()` / `logging.debug()` directly — always use the module logger.
+
+### Log levels
+
+| Level | When to use |
+|---|---|
+| `DEBUG` | Diagnostic detail useful during development (query parameters, row counts, branch taken) |
+| `INFO` | Normal business events worth knowing about in production (setting changed, tune added to list) |
+| `WARNING` | Unexpected but recoverable conditions |
+| `ERROR` | Failures that need investigation |
+
+### Structured extra fields
+
+Pass domain context as `extra={}` so it is indexed in Cloud Logging:
+
+```python
+logger.info("setting propagated", extra={"tune_id": tune_id, "list_ids": list_ids})
+```
+
+### Environment detection
+
+| Environment | Output |
+|---|---|
+| GCP (Cloud Run, App Engine, etc.) | Structured JSON to stdout; ingested by Cloud Logging |
+| Local interactive shell with `rich` | Rich pretty-printer with tracebacks |
+| Non-interactive / CI | Plain timestamped text |
+
+Set `CAIRN_LOG_LEVEL` env var to override the default `INFO` level.
+
+---
+
 ## Git Workflow
 
 - Always create a feature branch before committing (`git checkout -b fix/<slug>` or `feature/<slug>`)

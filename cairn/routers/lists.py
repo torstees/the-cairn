@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
 from cairn.models import PracticeListType, ProgressStatus
+from cairn.services.boxes import get_box_detail, list_boxes
 from cairn.services.lists import (
     activate_list,
     add_tune_to_list,
@@ -20,7 +21,6 @@ from cairn.services.lists import (
     update_list,
     update_list_entry_setting,
 )
-from cairn.services.boxes import get_box_detail, list_boxes
 from cairn.services.tunes import list_tunes
 from cairn.templating import templates
 
@@ -74,6 +74,7 @@ async def list_create(
     target_date: str = Form(default=""),
 ) -> Response:
     from datetime import date
+
     parsed_date = date.fromisoformat(target_date) if target_date else None
     practice_list = await create_list(
         db,
@@ -120,6 +121,7 @@ async def list_update(
     target_date: str = Form(default=""),
 ) -> Response:
     from datetime import date
+
     parsed_date = date.fromisoformat(target_date) if target_date else None
     practice_list = await update_list(db, list_id, name, list_type, progress_goal, parsed_date)
     if practice_list is None:
@@ -139,24 +141,20 @@ async def list_detail(
     entry_tune_ids = {e.tune_id for e in practice_list.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
-    addable_tunes_json = json.dumps([
-        {"id": t.id, "label": f"{t.title} — {t.tune_type.label}"}
-        for t in addable_tunes
-    ])
-    settings_by_tune_id = json.dumps({
-        t.id: [
-            {"id": s.id, "label": s.label + (f" ({s.instrument.label})" if s.instrument else "")}
-            for s in t.settings if not s.is_core
-        ]
-        for t in addable_tunes
-    })
+    addable_tunes_json = json.dumps([{"id": t.id, "label": f"{t.title} — {t.tune_type.label}"} for t in addable_tunes])
+    settings_by_tune_id = json.dumps(
+        {
+            t.id: [
+                {"id": s.id, "label": s.label + (f" ({s.instrument.label})" if s.instrument else "")}
+                for s in t.settings
+                if not s.is_core
+            ]
+            for t in addable_tunes
+        }
+    )
     box = await get_box_detail(db, practice_list.box_id)
     box_entries = box.entries if box else []
-    box_setting_by_tune_id = json.dumps({
-        e.tune_id: e.setting_id
-        for e in box_entries
-        if e.setting_id is not None
-    })
+    box_setting_by_tune_id = json.dumps({e.tune_id: e.setting_id for e in box_entries if e.setting_id is not None})
     box_tune_ids_json = json.dumps([e.tune_id for e in box_entries])
     return templates.TemplateResponse(
         request,

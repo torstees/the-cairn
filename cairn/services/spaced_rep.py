@@ -9,7 +9,6 @@ from cairn.models import (
     SettingProgress,
     StudentProgress,
     Tune,
-    TuneListEntry,
 )
 
 MIN_EASE_FACTOR = 1.3
@@ -173,11 +172,7 @@ async def _check_repertoire_removal(
     from cairn.services.lists import get_active_list, remove_tune_from_list
 
     active_list = await get_active_list(db, user_id)
-    if (
-        active_list is None
-        or active_list.box_id != box_id
-        or active_list.list_type != PracticeListType.repertoire
-    ):
+    if active_list is None or active_list.box_id != box_id or active_list.list_type != PracticeListType.repertoire:
         return
 
     list_entry = next((e for e in active_list.entries if e.tune_id == tune_id), None)
@@ -252,9 +247,7 @@ async def record_practice(
             None,
         )
         if list_entry is not None:
-            await _advance_setting_progress(
-                db, user_id, list_entry.setting_id, box_id, confidence, record.status
-            )
+            await _advance_setting_progress(db, user_id, list_entry.setting_id, box_id, confidence, record.status)
 
         await _check_repertoire_removal(db, user_id, tune_id, box_id)
 

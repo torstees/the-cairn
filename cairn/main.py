@@ -1,3 +1,5 @@
+import logging
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -5,6 +7,7 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from cairn.logging_config import setup_logging
 from cairn.routers import boxes as boxes_router
 from cairn.routers import difficulty as difficulty_router
 from cairn.routers import lists as lists_router
@@ -13,20 +16,33 @@ from cairn.routers import settings as settings_router
 from cairn.routers import tunes as tunes_router
 from cairn.templating import templates
 
+setup_logging()
+
+logger = logging.getLogger(__name__)
+
 BASE_DIR = Path(__file__).parent
 
 app = FastAPI(title="The Cairn")
 
 
-class NoCacheHTMLMiddleware(BaseHTTPMiddleware):
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
+        start = time.monotonic()
         response = await call_next(request)
+        duration_ms = (time.monotonic() - start) * 1000
+        logger.info(
+            "%s %s %s %.0fms",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
         if "text/html" in response.headers.get("content-type", ""):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
         return response
 
 
-app.add_middleware(NoCacheHTMLMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 app.mount("/static", StaticFiles(directory=BASE_DIR.parent / "static"), name="static")
 

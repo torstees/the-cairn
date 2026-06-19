@@ -2,11 +2,22 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, ProgressStatus, Role, SettingProgress, StudentProgress, TuneBox, TuneType, User
+from cairn.models import (
+    Instrument,
+    KeyMode,
+    KeyRoot,
+    PracticeListType,
+    ProgressStatus,
+    Role,
+    SettingProgress,
+    StudentProgress,
+    TuneBox,
+    TuneType,
+    User,
+)
 from cairn.schemas import TuneCreate
 from cairn.services.boxes import create_box
 from cairn.services.lists import activate_list, add_tune_to_list, create_list
-from cairn.models import PracticeListType
 from cairn.services.spaced_rep import (
     _INITIAL_EASE_FACTOR,
     MIN_EASE_FACTOR,
@@ -468,7 +479,9 @@ async def test_retire_setting_progress_deletes_record(db: AsyncSession) -> None:
     await db.commit()
     await retire_setting_progress(db, u.id, sid, b.id)
     result = await db.execute(
-        __import__("sqlalchemy", fromlist=["select"]).select(SettingProgress).where(
+        __import__("sqlalchemy", fromlist=["select"])
+        .select(SettingProgress)
+        .where(
             SettingProgress.user_id == u.id,
             SettingProgress.setting_id == sid,
             SettingProgress.box_id == b.id,
@@ -496,6 +509,7 @@ async def test_record_practice_creates_setting_progress_when_active_list_has_set
     await _active_list_with_setting(db, u.id, b.id, t.id, sid)
     await record_practice(db, u.id, b.id, t.id, confidence=4)
     from sqlalchemy import select as sa_select
+
     result = await db.execute(
         sa_select(SettingProgress).where(
             SettingProgress.user_id == u.id,
@@ -510,6 +524,7 @@ async def test_record_practice_creates_setting_progress_when_active_list_has_set
 
 async def test_record_practice_advances_setting_progress_on_high_confidence(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     u = await _user(db)
     b = await _box(db, u.id)
     t, sid = await _setting_id(db)
@@ -531,6 +546,7 @@ async def test_record_practice_advances_setting_progress_on_high_confidence(db: 
 
 async def test_record_practice_drops_setting_progress_on_low_confidence(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     u = await _user(db)
     b = await _box(db, u.id)
     t, sid = await _setting_id(db)
@@ -555,6 +571,7 @@ async def test_record_practice_drops_setting_progress_on_low_confidence(db: Asyn
 
 async def test_record_practice_retires_setting_progress_when_caught_up(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     u = await _user(db)
     b = await _box(db, u.id)
     t, sid = await _setting_id(db)
@@ -576,18 +593,18 @@ async def test_record_practice_retires_setting_progress_when_caught_up(db: Async
 
 async def test_record_practice_no_setting_progress_without_active_list(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     u = await _user(db)
     b = await _box(db, u.id)
     t, sid = await _setting_id(db)
     await record_practice(db, u.id, b.id, t.id, confidence=5)
-    result = await db.execute(
-        sa_select(SettingProgress).where(SettingProgress.user_id == u.id)
-    )
+    result = await db.execute(sa_select(SettingProgress).where(SettingProgress.user_id == u.id))
     assert result.scalar_one_or_none() is None
 
 
 async def test_record_practice_no_setting_progress_when_list_entry_has_no_setting(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     u = await _user(db)
     b = await _box(db, u.id)
     t = await _tune(db)
@@ -595,9 +612,7 @@ async def test_record_practice_no_setting_progress_when_list_entry_has_no_settin
     await add_tune_to_list(db, pl.id, t.id)  # no setting_id
     await activate_list(db, u.id, pl.id)
     await record_practice(db, u.id, b.id, t.id, confidence=5)
-    result = await db.execute(
-        sa_select(SettingProgress).where(SettingProgress.user_id == u.id)
-    )
+    result = await db.execute(sa_select(SettingProgress).where(SettingProgress.user_id == u.id))
     assert result.scalar_one_or_none() is None
 
 
@@ -606,12 +621,15 @@ async def test_record_practice_no_setting_progress_when_list_entry_has_no_settin
 
 async def test_set_status_removes_from_repertoire_list_when_goal_met(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     from cairn.models import TuneListEntry
+
     u = await _user(db)
     b = await _box(db, u.id)
     t = await _tune(db)
-    pl = await create_list(db, u.id, b.id, "Repertoire", PracticeListType.repertoire,
-                           progress_goal=ProgressStatus.committed)
+    pl = await create_list(
+        db, u.id, b.id, "Repertoire", PracticeListType.repertoire, progress_goal=ProgressStatus.committed
+    )
     await add_tune_to_list(db, pl.id, t.id)
     await activate_list(db, u.id, pl.id)
     await set_status(db, u.id, b.id, t.id, ProgressStatus.committed)
@@ -623,12 +641,15 @@ async def test_set_status_removes_from_repertoire_list_when_goal_met(db: AsyncSe
 
 async def test_set_status_does_not_remove_when_below_goal(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     from cairn.models import TuneListEntry
+
     u = await _user(db)
     b = await _box(db, u.id)
     t = await _tune(db)
-    pl = await create_list(db, u.id, b.id, "Repertoire", PracticeListType.repertoire,
-                           progress_goal=ProgressStatus.committed)
+    pl = await create_list(
+        db, u.id, b.id, "Repertoire", PracticeListType.repertoire, progress_goal=ProgressStatus.committed
+    )
     await add_tune_to_list(db, pl.id, t.id)
     await activate_list(db, u.id, pl.id)
     await set_status(db, u.id, b.id, t.id, ProgressStatus.nearly_there)
@@ -640,12 +661,15 @@ async def test_set_status_does_not_remove_when_below_goal(db: AsyncSession) -> N
 
 async def test_set_status_does_not_remove_from_woodshed_list(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     from cairn.models import TuneListEntry
+
     u = await _user(db)
     b = await _box(db, u.id)
     t = await _tune(db)
-    pl = await create_list(db, u.id, b.id, "Woodshed", PracticeListType.woodshed,
-                           progress_goal=ProgressStatus.committed)
+    pl = await create_list(
+        db, u.id, b.id, "Woodshed", PracticeListType.woodshed, progress_goal=ProgressStatus.committed
+    )
     await add_tune_to_list(db, pl.id, t.id)
     await activate_list(db, u.id, pl.id)
     await set_status(db, u.id, b.id, t.id, ProgressStatus.committed)

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
@@ -20,6 +21,8 @@ from cairn.services.boxes import (
 from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting
 from cairn.services.tunes import list_tunes
 from cairn.templating import templates
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/boxes", tags=["boxes"])
 
@@ -81,10 +84,7 @@ async def box_detail(
     entry_tune_ids = {e.tune_id for e in box.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
-    addable_tunes_json = json.dumps([
-        {"id": t.id, "label": f"{t.title} — {t.tune_type.label}"}
-        for t in addable_tunes
-    ])
+    addable_tunes_json = json.dumps([{"id": t.id, "label": f"{t.title} — {t.tune_type.label}"} for t in addable_tunes])
     return templates.TemplateResponse(
         request,
         "boxes/detail.html",
@@ -153,17 +153,17 @@ async def box_set_setting(
         )
 
     box = await get_box(db, box_id)
-    row_html = templates.env.get_template("boxes/partials/_tune_row.html").render(
-        {"entry": entry, "box_id": box_id}
+    row_html = templates.env.get_template("boxes/partials/_tune_row.html").render({"entry": entry, "box_id": box_id})
+    modal_html = templates.env.get_template("boxes/partials/_setting_change_modal.html").render(
+        {
+            "affected_entries": affected,
+            "box_id": box_id,
+            "tune_id": tune_id,
+            "new_setting_id": sid,
+            "tune_title": entry.tune.title,
+            "box_name": box.name if box else "",
+        }
     )
-    modal_html = templates.env.get_template("boxes/partials/_setting_change_modal.html").render({
-        "affected_entries": affected,
-        "box_id": box_id,
-        "tune_id": tune_id,
-        "new_setting_id": sid,
-        "tune_title": entry.tune.title,
-        "box_name": box.name if box else "",
-    })
     return Response(content=row_html + modal_html, media_type="text/html")
 
 
@@ -176,6 +176,12 @@ async def box_propagate_setting(
     list_ids: list[int] = Form(default=[]),
 ) -> Response:
     sid = int(setting_id) if setting_id else None
-    print(f"DEBUG propagate: box={box_id} tune={tune_id} setting_id={setting_id!r} sid={sid!r} list_ids={list_ids!r}", flush=True)
+    logger.debug(
+        "propagate setting: box=%s tune=%s setting_id=%r list_ids=%r",
+        box_id,
+        tune_id,
+        sid,
+        list_ids,
+    )
     await bulk_update_list_entry_setting(db, tune_id, list_ids, sid)
     return Response(content='<div id="box-setting-modal"></div>', media_type="text/html")
