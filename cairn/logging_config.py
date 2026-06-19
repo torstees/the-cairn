@@ -118,6 +118,7 @@ def setup_logging(level: str | None = None, log_file: str | None = None) -> None
     }
 
     if use_rich:
+        config["handlers"]["console"].pop("stream", None)  # RichHandler doesn't accept stream
         config["handlers"]["console"].update(
             {
                 "class": "rich.logging.RichHandler",
