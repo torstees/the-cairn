@@ -489,6 +489,7 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
 - Do not generate mixed-meter sets automatically
 - Do not split `models.py` into a package unless the 5-model-per-domain rule is met
 - Do not use PowerShell or cmd.exe — all shell commands must be run via WSL
+- Do not use `print()` for debug output — use `logging.getLogger(__name__)` and the appropriate level (`debug`, `info`, `warning`, `error`)
 
 ---
 
