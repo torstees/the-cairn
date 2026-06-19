@@ -172,9 +172,9 @@
     applyActiveCard(settingId);
 
     var tmpl = document.getElementById("abc-setting-" + settingId);
-    if (!tmpl) return;
+    if (!tmpl) { updateDroneDisplay(); return; }
     var abc = tmpl.content.textContent.trim();
-    if (!abc) return;
+    if (!abc) { updateDroneDisplay(); return; }
 
     if (activeSynth) {
       activeSynth.stop();
@@ -375,6 +375,15 @@
     if (!controls) return;
 
     droneKeys = extractKeyRoots(currentAbcString);
+
+    // Fall back to the tune's key root from the settings section metadata
+    // when the ABC hasn't been loaded yet or yielded no K: header.
+    if (!droneKeys.length) {
+      var sec = document.getElementById("settings-section");
+      var rootAttr = sec && sec.dataset.keyRoot;
+      if (rootAttr) droneKeys = [rootAttr];
+    }
+
     droneKeyIndex = 0;
 
     var keyLabel = document.getElementById("drone-key");
@@ -390,7 +399,7 @@
     }
 
     controls.classList.remove("hidden");
-    if (keyLabel) keyLabel.textContent = droneKeys[0];
+    if (keyLabel) keyLabel.textContent = droneKeys[droneKeyIndex];
 
     var multi = droneKeys.length > 1;
     if (prevBtn) prevBtn.classList.toggle("hidden", !multi);
@@ -398,7 +407,7 @@
 
     // If drone is currently playing, update frequency to match the new key
     if (droneOsc && droneCtx) {
-      droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[0]] || 440, droneCtx.currentTime);
+      droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, droneCtx.currentTime);
     }
   }
 
