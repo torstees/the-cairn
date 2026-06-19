@@ -544,22 +544,17 @@
       var btn = e.target.closest("[data-propagate-url]");
       if (!btn) return;
       var url = btn.dataset.propagateUrl;
-      var form = btn.closest("form");
-      var params = new URLSearchParams();
-      if (form) {
-        var si = form.querySelector('input[name="setting_id"]');
-        if (si) params.append("setting_id", si.value);
-        form.querySelectorAll('input[name="list_ids"]:checked').forEach(function (cb) {
-          params.append("list_ids", cb.value);
-        });
-      }
+      // Search from the modal container rather than up from the button —
+      // HTMX parses the combined <tr>+<div> response in a table context,
+      // which can disconnect the button from its <form> ancestor.
+      var modal = document.getElementById("box-setting-modal");
+      var form = modal && modal.querySelector("form");
+      if (!form) return;
+      var fd = new FormData(form);
       btn.disabled = true;
-      fetch(url, { method: "POST", body: params })
+      fetch(url, { method: "POST", body: fd })
         .then(function (r) {
-          if (r.ok) {
-            var m = document.getElementById("box-setting-modal");
-            if (m) m.innerHTML = "";
-          }
+          if (r.ok) { modal.innerHTML = ""; }
         })
         .catch(function () {})
         .finally(function () { btn.disabled = false; });
