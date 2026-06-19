@@ -31,6 +31,22 @@
   var cursorHighlightEl = null;
   var rebuildMapTimer = null;
 
+  var droneOsc = null;
+  var droneCtx = null;
+  var droneGain = null;
+  var droneKeys = [];
+  var droneKeyIndex = 0;
+
+  var NOTE_FREQ = {
+    "C": 261.63, "C#": 277.18, "Db": 277.18,
+    "D": 293.66, "D#": 311.13, "Eb": 311.13,
+    "E": 329.63,
+    "F": 349.23, "F#": 369.99, "Gb": 369.99,
+    "G": 392.00, "G#": 415.30, "Ab": 415.30,
+    "A": 440.00, "A#": 466.16, "Bb": 466.16,
+    "B": 493.88,
+  };
+
   // ── ABC helpers ────────────────────────────────────────────────────────────
 
   function extractBpm(abcString) {
@@ -156,9 +172,9 @@
     applyActiveCard(settingId);
 
     var tmpl = document.getElementById("abc-setting-" + settingId);
-    if (!tmpl) return;
+    if (!tmpl) { updateDroneDisplay(); return; }
     var abc = tmpl.content.textContent.trim();
-    if (!abc) return;
+    if (!abc) { updateDroneDisplay(); return; }
 
     if (activeSynth) {
       activeSynth.stop();
@@ -181,6 +197,7 @@
 
   function render(abcString) {
     currentAbcString = abcString;
+    updateDroneDisplay();
     clearCursorHighlight();
     charMap = [];
     if (rebuildMapTimer) { clearTimeout(rebuildMapTimer); rebuildMapTimer = null; }
@@ -259,6 +276,8 @@
       editor.addEventListener("keyup", syncCursorToScore);
       editor.addEventListener("click", syncCursorToScore);
     }
+
+    initDrone();
   }
 
   function handlePlayStop() {
@@ -315,6 +334,111 @@
       activeAudioCtx.close();
       activeAudioCtx = null;
     }
+  }
+
+  // ── drone ──────────────────────────────────────────────────────────────────
+
+  function extractKeyRoots(abcString) {
+    // Match both standalone header lines (K:D) and inline key changes ([K:D]).
+    var re = /(?:^|\[)K:\s*([A-G][b#]?)/gm;
+    var seen = {};
+    var roots = [];
+    var m;
+    while ((m = re.exec(abcString || "")) !== null) {
+      var key = m[1];
+      if (key && !seen[key]) { seen[key] = true; roots.push(key); }
+    }
+    return roots;
+  }
+
+  function startDrone(freq) {
+    stopDrone();
+    droneCtx = new AudioContext();
+    droneGain = droneCtx.createGain();
+    droneGain.gain.setValueAtTime(0.35, droneCtx.currentTime);
+    droneOsc = droneCtx.createOscillator();
+    droneOsc.type = "sine";
+    droneOsc.frequency.setValueAtTime(freq, droneCtx.currentTime);
+    droneOsc.connect(droneGain);
+    droneGain.connect(droneCtx.destination);
+    droneOsc.start();
+  }
+
+  function stopDrone() {
+    if (droneOsc) { try { droneOsc.stop(); } catch (e) {} droneOsc = null; }
+    if (droneCtx) { droneCtx.close(); droneCtx = null; }
+    droneGain = null;
+  }
+
+  function updateDroneDisplay() {
+    var controls = document.getElementById("drone-controls");
+    if (!controls) return;
+
+    droneKeys = extractKeyRoots(currentAbcString);
+
+    // Fall back to the tune's key root from the settings section metadata
+    // when the ABC hasn't been loaded yet or yielded no K: header.
+    if (!droneKeys.length) {
+      var sec = document.getElementById("settings-section");
+      var rootAttr = sec && sec.dataset.keyRoot;
+      if (rootAttr) droneKeys = [rootAttr];
+    }
+
+    droneKeyIndex = 0;
+
+    var keyLabel = document.getElementById("drone-key");
+    var prevBtn = document.getElementById("drone-prev");
+    var nextBtn = document.getElementById("drone-next");
+    var playBtn = document.getElementById("drone-play");
+
+    if (!droneKeys.length) {
+      controls.classList.add("hidden");
+      stopDrone();
+      if (playBtn) playBtn.textContent = "♪ Drone";
+      return;
+    }
+
+    controls.classList.remove("hidden");
+    if (keyLabel) keyLabel.textContent = droneKeys[droneKeyIndex];
+
+    var multi = droneKeys.length > 1;
+    if (prevBtn) prevBtn.classList.toggle("hidden", !multi);
+    if (nextBtn) nextBtn.classList.toggle("hidden", !multi);
+
+    // If drone is currently playing, update frequency to match the new key
+    if (droneOsc && droneCtx) {
+      droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, droneCtx.currentTime);
+    }
+  }
+
+  function initDrone() {
+    var playBtn = document.getElementById("drone-play");
+    var prevBtn = document.getElementById("drone-prev");
+    var nextBtn = document.getElementById("drone-next");
+    if (!playBtn) return;
+
+    playBtn.addEventListener("click", function () {
+      if (droneOsc) {
+        stopDrone();
+        playBtn.textContent = "♪ Drone";
+      } else {
+        startDrone(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440);
+        playBtn.textContent = "■ Drone";
+      }
+    });
+
+    function shiftDroneKey(delta) {
+      if (!droneKeys.length) return;
+      droneKeyIndex = (droneKeyIndex + delta + droneKeys.length) % droneKeys.length;
+      var keyLabel = document.getElementById("drone-key");
+      if (keyLabel) keyLabel.textContent = droneKeys[droneKeyIndex];
+      if (droneOsc && droneCtx) {
+        droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, droneCtx.currentTime);
+      }
+    }
+
+    if (prevBtn) prevBtn.addEventListener("click", function () { shiftDroneKey(-1); });
+    if (nextBtn) nextBtn.addEventListener("click", function () { shiftDroneKey(1); });
   }
 
   // ── edit/new tune form preview ─────────────────────────────────────────────
