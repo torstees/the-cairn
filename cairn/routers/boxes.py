@@ -10,12 +10,14 @@ from cairn.models import Instrument
 from cairn.services.boxes import (
     add_tune,
     create_box,
+    get_box,
     get_box_detail,
     get_box_entry,
     list_boxes,
     remove_tune,
     set_preferred_setting,
 )
+from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting
 from cairn.services.tunes import list_tunes
 from cairn.templating import templates
 
@@ -132,12 +134,48 @@ async def box_set_setting(
     db: AsyncSession = Depends(get_db),
     setting_id: str = Form(default=""),
 ) -> Response:
+    old_entry = await get_box_entry(db, box_id, tune_id)
+    old_setting_id = old_entry.setting_id if old_entry else None
+
     sid = int(setting_id) if setting_id else None
-    entry = await set_preferred_setting(db, box_id, tune_id, sid)
-    # Reload with full relationships for the partial
+    await set_preferred_setting(db, box_id, tune_id, sid)
     entry = await get_box_entry(db, box_id, tune_id)
-    return templates.TemplateResponse(
-        request,
-        "boxes/partials/_tune_row.html",
-        {"entry": entry, "box_id": box_id},
+
+    affected = []
+    if old_setting_id != sid:
+        affected = await find_list_entries_by_setting(db, tune_id, box_id, old_setting_id)
+
+    if not affected:
+        return templates.TemplateResponse(
+            request,
+            "boxes/partials/_tune_row.html",
+            {"entry": entry, "box_id": box_id},
+        )
+
+    box = await get_box(db, box_id)
+    row_html = templates.env.get_template("boxes/partials/_tune_row.html").render(
+        {"entry": entry, "box_id": box_id}
     )
+    modal_html = templates.env.get_template("boxes/partials/_setting_change_modal.html").render({
+        "affected_entries": affected,
+        "box_id": box_id,
+        "tune_id": tune_id,
+        "new_setting_id": sid,
+        "tune_title": entry.tune.title,
+        "box_name": box.name if box else "",
+    })
+    return Response(content=row_html + modal_html, media_type="text/html")
+
+
+@router.post("/{box_id}/tunes/{tune_id}/propagate-setting")
+async def box_propagate_setting(
+    box_id: int,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    setting_id: str = Form(default=""),
+    list_ids: list[int] = Form(default=[]),
+) -> Response:
+    sid = int(setting_id) if setting_id else None
+    print(f"DEBUG propagate: box={box_id} tune={tune_id} setting_id={setting_id!r} sid={sid!r} list_ids={list_ids!r}", flush=True)
+    await bulk_update_list_entry_setting(db, tune_id, list_ids, sid)
+    return Response(content='<div id="box-setting-modal"></div>', media_type="text/html")

@@ -523,7 +523,14 @@
     if (textarea.value.trim()) updatePreview();
   }
 
+  function clearCairnModal() {
+    var m = document.getElementById("box-setting-modal");
+    if (m) m.innerHTML = "";
+    document.querySelectorAll(".cairn-modal-backdrop").forEach(function (el) { el.remove(); });
+  }
+
   // Expose to Alpine and templates
+  window.clearCairnModal = clearCairnModal;
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
 
@@ -532,6 +539,32 @@
   document.addEventListener("DOMContentLoaded", function () {
     renderScore();
     initFormPreview();
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { clearCairnModal(); }
+    });
+
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-propagate-url]");
+      if (!btn) return;
+      var url = btn.dataset.propagateUrl;
+      // Collect data from the button and from checkboxes by class.
+      // We cannot rely on form traversal because HTMX parses the combined
+      // <tr>+<div> response in a table context, which can displace the modal's
+      // DOM subtree via HTML foster-parenting, breaking ancestor/descendant queries.
+      var params = new URLSearchParams();
+      params.append("setting_id", btn.dataset.settingId || "");
+      document.querySelectorAll(".cairn-propagate-list:checked").forEach(function (cb) {
+        params.append("list_ids", cb.value);
+      });
+      btn.disabled = true;
+      fetch(url, { method: "POST", body: params })
+        .then(function (r) {
+          if (r.ok) { clearCairnModal(); }
+        })
+        .catch(function () {})
+        .finally(function () { btn.disabled = false; });
+    });
 
     document.addEventListener("htmx:afterSwap", function () {
       if (activeSettingId !== null) {

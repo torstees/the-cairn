@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -169,6 +169,50 @@ async def update_list_entry_setting(
     db.add(entry)
     await db.commit()
     return await get_list_entry(db, list_id, tune_id)
+
+
+async def find_list_entries_by_setting(
+    db: AsyncSession,
+    tune_id: int,
+    box_id: int,
+    setting_id: int | None,
+) -> list[TuneListEntry]:
+    stmt = (
+        select(TuneListEntry)
+        .join(PracticeList, TuneListEntry.list_id == PracticeList.id)
+        .where(
+            TuneListEntry.tune_id == tune_id,
+            TuneListEntry.setting_id == setting_id,
+            PracticeList.box_id == box_id,
+        )
+        .options(selectinload(TuneListEntry.practice_list))
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def bulk_update_list_entry_setting(
+    db: AsyncSession,
+    tune_id: int,
+    list_ids: list[int],
+    setting_id: int | None,
+) -> None:
+    if not list_ids:
+        print(f"DEBUG bulk_update: no list_ids, skipping", flush=True)
+        return
+    print(f"DEBUG bulk_update: tune={tune_id} list_ids={list_ids} setting_id={setting_id!r}", flush=True)
+    stmt = (
+        update(TuneListEntry)
+        .where(
+            TuneListEntry.tune_id == tune_id,
+            TuneListEntry.list_id.in_(list_ids),
+        )
+        .values(setting_id=setting_id)
+        .execution_options(synchronize_session=False)
+    )
+    result = await db.execute(stmt)
+    print(f"DEBUG bulk_update: rows affected={result.rowcount}", flush=True)
+    await db.commit()
 
 
 async def remove_tune_from_list(db: AsyncSession, list_id: int, tune_id: int) -> bool:

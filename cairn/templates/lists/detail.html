@@ -102,11 +102,23 @@
              },
              async submitListAdd() {
                const tuneId = this.selectedId;
-               await htmx.ajax('POST', '/lists/{{ practice_list.id }}/tunes', {
-                 target: '#list-entries-body',
-                 swap: 'beforeend',
-                 values: {tune_id: tuneId, setting_id: this.selectedSettingId || ''},
-               });
+               const fd = new FormData();
+               fd.append('tune_id', tuneId);
+               fd.append('setting_id', this.selectedSettingId || '');
+               const resp = await fetch('/lists/{{ practice_list.id }}/tunes', {method: 'POST', body: fd});
+               if (resp.ok) {
+                 const html = await resp.text();
+                 const tbody = document.getElementById('list-entries-body');
+                 if (tbody && html.trim()) {
+                   const tmp = document.createElement('tbody');
+                   tmp.innerHTML = html;
+                   while (tmp.firstChild) {
+                     const node = tmp.firstChild;
+                     tbody.appendChild(node);
+                     htmx.process(node);
+                   }
+                 }
+               }
                window.dispatchEvent(new CustomEvent('cairn-tune-added', {detail: {id: tuneId}}));
              },
              async handleAdd() {
