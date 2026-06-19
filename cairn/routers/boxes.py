@@ -176,5 +176,6 @@ async def box_propagate_setting(
     list_ids: list[int] = Form(default=[]),
 ) -> Response:
     sid = int(setting_id) if setting_id else None
+    print(f"DEBUG propagate: box={box_id} tune={tune_id} setting_id={setting_id!r} sid={sid!r} list_ids={list_ids!r}", flush=True)
     await bulk_update_list_entry_setting(db, tune_id, list_ids, sid)
     return Response(content='<div id="box-setting-modal"></div>', media_type="text/html")

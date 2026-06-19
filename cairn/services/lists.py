@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -197,17 +197,21 @@ async def bulk_update_list_entry_setting(
     list_ids: list[int],
     setting_id: int | None,
 ) -> None:
-    for list_id in list_ids:
-        result = await db.execute(
-            select(TuneListEntry).where(
-                TuneListEntry.list_id == list_id,
-                TuneListEntry.tune_id == tune_id,
-            )
+    if not list_ids:
+        print(f"DEBUG bulk_update: no list_ids, skipping", flush=True)
+        return
+    print(f"DEBUG bulk_update: tune={tune_id} list_ids={list_ids} setting_id={setting_id!r}", flush=True)
+    stmt = (
+        update(TuneListEntry)
+        .where(
+            TuneListEntry.tune_id == tune_id,
+            TuneListEntry.list_id.in_(list_ids),
         )
-        entry = result.scalar_one_or_none()
-        if entry is not None:
-            entry.setting_id = setting_id
-            db.add(entry)
+        .values(setting_id=setting_id)
+        .execution_options(synchronize_session=False)
+    )
+    result = await db.execute(stmt)
+    print(f"DEBUG bulk_update: rows affected={result.rowcount}", flush=True)
     await db.commit()
 
 
