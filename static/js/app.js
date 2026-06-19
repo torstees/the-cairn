@@ -523,7 +523,14 @@
     if (textarea.value.trim()) updatePreview();
   }
 
+  function clearCairnModal() {
+    var m = document.getElementById("box-setting-modal");
+    if (m) m.innerHTML = "";
+    document.querySelectorAll(".cairn-modal-backdrop").forEach(function (el) { el.remove(); });
+  }
+
   // Expose to Alpine and templates
+  window.clearCairnModal = clearCairnModal;
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
 
@@ -534,27 +541,26 @@
     initFormPreview();
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") {
-        var m = document.getElementById("box-setting-modal");
-        if (m && m.innerHTML.trim()) m.innerHTML = "";
-      }
+      if (e.key === "Escape") { clearCairnModal(); }
     });
 
     document.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-propagate-url]");
       if (!btn) return;
       var url = btn.dataset.propagateUrl;
-      // Search from the modal container rather than up from the button —
-      // HTMX parses the combined <tr>+<div> response in a table context,
-      // which can disconnect the button from its <form> ancestor.
-      var modal = document.getElementById("box-setting-modal");
-      var form = modal && modal.querySelector("form");
-      if (!form) return;
-      var fd = new FormData(form);
+      // Collect data from the button and from checkboxes by class.
+      // We cannot rely on form traversal because HTMX parses the combined
+      // <tr>+<div> response in a table context, which can displace the modal's
+      // DOM subtree via HTML foster-parenting, breaking ancestor/descendant queries.
+      var params = new URLSearchParams();
+      params.append("setting_id", btn.dataset.settingId || "");
+      document.querySelectorAll(".cairn-propagate-list:checked").forEach(function (cb) {
+        params.append("list_ids", cb.value);
+      });
       btn.disabled = true;
-      fetch(url, { method: "POST", body: fd })
+      fetch(url, { method: "POST", body: params })
         .then(function (r) {
-          if (r.ok) { modal.innerHTML = ""; }
+          if (r.ok) { clearCairnModal(); }
         })
         .catch(function () {})
         .finally(function () { btn.disabled = false; });
