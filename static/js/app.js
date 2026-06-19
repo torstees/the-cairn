@@ -339,15 +339,15 @@
   // ── drone ──────────────────────────────────────────────────────────────────
 
   function extractKeyRoots(abcString) {
-    var raw = (abcString || "").match(/^K:([A-G][b#]?)/gim) || [];
+    // Match both standalone header lines (K:D) and inline key changes ([K:D]).
+    var re = /(?:^|\[)K:\s*([A-G][b#]?)/gm;
     var seen = {};
     var roots = [];
-    raw.forEach(function (m) {
-      var note = m.charAt(2).toUpperCase();
-      var acc = (m.charAt(3) === "b" || m.charAt(3) === "#") ? m.charAt(3) : "";
-      var key = note + acc;
-      if (!seen[key]) { seen[key] = true; roots.push(key); }
-    });
+    var m;
+    while ((m = re.exec(abcString || "")) !== null) {
+      var key = m[1];
+      if (key && !seen[key]) { seen[key] = true; roots.push(key); }
+    }
     return roots;
   }
 
