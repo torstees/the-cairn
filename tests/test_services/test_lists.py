@@ -1,6 +1,5 @@
 from datetime import date
 
-import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, ProgressStatus, Role, TuneType, User
@@ -29,7 +28,9 @@ async def _user(db: AsyncSession, username: str = "alice") -> User:
 async def _tune(db: AsyncSession, title: str = "The Morning Dew") -> object:
     return await create_tune(
         db,
-        TuneCreate(title=title, tune_type=TuneType.reel, key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4"),
+        TuneCreate(
+            title=title, tune_type=TuneType.reel, key_root=KeyRoot.D, key_mode=KeyMode.major, time_signature="4/4"
+        ),
         abc_notation=_ABC,
     )
 
@@ -57,7 +58,11 @@ async def test_create_list_with_optional_fields(db: AsyncSession) -> None:
     u = await _user(db)
     box = await _box(db, u.id)
     pl = await create_list(
-        db, u.id, box.id, "  Woodshed  ", PracticeListType.woodshed,
+        db,
+        u.id,
+        box.id,
+        "  Woodshed  ",
+        PracticeListType.woodshed,
         progress_goal=ProgressStatus.session_ready,
         target_date=date(2026, 12, 31),
     )
