@@ -1,3 +1,5 @@
+import re
+
 from cairn.models import Tune, TuneSetting
 
 _MAPPED_HEADERS = frozenset("XTCOARMSZNK")
@@ -99,3 +101,26 @@ def build_abc(tune: Tune, setting: TuneSetting, x: int = 1) -> str:
         music_lines.pop()
 
     return "\n".join(headers + music_lines) + "\n"
+
+
+def truncate_to_bars(abc: str, n_bars: int) -> str:
+    """Return abc truncated to approximately the first n_bars measures.
+
+    Counts `|` characters in the music body (after K:) and stops after the
+    (n_bars+1)th one — the extra `|` closes the last retained bar.  The count
+    is intentionally simple: each `|` in the music body is treated as one bar
+    boundary, so repeat markers (`|:`, `:|`) count too, which is close enough
+    for the practice-session display purpose.
+    """
+    k_match = re.search(r"^K:.*$", abc, re.MULTILINE)
+    if not k_match:
+        return abc
+    header = abc[: k_match.end()]
+    body = abc[k_match.end() :]
+    pipe_count = 0
+    for i, ch in enumerate(body):
+        if ch == "|":
+            pipe_count += 1
+            if pipe_count > n_bars:
+                return header + body[: i + 1].rstrip() + "\n"
+    return abc

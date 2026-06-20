@@ -83,7 +83,7 @@ async def test_session_detail_404_for_unknown(client: AsyncClient) -> None:
     assert resp.status_code == 404
 
 
-async def test_item_complete_marks_done(client: AsyncClient, db: AsyncSession) -> None:
+async def test_item_complete_returns_done_indicator(client: AsyncClient, db: AsyncSession) -> None:
     _, box, _, _ = await _seed(db)
     session = await build_session(db, _STUB_USER_ID, box.id, 30)
     item = session.items[0]

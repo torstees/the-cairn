@@ -14,6 +14,7 @@ from cairn.models import (
     ProgressStatus,
     SessionItemType,
     StudentProgress,
+    Tune,
     TuneBoxEntry,
     WarmupItem,
 )
@@ -33,6 +34,25 @@ _LEARNING_MINUTES: dict[ProgressStatus, int] = {
 }
 
 _RETENTION_MINUTES = 2
+
+# Bars shown per status in the practice session view.
+# None  → title + key only (no music rendered)
+# -1    → full tune
+# N > 0 → first N bars
+_BARS_BY_STATUS: dict[ProgressStatus, int | None] = {
+    ProgressStatus.just_learning: -1,
+    ProgressStatus.getting_there: -1,
+    ProgressStatus.nearly_there: 8,
+    ProgressStatus.session_ready: 4,
+    ProgressStatus.committed: None,
+    ProgressStatus.performance_ready: None,
+    ProgressStatus.solo_ready: None,
+}
+
+
+def bars_for_status(status: ProgressStatus) -> int | None:
+    """Bars to display for a status.  None = title only, -1 = full tune."""
+    return _BARS_BY_STATUS.get(status, -1)
 
 
 def _is_due(next_suggested: datetime | None, now: datetime) -> bool:
@@ -221,7 +241,7 @@ async def build_session(
     warmup_minutes = max(1, math.ceil(total_minutes * 0.10))
     remaining = total_minutes - warmup_minutes
 
-    session = PracticeSession(user_id=user_id, started_at=now)
+    session = PracticeSession(user_id=user_id, box_id=box_id, started_at=now)
     db.add(session)
     await db.flush()
 
@@ -309,11 +329,36 @@ async def get_session(db: AsyncSession, session_id: int) -> PracticeSession | No
         select(PracticeSession)
         .where(PracticeSession.id == session_id)
         .options(
-            selectinload(PracticeSession.items).selectinload(PracticeSessionItem.tune),
+            selectinload(PracticeSession.items).selectinload(PracticeSessionItem.tune).selectinload(Tune.settings),
             selectinload(PracticeSession.items).selectinload(PracticeSessionItem.warmup),
         )
     )
     return result.scalar_one_or_none()
+
+
+async def _load_progress_map(
+    db: AsyncSession,
+    user_id: int,
+    box_id: int,
+    tune_ids: set[int],
+) -> dict[int, ProgressStatus]:
+    """Single query: tune_id → ProgressStatus for all tune_ids in a box."""
+    if not tune_ids:
+        return {}
+    rows = (
+        (
+            await db.execute(
+                select(StudentProgress).where(
+                    StudentProgress.user_id == user_id,
+                    StudentProgress.tune_id.in_(tune_ids),
+                    StudentProgress.box_id == box_id,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {p.tune_id: p.status for p in rows}
 
 
 async def complete_item(db: AsyncSession, session_id: int, item_id: int) -> PracticeSessionItem | None:
