@@ -461,6 +461,7 @@
   var metroStartTime = 0;
   var metroBeatCount = 0;
   var metroNodes = [];          // scheduled oscillators — cancelled on stop
+  var metroGains = [];          // corresponding gain nodes — disconnected on stop
   var METRO_LOOKAHEAD = 25;    // ms between scheduler ticks
   var METRO_SCHEDULE = 0.25;   // seconds to schedule ahead — must exceed worst-case GC pause
 
@@ -475,26 +476,30 @@
     }
     while (metroNextBeat < ctx.currentTime + METRO_SCHEDULE) {
       var t = Math.max(metroNextBeat, ctx.currentTime + 0.005);
+      var isAccent = metroBeatCount % 4 === 0;
+      var peak = isAccent ? 0.45 : 0.65;
       var osc = ctx.createOscillator();
       var gain = ctx.createGain();
-      var isAccent = metroBeatCount % 4 === 0;
       osc.frequency.value = isAccent ? 1320 : 880;
-      // 1320 Hz is ~6 dB louder perceptually than 880 Hz at equal linear gain;
-      // compensate so the accent is a subtle emphasis, not a spike.
-      gain.gain.setValueAtTime(isAccent ? 0.45 : 0.65, t);
-      gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.015);
+      // 2 ms linear ramp from 0 avoids the onset click from a hard gain step.
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(peak, t + 0.002);
+      gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.02);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(t);
-      osc.stop(t + 0.15);
-      // Self-prune once played so the array doesn't grow unbounded.
-      (function(node) {
+      osc.stop(t + 0.1);
+      // Disconnect both nodes when done — zombie gain nodes left in the graph
+      // accumulate across beats and cause volume drift and render-thread pressure.
+      (function(node, gainNode) {
         node.onended = function() {
+          try { gainNode.disconnect(); } catch (e) {}
           var i = metroNodes.indexOf(node);
-          if (i !== -1) metroNodes.splice(i, 1);
+          if (i !== -1) { metroNodes.splice(i, 1); metroGains.splice(i, 1); }
         };
-      }(osc));
+      }(osc, gain));
       metroNodes.push(osc);
+      metroGains.push(gain);
       metroNextBeat += interval;
       metroBeatCount++;
     }
@@ -512,9 +517,10 @@
 
   function stopMetronome() {
     if (metroTimer) { clearTimeout(metroTimer); metroTimer = null; }
-    // Cancel any oscillators already committed to the audio graph.
     metroNodes.forEach(function(osc) { try { osc.stop(); } catch(e) {} });
+    metroGains.forEach(function(g) { try { g.disconnect(); } catch(e) {} });
     metroNodes = [];
+    metroGains = [];
   }
 
   function initMetronome() {
