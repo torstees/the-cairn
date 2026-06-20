@@ -462,7 +462,7 @@
   var metroBeatCount = 0;
   var metroNodes = [];          // scheduled oscillators — cancelled on stop
   var METRO_LOOKAHEAD = 25;    // ms between scheduler ticks
-  var METRO_SCHEDULE = 0.1;    // seconds to schedule ahead
+  var METRO_SCHEDULE = 0.25;   // seconds to schedule ahead — must exceed worst-case GC pause
 
   function metroSchedule(bpm) {
     var ctx = sharedAudioCtx;
@@ -477,8 +477,11 @@
       var t = Math.max(metroNextBeat, ctx.currentTime + 0.005);
       var osc = ctx.createOscillator();
       var gain = ctx.createGain();
-      osc.frequency.value = metroBeatCount % 4 === 0 ? 1320 : 880;
-      gain.gain.setValueAtTime(0.7, t);
+      var isAccent = metroBeatCount % 4 === 0;
+      osc.frequency.value = isAccent ? 1320 : 880;
+      // 1320 Hz is ~6 dB louder perceptually than 880 Hz at equal linear gain;
+      // compensate so the accent is a subtle emphasis, not a spike.
+      gain.gain.setValueAtTime(isAccent ? 0.45 : 0.65, t);
       gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.015);
       osc.connect(gain);
       gain.connect(ctx.destination);
