@@ -558,6 +558,13 @@
 
     metroPattern = METRO_PATTERNS[window.__cairnTuneType] || METRO_PATTERNS.reel;
 
+    if (window.__cairnLastTempo) {
+      var slider = document.getElementById("abc-tempo");
+      var label  = document.getElementById("abc-tempo-label");
+      if (slider) slider.value = window.__cairnLastTempo;
+      if (label)  label.textContent = window.__cairnLastTempo + " bpm";
+    }
+
     btn.addEventListener("click", function () {
       var slider = document.getElementById("abc-tempo");
       var bpm = slider ? parseInt(slider.value, 10) : 100;
