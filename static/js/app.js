@@ -571,7 +571,8 @@
 
       if (metroTimer) {
         var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
-        var minDuration = (4 * 60) / bpm;
+        var beatsPerBar = window.__cairnBeatsPerBar || 4;
+        var minDuration = (beatsPerBar * 4 / bpm) * 60;
         var shouldRecord = elapsed >= minDuration;
         stopMetronome();
         btn.textContent = "♩ Metro";
