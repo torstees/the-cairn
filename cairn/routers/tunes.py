@@ -126,6 +126,7 @@ async def tune_detail(
             "box_id": box_id,
             "min_tempo": min_tempo,
             "tempo_records": tempo_records,
+            "last_tempo": tempo_records[-1].tempo if tempo_records else None,
             **_SETTINGS_CTX,
         },
     )

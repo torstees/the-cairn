@@ -95,6 +95,7 @@
   <script>
     window.__cairnTuneId = {{ tune.id }};
     window.__cairnTuneType = {{ tune.tune_type.value | tojson }};
+    {% if last_tempo %}window.__cairnLastTempo = {{ last_tempo }};{% endif %}
     {% if box_id %}window.__cairnBoxId = {{ box_id }};{% endif %}
     {% if active_setting_id %}window.__cairnActiveSettingId = {{ active_setting_id }};{% endif %}
   </script>
