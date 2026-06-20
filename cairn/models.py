@@ -152,6 +152,7 @@ class Tune(TimestampMixin, Base):
     box_entries: Mapped[list["TuneBoxEntry"]] = relationship(back_populates="tune")
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="tune")
     session_items: Mapped[list["PracticeSessionItem"]] = relationship(back_populates="tune")
+    tempo_records: Mapped[list["TempoRecord"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
 
 
 class TuneSetting(TimestampMixin, Base):
@@ -391,6 +392,19 @@ class PracticeSession(TimestampMixin, Base):
 
     user: Mapped["User"] = relationship(back_populates="practice_sessions")
     items: Mapped[list["PracticeSessionItem"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+
+
+class TempoRecord(TimestampMixin, Base):
+    __tablename__ = "tempo_records"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    box_id: Mapped[int | None] = mapped_column(ForeignKey("tune_boxes.id"), nullable=True)
+    tempo: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    user: Mapped["User"] = relationship()
+    tune: Mapped["Tune"] = relationship(back_populates="tempo_records")
 
 
 class PracticeSessionItem(TimestampMixin, Base):

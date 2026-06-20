@@ -12,8 +12,10 @@ from cairn.services.tunes import (
     add_alias,
     create_tune,
     delete_tune,
+    get_tempo_history,
     get_tune,
     list_tunes,
+    record_tempo,
     remove_alias,
     update_tune,
 )
@@ -29,6 +31,7 @@ _ORN_LEVELS = list(OrnamentationLevel)
 
 _FORM_CTX = {"tune_types": _TUNE_TYPES, "key_roots": _KEY_ROOTS, "key_modes": _KEY_MODES}
 _SETTINGS_CTX = {"instruments": _INSTRUMENTS, "orn_levels": _ORN_LEVELS}
+_STUB_USER_ID = 1
 
 
 @router.get("/new")
@@ -110,6 +113,7 @@ async def tune_detail(
 
     built_abc = build_abc(tune, active_setting) if active_setting else ""
     settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
+    min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
     return templates.TemplateResponse(
         request,
         "tunes/detail.html",
@@ -120,8 +124,27 @@ async def tune_detail(
             "active_setting_id": active_setting.id if active_setting else None,
             "box": box,
             "box_id": box_id,
+            "min_tempo": min_tempo,
+            "tempo_records": tempo_records,
             **_SETTINGS_CTX,
         },
+    )
+
+
+@router.post("/{tune_id}/tempo")
+async def tempo_record_create(
+    request: Request,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    tempo: int = Form(...),
+    box_id: int | None = Form(None),
+) -> Response:
+    await record_tempo(db, _STUB_USER_ID, tune_id, box_id, tempo)
+    min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
+    return templates.TemplateResponse(
+        request,
+        "tunes/partials/_tempo_history.html",
+        {"min_tempo": min_tempo, "tempo_records": tempo_records},
     )
 
 

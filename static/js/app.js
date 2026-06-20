@@ -31,8 +31,21 @@
   var cursorHighlightEl = null;
   var rebuildMapTimer = null;
 
+  // Shared AudioContext — drone and metronome use the same context to avoid
+  // browser volume normalisation side-effects from concurrent contexts.
+  var sharedAudioCtx = null;
+
+  function getAudioCtx() {
+    if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
+      sharedAudioCtx = new AudioContext();
+    }
+    if (sharedAudioCtx.state === "suspended") {
+      sharedAudioCtx.resume();
+    }
+    return sharedAudioCtx;
+  }
+
   var droneOsc = null;
-  var droneCtx = null;
   var droneGain = null;
   var droneKeys = [];
   var droneKeyIndex = 0;
@@ -278,6 +291,7 @@
     }
 
     initDrone();
+    initMetronome();
   }
 
   function handlePlayStop() {
@@ -353,20 +367,19 @@
 
   function startDrone(freq) {
     stopDrone();
-    droneCtx = new AudioContext();
-    droneGain = droneCtx.createGain();
-    droneGain.gain.setValueAtTime(0.35, droneCtx.currentTime);
-    droneOsc = droneCtx.createOscillator();
+    var ctx = getAudioCtx();
+    droneGain = ctx.createGain();
+    droneGain.gain.setValueAtTime(0.35, ctx.currentTime);
+    droneOsc = ctx.createOscillator();
     droneOsc.type = "sine";
-    droneOsc.frequency.setValueAtTime(freq, droneCtx.currentTime);
+    droneOsc.frequency.setValueAtTime(freq, ctx.currentTime);
     droneOsc.connect(droneGain);
-    droneGain.connect(droneCtx.destination);
+    droneGain.connect(ctx.destination);
     droneOsc.start();
   }
 
   function stopDrone() {
     if (droneOsc) { try { droneOsc.stop(); } catch (e) {} droneOsc = null; }
-    if (droneCtx) { droneCtx.close(); droneCtx = null; }
     droneGain = null;
   }
 
@@ -406,8 +419,8 @@
     if (nextBtn) nextBtn.classList.toggle("hidden", !multi);
 
     // If drone is currently playing, update frequency to match the new key
-    if (droneOsc && droneCtx) {
-      droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, droneCtx.currentTime);
+    if (droneOsc && sharedAudioCtx) {
+      droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, sharedAudioCtx.currentTime);
     }
   }
 
@@ -432,13 +445,116 @@
       droneKeyIndex = (droneKeyIndex + delta + droneKeys.length) % droneKeys.length;
       var keyLabel = document.getElementById("drone-key");
       if (keyLabel) keyLabel.textContent = droneKeys[droneKeyIndex];
-      if (droneOsc && droneCtx) {
-        droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, droneCtx.currentTime);
+      if (droneOsc && sharedAudioCtx) {
+        droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, sharedAudioCtx.currentTime);
       }
     }
 
     if (prevBtn) prevBtn.addEventListener("click", function () { shiftDroneKey(-1); });
     if (nextBtn) nextBtn.addEventListener("click", function () { shiftDroneKey(1); });
+  }
+
+  // ── metronome ──────────────────────────────────────────────────────────────
+
+  var metroTimer = null;
+  var metroNextBeat = 0;
+  var metroStartTime = 0;
+  var metroBeatCount = 0;
+  var metroNodes = [];          // scheduled oscillators — cancelled on stop
+  var metroGains = [];          // corresponding gain nodes — disconnected on stop
+  var METRO_LOOKAHEAD = 25;    // ms between scheduler ticks
+  var METRO_SCHEDULE = 0.25;   // seconds to schedule ahead — must exceed worst-case GC pause
+
+  function metroSchedule(bpm) {
+    var ctx = sharedAudioCtx;
+    var interval = 60.0 / bpm;
+    // If the JS timer fired late (tab hidden, busy thread), skip forward rather
+    // than flooding with catch-up beats that all land within milliseconds.
+    while (metroNextBeat < ctx.currentTime - interval) {
+      metroNextBeat += interval;
+      metroBeatCount++;
+    }
+    while (metroNextBeat < ctx.currentTime + METRO_SCHEDULE) {
+      var t = Math.max(metroNextBeat, ctx.currentTime + 0.005);
+      var isAccent = metroBeatCount % 4 === 0;
+      var peak = isAccent ? 0.45 : 0.65;
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.frequency.value = isAccent ? 1320 : 880;
+      // 2 ms linear ramp from 0 avoids the onset click from a hard gain step.
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(peak, t + 0.002);
+      gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.02);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.1);
+      // Disconnect both nodes when done — zombie gain nodes left in the graph
+      // accumulate across beats and cause volume drift and render-thread pressure.
+      (function(node, gainNode) {
+        node.onended = function() {
+          try { gainNode.disconnect(); } catch (e) {}
+          var i = metroNodes.indexOf(node);
+          if (i !== -1) { metroNodes.splice(i, 1); metroGains.splice(i, 1); }
+        };
+      }(osc, gain));
+      metroNodes.push(osc);
+      metroGains.push(gain);
+      metroNextBeat += interval;
+      metroBeatCount++;
+    }
+    metroTimer = setTimeout(function () { metroSchedule(bpm); }, METRO_LOOKAHEAD);
+  }
+
+  function startMetronome(bpm) {
+    stopMetronome();
+    var ctx = getAudioCtx();
+    metroNextBeat = ctx.currentTime;
+    metroStartTime = ctx.currentTime;
+    metroBeatCount = 0;
+    metroSchedule(bpm);
+  }
+
+  function stopMetronome() {
+    if (metroTimer) { clearTimeout(metroTimer); metroTimer = null; }
+    metroNodes.forEach(function(osc) { try { osc.stop(); } catch(e) {} });
+    metroGains.forEach(function(g) { try { g.disconnect(); } catch(e) {} });
+    metroNodes = [];
+    metroGains = [];
+  }
+
+  function initMetronome() {
+    var btn = document.getElementById("metro-play");
+    if (!btn) return;
+
+    btn.addEventListener("click", function () {
+      var slider = document.getElementById("abc-tempo");
+      var bpm = slider ? parseInt(slider.value, 10) : 100;
+
+      if (metroTimer) {
+        var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
+        var minDuration = (4 * 60) / bpm;
+        var shouldRecord = elapsed >= minDuration;
+        stopMetronome();
+        btn.textContent = "♩ Metro";
+        if (shouldRecord) {
+          var params = new URLSearchParams();
+          params.append("tempo", bpm);
+          if (window.__cairnBoxId) params.append("box_id", window.__cairnBoxId);
+          fetch("/tunes/" + window.__cairnTuneId + "/tempo", { method: "POST", body: params })
+            .then(function (r) { return r.ok ? r.text() : null; })
+            .then(function (html) {
+              if (!html) return;
+              var el = document.getElementById("tempo-history");
+              if (el) el.outerHTML = html;
+            })
+            .catch(function () {});
+        }
+      } else {
+        startMetronome(bpm);
+        btn.textContent = "■ Metro";
+      }
+    });
   }
 
   // ── edit/new tune form preview ─────────────────────────────────────────────

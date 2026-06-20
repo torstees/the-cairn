@@ -1,0 +1,30 @@
+<div id="tempo-history">
+{% if tempo_records %}
+  <div class="mt-4 pt-4 border-t border-stone-100">
+    <div class="flex items-center gap-2 mb-1">
+      <span class="text-xs font-medium text-stone-500 uppercase tracking-wide">Tempo history</span>
+      {% if tempo_records | length > 1 %}
+        {% set first = tempo_records[0].tempo %}
+        {% set last = tempo_records[-1].tempo %}
+        {% if last > first %}
+        <span class="text-xs text-green-600">↑ trending faster</span>
+        {% elif last < first %}
+        <span class="text-xs text-amber-600">↓ trending slower</span>
+        {% else %}
+        <span class="text-xs text-stone-400">→ steady</span>
+        {% endif %}
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-1 flex-wrap">
+      {% for record in tempo_records %}
+        {% if not loop.first %}<span class="text-stone-300 text-xs">›</span>{% endif %}
+        <span class="text-sm font-medium text-stone-700">{{ record.tempo }}</span>
+      {% endfor %}
+      <span class="text-xs text-stone-400 ml-1">bpm</span>
+      {% if min_tempo is not none and min_tempo < tempo_records[0].tempo %}
+      <span class="text-xs text-stone-400 ml-3">(started at {{ min_tempo }} bpm)</span>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+</div>
