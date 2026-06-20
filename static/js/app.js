@@ -456,6 +456,36 @@
 
   // ── metronome ──────────────────────────────────────────────────────────────
 
+  // Beat patterns keyed by TuneType value.
+  // Each entry is an array of { freq, gain } objects representing one measure.
+  // H = primary downbeat, M = secondary downbeat, L = off-beat subdivision.
+  var H = { freq: 1320, gain: 0.45 };
+  var M = { freq: 1050, gain: 0.32 };
+  var L = { freq:  820, gain: 0.20 };
+
+  var METRO_PATTERNS = {
+    // 6/8 — two groups of three: strong, 2 light, medium, 2 light
+    jig:        [H, L, L, M, L, L],
+    // 9/8 — three groups of three
+    slip_jig:   [H, L, L, M, L, L, M, L, L],
+    // 12/8 — four groups of three; three equal secondary downbeats
+    slide:      [H, L, L, M, L, L, M, L, L, M, L, L],
+    // 4/4 / cut time — strong, off, medium, off
+    reel:       [H, L, M, L],
+    hornpipe:   [H, L, M, L],
+    barndance:  [H, L, M, L],
+    // 2/4 — treat as two-beat for practice purposes
+    march:      [H, L, M, L],
+    polka:      [H, L, M, L],
+    // 3/4
+    waltz:      [H, L, L],
+    // Strathspey is in 4/4 with a dotted feel — same macro-shape as reel
+    strathspey: [H, L, M, L],
+    // Air has no fixed metre; default 4-beat keeps things usable
+    air:        [H, L, M, L],
+  };
+
+  var metroPattern = METRO_PATTERNS.reel;  // resolved in initMetronome
   var metroTimer = null;
   var metroNextBeat = 0;
   var metroStartTime = 0;
@@ -476,14 +506,13 @@
     }
     while (metroNextBeat < ctx.currentTime + METRO_SCHEDULE) {
       var t = Math.max(metroNextBeat, ctx.currentTime + 0.005);
-      var isAccent = metroBeatCount % 4 === 0;
-      var peak = isAccent ? 0.45 : 0.65;
+      var beat = metroPattern[metroBeatCount % metroPattern.length];
       var osc = ctx.createOscillator();
       var gain = ctx.createGain();
-      osc.frequency.value = isAccent ? 1320 : 880;
+      osc.frequency.value = beat.freq;
       // 2 ms linear ramp from 0 avoids the onset click from a hard gain step.
       gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(peak, t + 0.002);
+      gain.gain.linearRampToValueAtTime(beat.gain, t + 0.002);
       gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.02);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -526,6 +555,8 @@
   function initMetronome() {
     var btn = document.getElementById("metro-play");
     if (!btn) return;
+
+    metroPattern = METRO_PATTERNS[window.__cairnTuneType] || METRO_PATTERNS.reel;
 
     btn.addEventListener("click", function () {
       var slider = document.getElementById("abc-tempo");
