@@ -31,8 +31,21 @@
   var cursorHighlightEl = null;
   var rebuildMapTimer = null;
 
+  // Shared AudioContext — drone and metronome use the same context to avoid
+  // browser volume normalisation side-effects from concurrent contexts.
+  var sharedAudioCtx = null;
+
+  function getAudioCtx() {
+    if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
+      sharedAudioCtx = new AudioContext();
+    }
+    if (sharedAudioCtx.state === "suspended") {
+      sharedAudioCtx.resume();
+    }
+    return sharedAudioCtx;
+  }
+
   var droneOsc = null;
-  var droneCtx = null;
   var droneGain = null;
   var droneKeys = [];
   var droneKeyIndex = 0;
@@ -354,20 +367,19 @@
 
   function startDrone(freq) {
     stopDrone();
-    droneCtx = new AudioContext();
-    droneGain = droneCtx.createGain();
-    droneGain.gain.setValueAtTime(0.35, droneCtx.currentTime);
-    droneOsc = droneCtx.createOscillator();
+    var ctx = getAudioCtx();
+    droneGain = ctx.createGain();
+    droneGain.gain.setValueAtTime(0.35, ctx.currentTime);
+    droneOsc = ctx.createOscillator();
     droneOsc.type = "sine";
-    droneOsc.frequency.setValueAtTime(freq, droneCtx.currentTime);
+    droneOsc.frequency.setValueAtTime(freq, ctx.currentTime);
     droneOsc.connect(droneGain);
-    droneGain.connect(droneCtx.destination);
+    droneGain.connect(ctx.destination);
     droneOsc.start();
   }
 
   function stopDrone() {
     if (droneOsc) { try { droneOsc.stop(); } catch (e) {} droneOsc = null; }
-    if (droneCtx) { droneCtx.close(); droneCtx = null; }
     droneGain = null;
   }
 
@@ -407,8 +419,8 @@
     if (nextBtn) nextBtn.classList.toggle("hidden", !multi);
 
     // If drone is currently playing, update frequency to match the new key
-    if (droneOsc && droneCtx) {
-      droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, droneCtx.currentTime);
+    if (droneOsc && sharedAudioCtx) {
+      droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, sharedAudioCtx.currentTime);
     }
   }
 
@@ -433,8 +445,8 @@
       droneKeyIndex = (droneKeyIndex + delta + droneKeys.length) % droneKeys.length;
       var keyLabel = document.getElementById("drone-key");
       if (keyLabel) keyLabel.textContent = droneKeys[droneKeyIndex];
-      if (droneOsc && droneCtx) {
-        droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, droneCtx.currentTime);
+      if (droneOsc && sharedAudioCtx) {
+        droneOsc.frequency.setValueAtTime(NOTE_FREQ[droneKeys[droneKeyIndex]] || 440, sharedAudioCtx.currentTime);
       }
     }
 
@@ -444,7 +456,6 @@
 
   // ── metronome ──────────────────────────────────────────────────────────────
 
-  var metroCtx = null;
   var metroTimer = null;
   var metroNextBeat = 0;
   var metroStartTime = 0;
@@ -453,18 +464,21 @@
   var METRO_SCHEDULE = 0.1;    // seconds to schedule ahead
 
   function metroSchedule(bpm) {
+    var ctx = sharedAudioCtx;
     var interval = 60.0 / bpm;
-    while (metroNextBeat < metroCtx.currentTime + METRO_SCHEDULE) {
-      var t = metroNextBeat;
-      var osc = metroCtx.createOscillator();
-      var gain = metroCtx.createGain();
+    while (metroNextBeat < ctx.currentTime + METRO_SCHEDULE) {
+      // Clamp to slightly ahead of now so envelope start is never in the past.
+      var t = Math.max(metroNextBeat, ctx.currentTime + 0.005);
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
       osc.frequency.value = metroBeatCount % 4 === 0 ? 1320 : 880;
-      gain.gain.setValueAtTime(0.5, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      // setTargetAtTime handles past start times gracefully; exponentialRamp does not.
+      gain.gain.setValueAtTime(0.7, t);
+      gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.015);
       osc.connect(gain);
-      gain.connect(metroCtx.destination);
+      gain.connect(ctx.destination);
       osc.start(t);
-      osc.stop(t + 0.05);
+      osc.stop(t + 0.15);
       metroNextBeat += interval;
       metroBeatCount++;
     }
@@ -473,16 +487,15 @@
 
   function startMetronome(bpm) {
     stopMetronome();
-    metroCtx = new AudioContext();
-    metroNextBeat = metroCtx.currentTime;
-    metroStartTime = metroCtx.currentTime;
+    var ctx = getAudioCtx();
+    metroNextBeat = ctx.currentTime;
+    metroStartTime = ctx.currentTime;
     metroBeatCount = 0;
     metroSchedule(bpm);
   }
 
   function stopMetronome() {
     if (metroTimer) { clearTimeout(metroTimer); metroTimer = null; }
-    if (metroCtx) { metroCtx.close(); metroCtx = null; }
   }
 
   function initMetronome() {
@@ -493,8 +506,8 @@
       var slider = document.getElementById("abc-tempo");
       var bpm = slider ? parseInt(slider.value, 10) : 100;
 
-      if (metroCtx) {
-        var elapsed = metroCtx.currentTime - metroStartTime;
+      if (metroTimer) {
+        var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
         var minDuration = (4 * 60) / bpm;
         var shouldRecord = elapsed >= minDuration;
         stopMetronome();
