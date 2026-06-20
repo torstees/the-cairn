@@ -368,7 +368,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   - `POST /boxes/{id}/tunes/{tune_id}/setting` — set preferred setting (HTMX)
   Add a "Boxes" link to `base.html` nav.
 
-- [ ] **4.3 — PracticeList and TuneListEntry models and CRUD service**
+- [x] **4.3 — PracticeList and TuneListEntry models and CRUD service**
   New models in `cairn/models.py`:
 
   `PracticeListType` enum: `repertoire | woodshed` (with `.label`).
@@ -393,7 +393,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Generate Alembic migration.
   Write tests in `tests/test_services/test_lists.py`.
 
-- [ ] **4.4 — PracticeList routes and templates**
+- [x] **4.4 — PracticeList routes and templates**
   Router: `cairn/routers/lists.py`, prefix `/lists`.
   Routes:
   - `GET /lists` — all lists for current user → `lists/index.html`
@@ -428,7 +428,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Generate Alembic migration.
   Add tests in `tests/test_services/test_spaced_rep.py`.
 
-- [ ] **4.5b — Setting picker for list entries**
+- [x] **4.5b — Setting picker for list entries**
   Update the add-tune form on `lists/detail.html` to include an optional setting
   dropdown alongside the tune picker. When the tune selection changes, an HTMX
   request fetches the non-core settings for that tune and populates the setting
