@@ -460,25 +460,38 @@
   var metroNextBeat = 0;
   var metroStartTime = 0;
   var metroBeatCount = 0;
+  var metroNodes = [];          // scheduled oscillators — cancelled on stop
   var METRO_LOOKAHEAD = 25;    // ms between scheduler ticks
   var METRO_SCHEDULE = 0.1;    // seconds to schedule ahead
 
   function metroSchedule(bpm) {
     var ctx = sharedAudioCtx;
     var interval = 60.0 / bpm;
+    // If the JS timer fired late (tab hidden, busy thread), skip forward rather
+    // than flooding with catch-up beats that all land within milliseconds.
+    while (metroNextBeat < ctx.currentTime - interval) {
+      metroNextBeat += interval;
+      metroBeatCount++;
+    }
     while (metroNextBeat < ctx.currentTime + METRO_SCHEDULE) {
-      // Clamp to slightly ahead of now so envelope start is never in the past.
       var t = Math.max(metroNextBeat, ctx.currentTime + 0.005);
       var osc = ctx.createOscillator();
       var gain = ctx.createGain();
       osc.frequency.value = metroBeatCount % 4 === 0 ? 1320 : 880;
-      // setTargetAtTime handles past start times gracefully; exponentialRamp does not.
       gain.gain.setValueAtTime(0.7, t);
       gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.015);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(t);
       osc.stop(t + 0.15);
+      // Self-prune once played so the array doesn't grow unbounded.
+      (function(node) {
+        node.onended = function() {
+          var i = metroNodes.indexOf(node);
+          if (i !== -1) metroNodes.splice(i, 1);
+        };
+      }(osc));
+      metroNodes.push(osc);
       metroNextBeat += interval;
       metroBeatCount++;
     }
@@ -496,6 +509,9 @@
 
   function stopMetronome() {
     if (metroTimer) { clearTimeout(metroTimer); metroTimer = null; }
+    // Cancel any oscillators already committed to the audio graph.
+    metroNodes.forEach(function(osc) { try { osc.stop(); } catch(e) {} });
+    metroNodes = [];
   }
 
   function initMetronome() {
