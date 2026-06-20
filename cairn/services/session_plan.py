@@ -302,3 +302,47 @@ async def build_session(
         select(PracticeSession).where(PracticeSession.id == session.id).options(selectinload(PracticeSession.items))
     )
     return result.scalar_one()
+
+
+async def get_session(db: AsyncSession, session_id: int) -> PracticeSession | None:
+    result = await db.execute(
+        select(PracticeSession)
+        .where(PracticeSession.id == session_id)
+        .options(
+            selectinload(PracticeSession.items).selectinload(PracticeSessionItem.tune),
+            selectinload(PracticeSession.items).selectinload(PracticeSessionItem.warmup),
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def complete_item(db: AsyncSession, session_id: int, item_id: int) -> PracticeSessionItem | None:
+    result = await db.execute(
+        select(PracticeSessionItem).where(
+            PracticeSessionItem.id == item_id,
+            PracticeSessionItem.session_id == session_id,
+        )
+    )
+    item = result.scalar_one_or_none()
+    if item is None:
+        return None
+    item.completed = True
+    await db.commit()
+    result = await db.execute(
+        select(PracticeSessionItem)
+        .where(PracticeSessionItem.id == item_id)
+        .options(selectinload(PracticeSessionItem.tune), selectinload(PracticeSessionItem.warmup))
+    )
+    return result.scalar_one_or_none()
+
+
+async def finish_session(db: AsyncSession, session_id: int) -> PracticeSession | None:
+    session = await db.get(PracticeSession, session_id)
+    if session is None:
+        return None
+    now = datetime.now(UTC)
+    session.ended_at = now
+    elapsed = (now.replace(tzinfo=None) - session.started_at.replace(tzinfo=None)).total_seconds()
+    session.total_minutes = max(1, int(elapsed / 60))
+    await db.commit()
+    return session
