@@ -1,10 +1,19 @@
 import re
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Instrument, OrnamentationLevel, Tune, TuneAlias, TuneDifficulty, TuneSetting, TuneType
+from cairn.models import (
+    Instrument,
+    OrnamentationLevel,
+    TempoRecord,
+    Tune,
+    TuneAlias,
+    TuneDifficulty,
+    TuneSetting,
+    TuneType,
+)
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
 
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
@@ -261,3 +270,40 @@ async def delete_tune(db: AsyncSession, tune_id: int) -> bool:
     await db.delete(tune)
     await db.commit()
     return True
+
+
+async def record_tempo(
+    db: AsyncSession, user_id: int, tune_id: int, box_id: int | None, tempo: int
+) -> TempoRecord:
+    record = TempoRecord(user_id=user_id, tune_id=tune_id, box_id=box_id, tempo=tempo)
+    db.add(record)
+    await db.commit()
+    await db.refresh(record)
+    return record
+
+
+async def get_tempo_history(
+    db: AsyncSession, user_id: int, tune_id: int, limit: int = 5
+) -> tuple[int | None, list[TempoRecord]]:
+    """Return (all-time min tempo, last `limit` records oldest-first)."""
+    recent = (
+        await db.execute(
+            select(TempoRecord)
+            .where(TempoRecord.user_id == user_id, TempoRecord.tune_id == tune_id)
+            .order_by(TempoRecord.created_at.desc())
+            .limit(limit)
+        )
+    ).scalars().all()
+
+    if not recent:
+        return None, []
+
+    min_tempo = (
+        await db.execute(
+            select(func.min(TempoRecord.tempo)).where(
+                TempoRecord.user_id == user_id, TempoRecord.tune_id == tune_id
+            )
+        )
+    ).scalar_one_or_none()
+
+    return min_tempo, list(reversed(recent))

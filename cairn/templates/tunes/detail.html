@@ -49,6 +49,10 @@
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed">
           &#9654; Play
         </button>
+        <button id="metro-play" type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+          &#9834; Metro
+        </button>
         <div class="flex items-center gap-2">
           <label for="abc-tempo" class="text-sm text-stone-500 select-none">Speed</label>
           <input id="abc-tempo" type="range" min="40" max="250" value="100" step="5"
@@ -85,11 +89,14 @@
     <template id="abc-source">{{ built_abc }}</template>
     {# Hidden render target — used by audio synth so BPM changes don't alter the visible score #}
     <div id="abc-audio" hidden></div>
+    {% include "tunes/partials/_tempo_history.html" %}
   </section>
   {% endif %}
-  {% if active_setting_id %}
-  <script>window.__cairnActiveSettingId = {{ active_setting_id }};</script>
-  {% endif %}
+  <script>
+    window.__cairnTuneId = {{ tune.id }};
+    {% if box_id %}window.__cairnBoxId = {{ box_id }};{% endif %}
+    {% if active_setting_id %}window.__cairnActiveSettingId = {{ active_setting_id }};{% endif %}
+  </script>
 
   {% include "tunes/partials/_aliases.html" %}
 

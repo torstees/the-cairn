@@ -278,6 +278,7 @@
     }
 
     initDrone();
+    initMetronome();
   }
 
   function handlePlayStop() {
@@ -439,6 +440,83 @@
 
     if (prevBtn) prevBtn.addEventListener("click", function () { shiftDroneKey(-1); });
     if (nextBtn) nextBtn.addEventListener("click", function () { shiftDroneKey(1); });
+  }
+
+  // ── metronome ──────────────────────────────────────────────────────────────
+
+  var metroCtx = null;
+  var metroTimer = null;
+  var metroNextBeat = 0;
+  var metroStartTime = 0;
+  var metroBeatCount = 0;
+  var METRO_LOOKAHEAD = 25;    // ms between scheduler ticks
+  var METRO_SCHEDULE = 0.1;    // seconds to schedule ahead
+
+  function metroSchedule(bpm) {
+    var interval = 60.0 / bpm;
+    while (metroNextBeat < metroCtx.currentTime + METRO_SCHEDULE) {
+      var t = metroNextBeat;
+      var osc = metroCtx.createOscillator();
+      var gain = metroCtx.createGain();
+      osc.frequency.value = metroBeatCount % 4 === 0 ? 1320 : 880;
+      gain.gain.setValueAtTime(0.5, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      osc.connect(gain);
+      gain.connect(metroCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.05);
+      metroNextBeat += interval;
+      metroBeatCount++;
+    }
+    metroTimer = setTimeout(function () { metroSchedule(bpm); }, METRO_LOOKAHEAD);
+  }
+
+  function startMetronome(bpm) {
+    stopMetronome();
+    metroCtx = new AudioContext();
+    metroNextBeat = metroCtx.currentTime;
+    metroStartTime = metroCtx.currentTime;
+    metroBeatCount = 0;
+    metroSchedule(bpm);
+  }
+
+  function stopMetronome() {
+    if (metroTimer) { clearTimeout(metroTimer); metroTimer = null; }
+    if (metroCtx) { metroCtx.close(); metroCtx = null; }
+  }
+
+  function initMetronome() {
+    var btn = document.getElementById("metro-play");
+    if (!btn) return;
+
+    btn.addEventListener("click", function () {
+      var slider = document.getElementById("abc-tempo");
+      var bpm = slider ? parseInt(slider.value, 10) : 100;
+
+      if (metroCtx) {
+        var elapsed = metroCtx.currentTime - metroStartTime;
+        var minDuration = (4 * 60) / bpm;
+        var shouldRecord = elapsed >= minDuration;
+        stopMetronome();
+        btn.textContent = "♩ Metro";
+        if (shouldRecord) {
+          var params = new URLSearchParams();
+          params.append("tempo", bpm);
+          if (window.__cairnBoxId) params.append("box_id", window.__cairnBoxId);
+          fetch("/tunes/" + window.__cairnTuneId + "/tempo", { method: "POST", body: params })
+            .then(function (r) { return r.ok ? r.text() : null; })
+            .then(function (html) {
+              if (!html) return;
+              var el = document.getElementById("tempo-history");
+              if (el) el.outerHTML = html;
+            })
+            .catch(function () {});
+        }
+      } else {
+        startMetronome(bpm);
+        btn.textContent = "■ Metro";
+      }
+    });
   }
 
   // ── edit/new tune form preview ─────────────────────────────────────────────
