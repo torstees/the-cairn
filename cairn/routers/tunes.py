@@ -114,6 +114,7 @@ async def tune_detail(
     built_abc = build_abc(tune, active_setting) if active_setting else ""
     settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
     min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
+    beats_per_bar = int(tune.time_signature.split("/")[0])
     return templates.TemplateResponse(
         request,
         "tunes/detail.html",
@@ -127,6 +128,7 @@ async def tune_detail(
             "min_tempo": min_tempo,
             "tempo_records": tempo_records,
             "last_tempo": tempo_records[-1].tempo if tempo_records else None,
+            "beats_per_bar": beats_per_bar,
             **_SETTINGS_CTX,
         },
     )
