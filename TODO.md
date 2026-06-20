@@ -441,7 +441,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### 5. Practice Session Planner
 
-- [ ] **5.1 — Session plan service**
+- [x] **5.1 — Session plan service**
   Create `cairn/services/session_plan.py`.
   Implement `build_session(db, user_id, box_id, total_minutes) -> list[PracticeSessionItem]`.
   Logic:
