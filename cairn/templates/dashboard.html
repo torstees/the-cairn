@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <div class="flex items-start justify-between mb-6">
+    <h1 class="text-3xl font-bold text-stone-800">Dashboard</h1>
+    <a href="/practice/plan"
+       class="bg-stone-700 hover:bg-stone-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium shrink-0">
+      Start Practice
+    </a>
+  </div>
+
+  {# ── Active context banner ────────────────────────────────────────────────── #}
+  {% if data.active_box or data.active_list_name %}
+  <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-6 flex flex-wrap gap-4 text-sm text-amber-800">
+    {% if data.active_box %}
+    <span>
+      Box: <span class="font-semibold">{{ data.active_box.name }}</span>
+    </span>
+    {% endif %}
+    {% if data.active_list_name %}
+    <span>
+      Active list: <span class="font-semibold">{{ data.active_list_name }}</span>
+      <span class="text-amber-600">({{ data.active_list_type_label }})</span>
+    </span>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="bg-stone-50 border border-stone-200 rounded-lg px-4 py-3 mb-6 text-sm text-stone-500">
+    No tune box selected yet.
+    <a href="/boxes" class="underline text-stone-700 hover:text-stone-900">Set up a box</a> to get started.
+  </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+
+    {# ── Retention due today ──────────────────────────────────────────────── #}
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div class="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
+        <h2 class="font-semibold text-stone-700 text-sm">Due for review</h2>
+        {% if data.due_retention %}
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
+          {{ data.due_retention | length }}
+        </span>
+        {% endif %}
+      </div>
+      {% if data.due_retention %}
+      <ul class="divide-y divide-stone-100">
+        {% for row in data.due_retention %}
+        <li class="px-4 py-2.5 flex items-center gap-3">
+          <a href="/tunes/{{ row.tune.id }}" class="flex-1 min-w-0 hover:text-stone-600">
+            <span class="block text-sm font-medium text-stone-800 truncate">{{ row.tune.title }}</span>
+            <span class="block text-xs text-stone-400">{{ row.tune.tune_type.label }}</span>
+          </a>
+          <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-stone-100 text-stone-600">
+            {{ row.progress.status.label }}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="px-4 py-6 text-center text-stone-400 text-sm">Nothing due for review today.</p>
+      {% endif %}
+    </div>
+
+    {# ── Currently learning ───────────────────────────────────────────────── #}
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div class="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
+        <h2 class="font-semibold text-stone-700 text-sm">Currently learning</h2>
+        {% if data.learning %}
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+          {{ data.learning | length }}
+        </span>
+        {% endif %}
+      </div>
+      {% if data.learning %}
+      <ul class="divide-y divide-stone-100">
+        {% for row in data.learning %}
+        <li class="px-4 py-2.5 flex items-center gap-3">
+          <a href="/tunes/{{ row.tune.id }}" class="flex-1 min-w-0 hover:text-stone-600">
+            <span class="block text-sm font-medium text-stone-800 truncate">{{ row.tune.title }}</span>
+            <span class="block text-xs text-stone-400">{{ row.tune.tune_type.label }}</span>
+          </a>
+          <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+            {% if row.progress.status.value == 'just_learning' %}bg-red-100 text-red-700
+            {% elif row.progress.status.value == 'getting_there' %}bg-orange-100 text-orange-700
+            {% elif row.progress.status.value == 'nearly_there' %}bg-yellow-100 text-yellow-700
+            {% else %}bg-green-100 text-green-700{% endif %}">
+            {{ row.progress.status.label }}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="px-4 py-6 text-center text-stone-400 text-sm">No tunes in active learning.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  {# ── Quick links ──────────────────────────────────────────────────────────── #}
+  <div class="flex flex-wrap gap-3 text-sm">
+    <a href="/progress" class="text-stone-500 hover:text-stone-700 underline underline-offset-2">View all progress</a>
+    <span class="text-stone-300">·</span>
+    <a href="/tunes" class="text-stone-500 hover:text-stone-700 underline underline-offset-2">Tune library</a>
+    <span class="text-stone-300">·</span>
+    <a href="/boxes" class="text-stone-500 hover:text-stone-700 underline underline-offset-2">Tune boxes</a>
+    <span class="text-stone-300">·</span>
+    <a href="/lists" class="text-stone-500 hover:text-stone-700 underline underline-offset-2">Practice lists</a>
+  </div>
+
+</div>
+{% endblock %}
