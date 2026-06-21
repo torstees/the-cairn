@@ -141,7 +141,7 @@
       <div x-show="!atMax || !showMusic" x-cloak class="px-4 py-2 flex justify-end">
         <button @click="cheat()"
                 class="text-xs text-stone-400 hover:text-stone-600 underline underline-offset-2">
-          <span x-text="showMusic ? 'Show full tune →' : 'Show music →'"></span>
+          <span x-text="!showMusic ? 'Show music →' : (_d.levels[idx+1] === -1 ? 'Show full tune →' : 'Show more →')"></span>
         </button>
       </div>
 
