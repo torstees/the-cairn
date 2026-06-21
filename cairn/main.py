@@ -2,11 +2,13 @@ import logging
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from cairn.dependencies import get_db
 from cairn.logging_config import setup_logging
 from cairn.routers import boxes as boxes_router
 from cairn.routers import difficulty as difficulty_router
@@ -15,6 +17,7 @@ from cairn.routers import practice as practice_router
 from cairn.routers import progress as progress_router
 from cairn.routers import settings as settings_router
 from cairn.routers import tunes as tunes_router
+from cairn.services.dashboard import get_dashboard_data
 from cairn.templating import templates
 
 setup_logging()
@@ -56,6 +59,13 @@ app.include_router(lists_router.router)
 app.include_router(practice_router.router)
 
 
+_STUB_USER_ID = 1
+
+
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "index.html")
+async def index(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> HTMLResponse:
+    data = await get_dashboard_data(db, _STUB_USER_ID)
+    return templates.TemplateResponse(request, "dashboard.html", {"data": data})
