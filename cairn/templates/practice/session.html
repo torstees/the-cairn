@@ -37,23 +37,29 @@
 
     {% if item.tune and disp %}
     {# ── Tune item (with ABC rendering and cheat button) ─────────────────── #}
+    {# ABC strings go in a <script> block — embedding them directly in an     #}
+    {# HTML attribute breaks when the string contains a " character.          #}
+    <script>
+    (window.__cairnItems = window.__cairnItems || {})[{{ item.id }}] = {
+      levels: {{ disp.levels | safe }},
+      full:   {{ disp.abc_full | tojson }},
+      b4:     {{ disp.abc_4   | tojson }},
+      b8:     {{ disp.abc_8   | tojson }}
+    };
+    </script>
     <div id="item-card-{{ item.id }}"
          x-data="{
-           levels: {{ disp.levels | safe }},
+           _d: (window.__cairnItems || {})[{{ item.id }}] || {levels:[-1],full:'',b4:'',b8:''},
            idx: 0,
-           abcFull: {{ disp.abc_full | tojson }},
-           abc4: {{ disp.abc_4 | tojson }},
-           abc8: {{ disp.abc_8 | tojson }},
-           completed: {{ 'true' if item.completed else 'false' }},
-           get bars() { return this.levels[this.idx]; },
-           get atMax() { return this.idx === this.levels.length - 1; },
+           get bars()   { return this._d.levels[this.idx]; },
+           get atMax()  { return this.idx === this._d.levels.length - 1; },
            get showMusic() { return this.bars !== null; },
            cheat() { if (!this.atMax) { this.idx++; this.$nextTick(() => this._render()); } },
            _getAbc() {
-             if (this.bars === -1) return this.abcFull;
-             if (this.bars === 8) return this.abc8 || this.abcFull;
-             if (this.bars === 4) return this.abc4 || this.abcFull;
-             return this.abcFull;
+             if (this.bars === -1) return this._d.full;
+             if (this.bars === 8)  return this._d.b8 || this._d.full;
+             if (this.bars === 4)  return this._d.b4 || this._d.full;
+             return this._d.full;
            },
            _render() {
              if (!this.showMusic) return;
@@ -61,7 +67,7 @@
                { responsive: 'resize', add_classes: true });
            }
          }"
-         x-init="$nextTick(() => _render())"
+         x-init="_render()"
          class="bg-white rounded-lg shadow-sm overflow-hidden {% if item.completed %}opacity-60{% endif %}">
 
       {# Header row #}
