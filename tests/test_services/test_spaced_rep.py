@@ -21,6 +21,7 @@ from cairn.services.lists import activate_list, add_tune_to_list, create_list
 from cairn.services.spaced_rep import (
     _INITIAL_EASE_FACTOR,
     MIN_EASE_FACTOR,
+    advance_status_one,
     get_effective_status,
     get_user_progress,
     next_review,
@@ -677,3 +678,31 @@ async def test_set_status_does_not_remove_from_woodshed_list(db: AsyncSession) -
         sa_select(TuneListEntry).where(TuneListEntry.list_id == pl.id, TuneListEntry.tune_id == t.id)
     )
     assert result.scalar_one_or_none() is not None
+
+
+async def test_advance_status_one_moves_up_one_step(db: AsyncSession) -> None:
+    u = await _user(db)
+    b = await _box(db, u.id)
+    t = await _tune(db)
+    await set_status(db, u.id, b.id, t.id, ProgressStatus.just_learning)
+    result = await advance_status_one(db, u.id, b.id, t.id)
+    assert result is not None
+    assert result.status == ProgressStatus.getting_there
+
+
+async def test_advance_status_one_does_not_exceed_top(db: AsyncSession) -> None:
+    u = await _user(db)
+    b = await _box(db, u.id)
+    t = await _tune(db)
+    await set_status(db, u.id, b.id, t.id, ProgressStatus.solo_ready)
+    result = await advance_status_one(db, u.id, b.id, t.id)
+    assert result is not None
+    assert result.status == ProgressStatus.solo_ready
+
+
+async def test_advance_status_one_returns_none_when_no_record(db: AsyncSession) -> None:
+    u = await _user(db)
+    b = await _box(db, u.id)
+    t = await _tune(db)
+    result = await advance_status_one(db, u.id, b.id, t.id)
+    assert result is None

@@ -19,7 +19,7 @@ from cairn.models import (
     WarmupItem,
 )
 from cairn.services.lists import get_active_list
-from cairn.services.spaced_rep import get_effective_status, record_practice
+from cairn.services.spaced_rep import advance_status_one, get_effective_status, record_practice
 
 logger = logging.getLogger(__name__)
 
@@ -413,6 +413,8 @@ async def rate_item(
 
     if item.tune_id and session.box_id:
         await record_practice(db, user_id, session.box_id, item.tune_id, confidence)
+        if confidence >= 4:
+            await advance_status_one(db, user_id, session.box_id, item.tune_id)
 
     result = await db.execute(
         select(PracticeSessionItem).where(PracticeSessionItem.id == item_id)

@@ -277,6 +277,37 @@ async def get_user_progress(
     return [(tune, progress_by_tune_id.get(tune.id)) for tune in tunes]
 
 
+async def advance_status_one(
+    db: AsyncSession,
+    user_id: int,
+    box_id: int,
+    tune_id: int,
+) -> StudentProgress | None:
+    """Advance a student's status by exactly one step.
+
+    No-op if the record doesn't exist or is already at the top level.
+    """
+    result = await db.execute(
+        select(StudentProgress).where(
+            StudentProgress.user_id == user_id,
+            StudentProgress.box_id == box_id,
+            StudentProgress.tune_id == tune_id,
+        )
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        return None
+
+    current_idx = _STATUS_ORDER.index(record.status)
+    if current_idx < len(_STATUS_ORDER) - 1:
+        record.status = _STATUS_ORDER[current_idx + 1]
+        await db.commit()
+        await db.refresh(record)
+        await _check_repertoire_removal(db, user_id, tune_id, box_id)
+
+    return record
+
+
 async def set_status(
     db: AsyncSession,
     user_id: int,
