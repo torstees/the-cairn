@@ -462,7 +462,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   list active, Woodshed list active, no active list, no tunes due for retention,
   all tunes committed.
 
-- [ ] **5.2 — Practice session routes and templates**
+- [x] **5.2 — Practice session routes and templates**
   Router: `cairn/routers/practice.py`, prefix `/practice`.
   Routes:
   - `GET /practice/plan` — form to enter total minutes and select active box →

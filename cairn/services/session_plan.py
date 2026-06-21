@@ -14,11 +14,12 @@ from cairn.models import (
     ProgressStatus,
     SessionItemType,
     StudentProgress,
+    Tune,
     TuneBoxEntry,
     WarmupItem,
 )
 from cairn.services.lists import get_active_list
-from cairn.services.spaced_rep import get_effective_status
+from cairn.services.spaced_rep import advance_status_one, get_effective_status, record_practice
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,25 @@ _LEARNING_MINUTES: dict[ProgressStatus, int] = {
 }
 
 _RETENTION_MINUTES = 2
+
+# Bars shown per status in the practice session view.
+# None  → title + key only (no music rendered)
+# -1    → full tune
+# N > 0 → first N bars
+_BARS_BY_STATUS: dict[ProgressStatus, int | None] = {
+    ProgressStatus.just_learning: -1,
+    ProgressStatus.getting_there: -1,
+    ProgressStatus.nearly_there: 8,
+    ProgressStatus.session_ready: 4,
+    ProgressStatus.committed: None,
+    ProgressStatus.performance_ready: None,
+    ProgressStatus.solo_ready: None,
+}
+
+
+def bars_for_status(status: ProgressStatus) -> int | None:
+    """Bars to display for a status.  None = title only, -1 = full tune."""
+    return _BARS_BY_STATUS.get(status, -1)
 
 
 def _is_due(next_suggested: datetime | None, now: datetime) -> bool:
@@ -221,7 +241,7 @@ async def build_session(
     warmup_minutes = max(1, math.ceil(total_minutes * 0.10))
     remaining = total_minutes - warmup_minutes
 
-    session = PracticeSession(user_id=user_id, started_at=now)
+    session = PracticeSession(user_id=user_id, box_id=box_id, started_at=now)
     db.add(session)
     await db.flush()
 
@@ -302,3 +322,118 @@ async def build_session(
         select(PracticeSession).where(PracticeSession.id == session.id).options(selectinload(PracticeSession.items))
     )
     return result.scalar_one()
+
+
+async def get_session(db: AsyncSession, session_id: int) -> PracticeSession | None:
+    result = await db.execute(
+        select(PracticeSession)
+        .where(PracticeSession.id == session_id)
+        .options(
+            selectinload(PracticeSession.items).selectinload(PracticeSessionItem.tune).selectinload(Tune.settings),
+            selectinload(PracticeSession.items).selectinload(PracticeSessionItem.warmup),
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def _load_progress_map(
+    db: AsyncSession,
+    user_id: int,
+    box_id: int,
+    tune_ids: set[int],
+) -> dict[int, ProgressStatus]:
+    """Single query: tune_id → ProgressStatus for all tune_ids in a box."""
+    if not tune_ids:
+        return {}
+    rows = (
+        (
+            await db.execute(
+                select(StudentProgress).where(
+                    StudentProgress.user_id == user_id,
+                    StudentProgress.tune_id.in_(tune_ids),
+                    StudentProgress.box_id == box_id,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {p.tune_id: p.status for p in rows}
+
+
+async def complete_item(db: AsyncSession, session_id: int, item_id: int) -> PracticeSessionItem | None:
+    session = await db.get(PracticeSession, session_id)
+    if session is None:
+        return None
+    result = await db.execute(
+        select(PracticeSessionItem).where(
+            PracticeSessionItem.id == item_id,
+            PracticeSessionItem.session_id == session_id,
+        )
+    )
+    item = result.scalar_one_or_none()
+    if item is None:
+        return None
+
+    now = datetime.now(UTC)
+    elapsed_total = (now.replace(tzinfo=None) - session.started_at.replace(tzinfo=None)).total_seconds() / 60
+    already_spent_result = await db.execute(
+        select(PracticeSessionItem.actual_minutes).where(
+            PracticeSessionItem.session_id == session_id,
+            PracticeSessionItem.actual_minutes.isnot(None),
+        )
+    )
+    already_spent = sum(m for (m,) in already_spent_result.all())
+    item.completed = True
+    item.actual_minutes = max(1, round(elapsed_total - already_spent))
+    await db.commit()
+    result = await db.execute(
+        select(PracticeSessionItem)
+        .where(PracticeSessionItem.id == item_id)
+        .options(selectinload(PracticeSessionItem.tune), selectinload(PracticeSessionItem.warmup))
+    )
+    return result.scalar_one_or_none()
+
+
+async def rate_item(
+    db: AsyncSession,
+    session_id: int,
+    item_id: int,
+    user_id: int,
+    confidence: int,
+) -> PracticeSessionItem | None:
+    """Complete a tune item, record the practice rating, and store the rating choice."""
+    session = await db.get(PracticeSession, session_id)
+    if session is None:
+        return None
+
+    item = await complete_item(db, session_id, item_id)
+    if item is None:
+        return None
+
+    if item.tune_id and session.box_id:
+        await record_practice(db, user_id, session.box_id, item.tune_id, confidence)
+        if confidence >= 4:
+            await advance_status_one(db, user_id, session.box_id, item.tune_id)
+
+    result = await db.execute(
+        select(PracticeSessionItem).where(PracticeSessionItem.id == item_id)
+    )
+    db_item = result.scalar_one_or_none()
+    if db_item is not None:
+        db_item.rating_given = confidence
+        await db.commit()
+
+    return item
+
+
+async def finish_session(db: AsyncSession, session_id: int) -> PracticeSession | None:
+    session = await db.get(PracticeSession, session_id)
+    if session is None:
+        return None
+    now = datetime.now(UTC)
+    session.ended_at = now
+    elapsed = (now.replace(tzinfo=None) - session.started_at.replace(tzinfo=None)).total_seconds()
+    session.total_minutes = max(1, int(elapsed / 60))
+    await db.commit()
+    return session

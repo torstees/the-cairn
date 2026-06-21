@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Practice Session — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <a href="/practice/plan" class="text-stone-500 hover:text-stone-700 text-sm">&larr; New Plan</a>
+      <h1 class="text-3xl font-bold text-stone-800 mt-1">Practice Session</h1>
+      <p class="text-stone-500 text-sm mt-1">
+        {% set total_allocated = session.items | sum(attribute='minutes_allocated') %}
+        {{ total_allocated }} min planned
+        {% if session.ended_at %}
+          &middot; {{ session.total_minutes }} min actual
+        {% endif %}
+      </p>
+    </div>
+    {% if session.ended_at %}
+    <span class="shrink-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
+      Finished
+    </span>
+    {% endif %}
+  </div>
+
+  {% if active_list %}
+  <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-5 text-sm text-amber-800">
+    Active list: <span class="font-semibold">{{ active_list.name }}</span>
+    ({{ active_list.list_type.label }})
+  </div>
+  {% endif %}
+
+  {% if session.items %}
+  <div class="space-y-3 mb-6">
+    {% for item in session.items %}
+    {% set disp = item_display.get(item.id) %}
+
+    {% if item.tune and disp %}
+    {# ── Tune item (with ABC rendering and cheat button) ─────────────────── #}
+    {# ABC strings go in a <script> block — embedding them directly in an     #}
+    {# HTML attribute breaks when the string contains a " character.          #}
+    <script>
+    (window.__cairnItems = window.__cairnItems || {})[{{ item.id }}] = {
+      levels: {{ disp.levels | safe }},
+      full:   {{ disp.abc_full | tojson }},
+      b4:     {{ disp.abc_4   | tojson }},
+      b8:     {{ disp.abc_8   | tojson }}
+    };
+    </script>
+    <div id="item-card-{{ item.id }}"
+         x-data="{
+           _d: (window.__cairnItems || {})[{{ item.id }}] || {levels:[-1],full:'',b4:'',b8:''},
+           idx: 0,
+           choosing: false,
+           get bars()   { return this._d.levels[this.idx]; },
+           get atMax()  { return this.idx === this._d.levels.length - 1; },
+           get showMusic() { return this.bars !== null; },
+           cheat() { if (!this.atMax) { this.idx++; this.$nextTick(() => this._render()); } },
+           _getAbc() {
+             if (this.bars === -1) return this._d.full;
+             if (this.bars === 8)  return this._d.b8 || this._d.full;
+             if (this.bars === 4)  return this._d.b4 || this._d.full;
+             return this._d.full;
+           },
+           _render() {
+             if (!this.showMusic) return;
+             ABCJS.renderAbc('abc-item-{{ item.id }}', this._getAbc(),
+               { responsive: 'resize', add_classes: true });
+           }
+         }"
+         x-init="_render()"
+         class="bg-white rounded-lg shadow-sm overflow-hidden {% if item.completed %}opacity-60{% endif %}">
+
+      {# Header row #}
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-stone-100">
+        <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+          {% if item.item_type.value == 'learning' %}bg-amber-100 text-amber-800
+          {% else %}bg-stone-100 text-stone-600{% endif %}">
+          {{ item.item_type.label }}
+        </span>
+        <span class="flex-1 font-semibold text-stone-800">{{ item.tune.title }}</span>
+        <span class="text-sm text-stone-500 shrink-0" x-show="!showMusic">
+          {{ disp.key_label }}
+        </span>
+        <span class="text-sm text-stone-400 shrink-0">
+          {% if session.ended_at and item.actual_minutes is not none %}
+          {{ item.actual_minutes }} min <span class="text-stone-300">/</span> {{ item.minutes_allocated }} min
+          {% else %}
+          {{ item.minutes_allocated }} min
+          {% endif %}
+        </span>
+        {% if not session.ended_at %}
+        <span id="item-done-{{ item.id }}" class="shrink-0">
+          {% if item.completed %}
+          <span class="text-green-600 text-sm font-medium">&#10003; Done</span>
+          {% else %}
+          {# "Mark Done" → shows two-choice rating buttons via Alpine #}
+          <button x-show="!choosing" @click="choosing = true"
+                  class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-3 py-1 rounded text-xs font-medium">
+            Mark Done
+          </button>
+          <div x-show="choosing" x-cloak class="flex flex-col items-end gap-1.5">
+            <div class="flex gap-2">
+              <div class="flex flex-col items-center gap-0.5">
+                <button hx-post="/practice/session/{{ session.id }}/item/{{ item.id }}/rate"
+                        hx-vals='{"confidence": "5"}'
+                        hx-target="#item-done-{{ item.id }}"
+                        hx-swap="innerHTML"
+                        @htmx:after-request="if($event.detail.successful) $el.closest('[id^=item-card-]').classList.add('opacity-60')"
+                        title="I played this well — advance to the next level and schedule a longer review"
+                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium">
+                  Moving on
+                </button>
+                <span class="text-xs text-stone-400 text-center">Advance + longer review</span>
+              </div>
+              <div class="flex flex-col items-center gap-0.5">
+                <button hx-post="/practice/session/{{ session.id }}/item/{{ item.id }}/rate"
+                        hx-vals='{"confidence": "2"}'
+                        hx-target="#item-done-{{ item.id }}"
+                        hx-swap="innerHTML"
+                        @htmx:after-request="if($event.detail.successful) $el.closest('[id^=item-card-]').classList.add('opacity-60')"
+                        title="I need more practice — stay at this level and revisit soon"
+                        class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-3 py-1 rounded text-xs font-medium">
+                  Keep working
+                </button>
+                <span class="text-xs text-stone-400 text-center">Stay + revisit soon</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </span>
+        {% endif %}
+      </div>
+
+      {# ABC notation area #}
+      <div x-show="showMusic" x-cloak class="px-4 pt-3 pb-1">
+        <div id="abc-item-{{ item.id }}" class="overflow-x-auto"></div>
+      </div>
+
+      {# Cheat / reveal bar #}
+      <div x-show="!atMax || !showMusic" x-cloak class="px-4 py-2 flex justify-end">
+        <button @click="cheat()"
+                class="text-xs text-stone-400 hover:text-stone-600 underline underline-offset-2">
+          <span x-text="!showMusic ? 'Show music →' : (_d.levels[idx+1] === -1 ? 'Show full tune →' : 'Show more →')"></span>
+        </button>
+      </div>
+
+    </div>
+
+    {% elif item.warmup %}
+    {# ── Warmup item (simple row) ────────────────────────────────────────── #}
+    <div id="item-card-{{ item.id }}"
+         class="bg-white rounded-lg shadow-sm px-4 py-3 flex items-center gap-3
+                {% if item.completed %}opacity-60{% endif %}">
+      <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+        Warmup
+      </span>
+      <span class="flex-1 font-semibold text-stone-800">{{ item.warmup.title }}</span>
+      <span class="text-sm text-stone-400 shrink-0">
+        {% if session.ended_at and item.actual_minutes is not none %}
+        {{ item.actual_minutes }} min <span class="text-stone-300">/</span> {{ item.minutes_allocated }} min
+        {% else %}
+        {{ item.minutes_allocated }} min
+        {% endif %}
+      </span>
+      {% if not session.ended_at %}
+      <span id="item-done-{{ item.id }}" class="shrink-0">
+        {% if item.completed %}
+        <span class="text-green-600 text-sm font-medium">&#10003; Done</span>
+        {% else %}
+        <button hx-post="/practice/session/{{ session.id }}/item/{{ item.id }}/complete"
+                hx-target="#item-done-{{ item.id }}"
+                hx-swap="innerHTML"
+                @htmx:after-request="if($event.detail.successful) $el.closest('[id^=item-card-]').classList.add('opacity-60')"
+                class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-3 py-1 rounded text-xs font-medium">
+          Mark Done
+        </button>
+        {% endif %}
+      </span>
+      {% endif %}
+    </div>
+
+    {% else %}
+    {# ── Fallback ────────────────────────────────────────────────────────── #}
+    {% set session_id = session.id %}
+    {% include "practice/partials/_item_row.html" %}
+    {% endif %}
+
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-lg shadow-sm p-8 text-center text-stone-400 mb-6">
+    <p>No items were scheduled for this session.</p>
+    <p class="text-sm mt-1">Try adding tunes to your box or adjusting the session length.</p>
+  </div>
+  {% endif %}
+
+  {% if not session.ended_at %}
+  <div class="flex justify-end">
+    <form method="post" action="/practice/session/{{ session.id }}/finish">
+      <button type="submit"
+              class="bg-stone-700 hover:bg-stone-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium">
+        Finish Session
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

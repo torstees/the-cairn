@@ -454,12 +454,12 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
 | Status | Label | Bars shown | Suggested practice slot |
 |---|---|---|---|
 | `just_learning` | Just Learning | All bars | 10–15 min |
-| `getting_there` | Getting There | First 8 bars | 5–10 min |
-| `nearly_there` | Nearly There | First 4 bars | 3–5 min |
-| `session_ready` | Session Ready | First 2 bars | 2–3 min |
-| `committed` | Committed | Title only | Spaced rep queue |
-| `performance_ready` | Performance Ready | Title only | Spaced rep queue |
-| `solo_ready` | Solo Ready | Title only | Spaced rep queue |
+| `getting_there` | Getting There | All bars | 5–10 min |
+| `nearly_there` | Nearly There | First 8 bars | 3–5 min |
+| `session_ready` | Session Ready | First 4 bars | 2–3 min |
+| `committed` | Committed | Title + key only | Spaced rep queue |
+| `performance_ready` | Performance Ready | Title + key only | Spaced rep queue |
+| `solo_ready` | Solo Ready | Title + key only | Spaced rep queue |
 
 `bars_to_show` is always derived from `status` at render time — never stored.
 
