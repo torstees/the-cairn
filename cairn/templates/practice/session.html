@@ -51,6 +51,7 @@
          x-data="{
            _d: (window.__cairnItems || {})[{{ item.id }}] || {levels:[-1],full:'',b4:'',b8:''},
            idx: 0,
+           choosing: false,
            get bars()   { return this._d.levels[this.idx]; },
            get atMax()  { return this.idx === this._d.levels.length - 1; },
            get showMusic() { return this.bars !== null; },
@@ -93,13 +94,39 @@
           {% if item.completed %}
           <span class="text-green-600 text-sm font-medium">&#10003; Done</span>
           {% else %}
-          <button hx-post="/practice/session/{{ session.id }}/item/{{ item.id }}/complete"
-                  hx-target="#item-done-{{ item.id }}"
-                  hx-swap="innerHTML"
-                  @htmx:after-request="if($event.detail.successful) $el.closest('[id^=item-card-]').classList.add('opacity-60')"
+          {# "Mark Done" → shows two-choice rating buttons via Alpine #}
+          <button x-show="!choosing" @click="choosing = true"
                   class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-3 py-1 rounded text-xs font-medium">
             Mark Done
           </button>
+          <div x-show="choosing" x-cloak class="flex flex-col items-end gap-1.5">
+            <div class="flex gap-2">
+              <div class="flex flex-col items-center gap-0.5">
+                <button hx-post="/practice/session/{{ session.id }}/item/{{ item.id }}/rate"
+                        hx-vals='{"confidence": "5"}'
+                        hx-target="#item-done-{{ item.id }}"
+                        hx-swap="innerHTML"
+                        @htmx:after-request="if($event.detail.successful) $el.closest('[id^=item-card-]').classList.add('opacity-60')"
+                        title="I played this well — advance to the next level and schedule a longer review"
+                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium">
+                  Moving on
+                </button>
+                <span class="text-xs text-stone-400 text-center">Advance + longer review</span>
+              </div>
+              <div class="flex flex-col items-center gap-0.5">
+                <button hx-post="/practice/session/{{ session.id }}/item/{{ item.id }}/rate"
+                        hx-vals='{"confidence": "2"}'
+                        hx-target="#item-done-{{ item.id }}"
+                        hx-swap="innerHTML"
+                        @htmx:after-request="if($event.detail.successful) $el.closest('[id^=item-card-]').classList.add('opacity-60')"
+                        title="I need more practice — stay at this level and revisit soon"
+                        class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-3 py-1 rounded text-xs font-medium">
+                  Keep working
+                </button>
+                <span class="text-xs text-stone-400 text-center">Stay + revisit soon</span>
+              </div>
+            </div>
+          </div>
           {% endif %}
         </span>
         {% endif %}

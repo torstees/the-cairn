@@ -17,6 +17,7 @@ from cairn.services.session_plan import (
     complete_item,
     finish_session,
     get_session,
+    rate_item,
 )
 from cairn.templating import templates
 
@@ -125,6 +126,24 @@ async def item_complete(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     item = await complete_item(db, session_id, item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return templates.TemplateResponse(
+        request,
+        "practice/partials/_done_indicator.html",
+        {"item": item},
+    )
+
+
+@router.post("/session/{session_id}/item/{item_id}/rate")
+async def item_rate(
+    request: Request,
+    session_id: int,
+    item_id: int,
+    db: AsyncSession = Depends(get_db),
+    confidence: int = Form(...),
+) -> Response:
+    item = await rate_item(db, session_id, item_id, _STUB_USER_ID, confidence)
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     return templates.TemplateResponse(

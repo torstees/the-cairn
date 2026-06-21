@@ -19,7 +19,7 @@ from cairn.models import (
     WarmupItem,
 )
 from cairn.services.lists import get_active_list
-from cairn.services.spaced_rep import get_effective_status
+from cairn.services.spaced_rep import get_effective_status, record_practice
 
 logger = logging.getLogger(__name__)
 
@@ -393,6 +393,36 @@ async def complete_item(db: AsyncSession, session_id: int, item_id: int) -> Prac
         .options(selectinload(PracticeSessionItem.tune), selectinload(PracticeSessionItem.warmup))
     )
     return result.scalar_one_or_none()
+
+
+async def rate_item(
+    db: AsyncSession,
+    session_id: int,
+    item_id: int,
+    user_id: int,
+    confidence: int,
+) -> PracticeSessionItem | None:
+    """Complete a tune item, record the practice rating, and store the rating choice."""
+    session = await db.get(PracticeSession, session_id)
+    if session is None:
+        return None
+
+    item = await complete_item(db, session_id, item_id)
+    if item is None:
+        return None
+
+    if item.tune_id and session.box_id:
+        await record_practice(db, user_id, session.box_id, item.tune_id, confidence)
+
+    result = await db.execute(
+        select(PracticeSessionItem).where(PracticeSessionItem.id == item_id)
+    )
+    db_item = result.scalar_one_or_none()
+    if db_item is not None:
+        db_item.rating_given = confidence
+        await db.commit()
+
+    return item
 
 
 async def finish_session(db: AsyncSession, session_id: int) -> PracticeSession | None:

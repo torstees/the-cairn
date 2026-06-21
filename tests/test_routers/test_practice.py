@@ -108,6 +108,42 @@ async def test_session_finish_redirects(client: AsyncClient, db: AsyncSession) -
     assert resp.headers["location"] == f"/practice/session/{session.id}"
 
 
+async def test_item_rate_moving_on_returns_done_indicator(client: AsyncClient, db: AsyncSession) -> None:
+    _, box, _, _ = await _seed(db)
+    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    # Find the first tune item
+    tune_item = next(i for i in session.items if i.tune_id)
+    resp = await client.post(
+        f"/practice/session/{session.id}/item/{tune_item.id}/rate",
+        data={"confidence": "5"},
+    )
+    assert resp.status_code == 200
+    assert "Done" in resp.text
+
+
+async def test_item_rate_keep_working_returns_done_indicator(client: AsyncClient, db: AsyncSession) -> None:
+    _, box, _, _ = await _seed(db)
+    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    tune_item = next(i for i in session.items if i.tune_id)
+    resp = await client.post(
+        f"/practice/session/{session.id}/item/{tune_item.id}/rate",
+        data={"confidence": "2"},
+    )
+    assert resp.status_code == 200
+    assert "Done" in resp.text
+
+
+async def test_item_rate_404_for_wrong_session(client: AsyncClient, db: AsyncSession) -> None:
+    _, box, _, _ = await _seed(db)
+    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    tune_item = next(i for i in session.items if i.tune_id)
+    resp = await client.post(
+        f"/practice/session/9999/item/{tune_item.id}/rate",
+        data={"confidence": "5"},
+    )
+    assert resp.status_code == 404
+
+
 async def test_session_finish_shows_finished_state(client: AsyncClient, db: AsyncSession) -> None:
     _, box, _, _ = await _seed(db)
     session = await build_session(db, _STUB_USER_ID, box.id, 30)
