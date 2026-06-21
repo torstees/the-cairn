@@ -362,6 +362,9 @@ async def _load_progress_map(
 
 
 async def complete_item(db: AsyncSession, session_id: int, item_id: int) -> PracticeSessionItem | None:
+    session = await db.get(PracticeSession, session_id)
+    if session is None:
+        return None
     result = await db.execute(
         select(PracticeSessionItem).where(
             PracticeSessionItem.id == item_id,
@@ -371,7 +374,18 @@ async def complete_item(db: AsyncSession, session_id: int, item_id: int) -> Prac
     item = result.scalar_one_or_none()
     if item is None:
         return None
+
+    now = datetime.now(UTC)
+    elapsed_total = (now.replace(tzinfo=None) - session.started_at.replace(tzinfo=None)).total_seconds() / 60
+    already_spent_result = await db.execute(
+        select(PracticeSessionItem.actual_minutes).where(
+            PracticeSessionItem.session_id == session_id,
+            PracticeSessionItem.actual_minutes.isnot(None),
+        )
+    )
+    already_spent = sum(m for (m,) in already_spent_result.all())
     item.completed = True
+    item.actual_minutes = max(1, round(elapsed_total - already_spent))
     await db.commit()
     result = await db.execute(
         select(PracticeSessionItem)

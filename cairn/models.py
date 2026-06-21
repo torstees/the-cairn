@@ -417,6 +417,7 @@ class PracticeSessionItem(TimestampMixin, Base):
     tune_id: Mapped[int | None] = mapped_column(ForeignKey("tunes.id"), nullable=True)
     warmup_id: Mapped[int | None] = mapped_column(ForeignKey("warmup_items.id"), nullable=True)
     minutes_allocated: Mapped[int] = mapped_column(Integer, nullable=False)
+    actual_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     rating_given: Mapped[int | None] = mapped_column(Integer, nullable=True)
 

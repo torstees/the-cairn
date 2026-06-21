@@ -81,7 +81,13 @@
         <span class="text-sm text-stone-500 shrink-0" x-show="!showMusic">
           {{ disp.key_label }}
         </span>
-        <span class="text-sm text-stone-400 shrink-0">{{ item.minutes_allocated }} min</span>
+        <span class="text-sm text-stone-400 shrink-0">
+          {% if session.ended_at and item.actual_minutes is not none %}
+          {{ item.actual_minutes }} min <span class="text-stone-300">/</span> {{ item.minutes_allocated }} min
+          {% else %}
+          {{ item.minutes_allocated }} min
+          {% endif %}
+        </span>
         {% if not session.ended_at %}
         <span id="item-done-{{ item.id }}" class="shrink-0">
           {% if item.completed %}
@@ -123,7 +129,13 @@
         Warmup
       </span>
       <span class="flex-1 font-semibold text-stone-800">{{ item.warmup.title }}</span>
-      <span class="text-sm text-stone-400 shrink-0">{{ item.minutes_allocated }} min</span>
+      <span class="text-sm text-stone-400 shrink-0">
+        {% if session.ended_at and item.actual_minutes is not none %}
+        {{ item.actual_minutes }} min <span class="text-stone-300">/</span> {{ item.minutes_allocated }} min
+        {% else %}
+        {{ item.minutes_allocated }} min
+        {% endif %}
+      </span>
       {% if not session.ended_at %}
       <span id="item-done-{{ item.id }}" class="shrink-0">
         {% if item.completed %}
