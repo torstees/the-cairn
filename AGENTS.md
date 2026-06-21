@@ -517,6 +517,24 @@ Set `CAIRN_LOG_LEVEL` env var to override the default `INFO` level.
 - **Never commit directly to `main`**
 - **Never merge or close a PR** — the user reviews, tests, and merges all PRs themselves
 
+### GitHub Issues
+
+When creating issues with `gh issue create`, always apply the most appropriate type label:
+
+- `bug` — something is broken or behaving incorrectly
+- `enhancement` — new feature or improvement to existing behaviour
+- `documentation` — docs-only change
+
+If the user states or implies a priority level, also apply the matching label:
+
+- `Priority - High` — blocking other work or urgent UX problem
+- `Priority - Medium` — important but not blocking
+- `Priority - Low` — nice to have, can wait
+
+Example: `gh issue create --label "enhancement" --label "Priority - High" ...`
+
+Omit the priority label when the user has not indicated one.
+
 ---
 
 ## What the Agent Must Not Do
