@@ -69,7 +69,7 @@
         <span class="font-normal text-stone-400">(ABC notation for Scale/Snippet; plain text for Text Blurb)</span>
       </label>
       <textarea id="content" name="content" rows="6" required
-                placeholder="X:1&#10;T:D Major Scale&#10;M:4/4&#10;L:1/8&#10;K:D&#10;DEFG ABAG|FEDC DEFD|"
+                placeholder="ABC notation (Scale/Snippet) or plain text (Text Blurb)"
                 class="w-full border border-stone-300 rounded-lg px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">{{ warmup.content if warmup else '' }}</textarea>
       <div id="abc-preview-container" class="hidden mt-3 border border-stone-200 rounded-lg bg-stone-50 px-4 py-3">
         <p class="text-xs font-medium text-stone-400 mb-2 uppercase tracking-wide">Preview</p>
@@ -87,6 +87,18 @@
         Cancel
       </a>
     </div>
+
+    <details class="text-sm text-stone-500">
+      <summary class="cursor-pointer select-none hover:text-stone-700">ABC notation reference</summary>
+      <pre class="mt-2 bg-stone-50 border border-stone-200 rounded-lg p-3 font-mono text-xs leading-relaxed overflow-x-auto">X:1
+T:D Major Scale
+M:4/4
+L:1/8
+K:D
+DEFG ABAG|FEDC DEFD|</pre>
+      <a href="https://abcwiki.org/abc:syntax" target="_blank" rel="noopener noreferrer"
+         class="inline-block mt-2 text-xs text-stone-500 hover:text-stone-700 underline">Full ABC syntax reference &rarr;</a>
+    </details>
 
   </form>
 </div>
