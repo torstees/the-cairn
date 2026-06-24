@@ -71,6 +71,10 @@
       <textarea id="content" name="content" rows="6" required
                 placeholder="X:1&#10;T:D Major Scale&#10;M:4/4&#10;L:1/8&#10;K:D&#10;DEFG ABAG|FEDC DEFD|"
                 class="w-full border border-stone-300 rounded-lg px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">{{ warmup.content if warmup else '' }}</textarea>
+      <div id="abc-preview-container" class="hidden mt-3 border border-stone-200 rounded-lg bg-stone-50 px-4 py-3">
+        <p class="text-xs font-medium text-stone-400 mb-2 uppercase tracking-wide">Preview</p>
+        <div id="abc-preview"></div>
+      </div>
     </div>
 
     <div class="flex gap-3 pt-2">
@@ -86,4 +90,40 @@
 
   </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const typeSelect = document.getElementById('warmup_type');
+  const contentArea = document.getElementById('content');
+  const previewContainer = document.getElementById('abc-preview-container');
+  const previewDiv = document.getElementById('abc-preview');
+
+  function isAbcType() {
+    return typeSelect.value === 'scale' || typeSelect.value === 'snippet';
+  }
+
+  function renderPreview() {
+    const src = contentArea.value.trim();
+    if (!src) {
+      previewDiv.innerHTML = '<p class="text-sm text-stone-400 italic">Preview will appear here.</p>';
+      return;
+    }
+    ABCJS.renderAbc('abc-preview', src, { responsive: 'resize', add_classes: true });
+  }
+
+  function syncPreview() {
+    if (isAbcType()) {
+      previewContainer.classList.remove('hidden');
+      renderPreview();
+    } else {
+      previewContainer.classList.add('hidden');
+    }
+  }
+
+  typeSelect.addEventListener('change', syncPreview);
+  contentArea.addEventListener('input', () => { if (isAbcType()) renderPreview(); });
+
+  syncPreview();
+</script>
 {% endblock %}
