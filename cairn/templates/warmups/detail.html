@@ -50,8 +50,13 @@
     {% endif %}
   </div>
 
-  {# ── Practice tools ─────────────────────────────────────────────────────── #}
+  {% if is_abc %}
+  {# ── Practice tools ───────────────────────────────────────────────────── #}
   <div class="mt-4 bg-white rounded-lg shadow-sm px-4 py-3 flex items-center gap-4 flex-wrap">
+    <button id="abc-play" type="button"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed">
+      &#9654; Play
+    </button>
     <button id="metro-play" type="button"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
       &#9834; Metro
@@ -78,20 +83,16 @@
       </button>
     </div>
   </div>
+  <div id="abc-audio" hidden></div>
+  {% endif %}
 
 </div>
 {% endblock %}
 
 {% block scripts %}
+{% if is_abc %}
 <script>
-  window.initWarmupTools({{ warmup.content | tojson if is_abc else '""' }});
-
-  var slider = document.getElementById('abc-tempo');
-  var label  = document.getElementById('abc-tempo-label');
-  if (slider && label) {
-    slider.addEventListener('input', function () {
-      label.textContent = slider.value + ' bpm';
-    });
-  }
+  window.initWarmupTools({{ warmup.content | tojson }});
 </script>
+{% endif %}
 {% endblock %}
