@@ -808,10 +808,81 @@
     document.querySelectorAll(".cairn-modal-backdrop").forEach(function (el) { el.remove(); });
   }
 
+  // Wire up the warmup form textarea to render a live ABCJS preview and sync
+  // the cursor to the nearest note. Simpler than initSettingPreview because
+  // warmup content is complete ABC — no header prepend or offset translation.
+  // Returns { update } so callers can trigger a render on type-select change.
+  function initWarmupPreview(textareaId, previewDivId) {
+    var textarea = document.getElementById(textareaId);
+    if (!textarea) return { update: function () {} };
+
+    var previewVisualObj = null;
+    var previewCharMap = [];
+    var previewCursorEl = null;
+    var previewRebuildTimer = null;
+
+    function clearHighlight() {
+      if (previewCursorEl) {
+        previewCursorEl.classList.remove("abcjs-cursor-active");
+        previewCursorEl = null;
+      }
+    }
+
+    function rebuildCharMap() {
+      previewCharMap = [];
+      if (previewVisualObj && previewVisualObj[0]) {
+        previewCharMap = buildCharMap(previewVisualObj[0], previewDivId);
+      }
+    }
+
+    function updatePreview() {
+      var src = textarea.value.trim();
+      clearHighlight();
+      previewCharMap = [];
+      if (previewRebuildTimer) { clearTimeout(previewRebuildTimer); previewRebuildTimer = null; }
+      if (!src) {
+        var div = document.getElementById(previewDivId);
+        if (div) div.innerHTML = '<p class="text-sm text-stone-400 italic">Preview will appear here.</p>';
+        return;
+      }
+      previewVisualObj = ABCJS.renderAbc(previewDivId, src, PREVIEW_OPTS);
+      rebuildCharMap();
+      previewRebuildTimer = setTimeout(function () {
+        rebuildCharMap();
+        previewRebuildTimer = null;
+      }, 150);
+    }
+
+    function syncCursor() {
+      if (!previewCharMap.length) rebuildCharMap();
+      if (!previewCharMap.length) return;
+      var pos = textarea.selectionStart;
+      clearHighlight();
+      var best = null;
+      for (var i = 0; i < previewCharMap.length; i++) {
+        var e = previewCharMap[i];
+        if (e.start <= pos && (best === null || e.start > best.start)) best = e;
+      }
+      if (best && best.el) {
+        best.el.classList.add("abcjs-cursor-active");
+        previewCursorEl = best.el;
+      }
+    }
+
+    textarea.addEventListener("input", updatePreview);
+    textarea.addEventListener("keyup", syncCursor);
+    textarea.addEventListener("click", syncCursor);
+
+    if (textarea.value.trim()) updatePreview();
+
+    return { update: updatePreview };
+  }
+
   // Expose to Alpine and templates
   window.clearCairnModal = clearCairnModal;
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
+  window.initWarmupPreview = initWarmupPreview;
 
   // ── init ───────────────────────────────────────────────────────────────────
 

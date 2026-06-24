@@ -95,35 +95,23 @@
 {% block scripts %}
 <script>
   const typeSelect = document.getElementById('warmup_type');
-  const contentArea = document.getElementById('content');
   const previewContainer = document.getElementById('abc-preview-container');
-  const previewDiv = document.getElementById('abc-preview');
+  const warmupPreview = window.initWarmupPreview('content', 'abc-preview');
 
   function isAbcType() {
     return typeSelect.value === 'scale' || typeSelect.value === 'snippet';
   }
 
-  function renderPreview() {
-    const src = contentArea.value.trim();
-    if (!src) {
-      previewDiv.innerHTML = '<p class="text-sm text-stone-400 italic">Preview will appear here.</p>';
-      return;
-    }
-    ABCJS.renderAbc('abc-preview', src, { responsive: 'resize', add_classes: true });
-  }
-
   function syncPreview() {
     if (isAbcType()) {
       previewContainer.classList.remove('hidden');
-      renderPreview();
+      warmupPreview.update();
     } else {
       previewContainer.classList.add('hidden');
     }
   }
 
   typeSelect.addEventListener('change', syncPreview);
-  contentArea.addEventListener('input', () => { if (isAbcType()) renderPreview(); });
-
   syncPreview();
 </script>
 {% endblock %}
