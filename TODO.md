@@ -482,7 +482,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### 6. Warmup Library
 
-- [ ] **6.1 — Warmup CRUD**
+- [x] **6.1 — Warmup CRUD**
   Router: `cairn/routers/warmups.py`, prefix `/warmups`.
   Basic CRUD for `WarmupItem`: list, create, edit, delete.
   Content field renders as ABC notation if `warmup_type == scale or snippet`,
