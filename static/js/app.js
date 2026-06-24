@@ -576,7 +576,7 @@
         var shouldRecord = elapsed >= minDuration;
         stopMetronome();
         btn.textContent = "♩ Metro";
-        if (shouldRecord) {
+        if (shouldRecord && window.__cairnTuneId) {
           var params = new URLSearchParams();
           params.append("tempo", bpm);
           if (window.__cairnBoxId) params.append("box_id", window.__cairnBoxId);
@@ -878,11 +878,22 @@
     return { update: updatePreview };
   }
 
+  // Initialise metronome and drone on the warmup detail page.
+  // abcString may be empty for text-blurb warmups — drone hides itself when
+  // no K: header is found.
+  function initWarmupTools(abcString) {
+    currentAbcString = abcString || "";
+    updateDroneDisplay();
+    initDrone();
+    initMetronome();
+  }
+
   // Expose to Alpine and templates
   window.clearCairnModal = clearCairnModal;
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
   window.initWarmupPreview = initWarmupPreview;
+  window.initWarmupTools = initWarmupTools;
 
   // ── init ───────────────────────────────────────────────────────────────────
 

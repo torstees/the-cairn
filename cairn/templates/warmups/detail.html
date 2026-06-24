@@ -50,5 +50,48 @@
     {% endif %}
   </div>
 
+  {# ── Practice tools ─────────────────────────────────────────────────────── #}
+  <div class="mt-4 bg-white rounded-lg shadow-sm px-4 py-3 flex items-center gap-4 flex-wrap">
+    <button id="metro-play" type="button"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+      &#9834; Metro
+    </button>
+    <div class="flex items-center gap-2">
+      <label for="abc-tempo" class="text-sm text-stone-500 select-none">Speed</label>
+      <input id="abc-tempo" type="range" min="40" max="250" value="100" step="5"
+             class="w-28 accent-stone-600 cursor-pointer">
+      <span id="abc-tempo-label" class="text-sm text-stone-500 w-16">100 bpm</span>
+    </div>
+    <div id="drone-controls" class="hidden flex items-center gap-1.5">
+      <button id="drone-prev" type="button"
+              class="hidden px-2 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+        &#9664;
+      </button>
+      <span id="drone-key" class="text-sm font-medium text-stone-600 w-8 text-center select-none"></span>
+      <button id="drone-next" type="button"
+              class="hidden px-2 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+        &#9654;
+      </button>
+      <button id="drone-play" type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+        &#9834; Drone
+      </button>
+    </div>
+  </div>
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.initWarmupTools({{ warmup.content | tojson if is_abc else '""' }});
+
+  var slider = document.getElementById('abc-tempo');
+  var label  = document.getElementById('abc-tempo-label');
+  if (slider && label) {
+    slider.addEventListener('input', function () {
+      label.textContent = slider.value + ' bpm';
+    });
+  }
+</script>
 {% endblock %}
