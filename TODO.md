@@ -588,6 +588,48 @@ without redesign.
   seed a `Content` record, `GET /pages/{slug}`, assert 200 and title
   appears in the response.
 
+- [ ] **7.3 — Warmup text blurb: markdown with embedded ABC notation**
+
+  Change warmup `text_blurb` content from plain text to markdown, rendered
+  via `render_markdown()` (from 7.2) and with ABC fenced block support
+  (from the 7.2 extension issue #68).
+
+  **Detail page** (`cairn/templates/warmups/detail.html`):
+  When `warmup.warmup_type == WarmupType.text_blurb`, render
+  `warmup.content` through `render_markdown()` in the route handler and
+  pass `rendered_body` to the template. Display with the same prose
+  container as `content/page.html`:
+  `max-w-3xl mx-auto space-y-4 text-stone-700 leading-relaxed`.
+  ABC blocks in the markdown render via the ABCJS post-processor from
+  issue #68 — no extra work needed.
+
+  **Form** (`cairn/templates/warmups/form.html`):
+  When `warmup_type` is `text_blurb`, show a Write / Preview tab toggle
+  above the content textarea (same pattern as GitHub's editor):
+  - **Write tab** — shows the raw textarea for editing
+  - **Preview tab** — POSTs the textarea content to a new endpoint
+    `POST /warmups/preview-markdown` (returns rendered HTML fragment),
+    then swaps the textarea out for a `<div>` showing the result; swap
+    back on return to Write
+  The toggle is hidden for `scale` and `snippet` types (those use the
+  live ABCJS preview from issue #64).
+
+  **New route** `POST /warmups/preview-markdown`:
+  Accepts `body: str` form field. Calls `render_markdown(body)`.
+  Returns an HTML fragment (not a full page) for injection into the
+  preview panel. No auth required for Phase 1.
+
+  **No schema/migration needed** — `content` column stays `Text`;
+  the interpretation changes by type.
+
+  Update `content/` seed docs or AGENTS.md to note that `text_blurb`
+  warmup bodies accept markdown with ` ```abc ``` ` fenced blocks.
+
+  Write tests in `tests/test_routers/test_warmups.py`:
+  - `POST /warmups/preview-markdown` returns rendered HTML
+  - ABC fenced block in preview body is passed through as a
+    `<code class="language-abc">` element (rendering is client-side)
+
 ---
 
 ### Phase 1 Complete Checklist
