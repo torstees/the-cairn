@@ -517,6 +517,21 @@ Set `CAIRN_LOG_LEVEL` env var to override the default `INFO` level.
 - **Never commit directly to `main`**
 - **Never merge or close a PR** — the user reviews, tests, and merges all PRs themselves
 
+### Closing issues via PR
+
+GitHub only auto-closes issues when a closing keyword (`closes`, `fixes`, `resolves`) appears
+in the **PR body or a commit message** — the PR title is ignored for this purpose.
+Always put the closing reference in the PR body:
+
+```
+## Summary
+...
+
+Closes #42
+```
+
+Never rely on a keyword in the PR title to close an issue.
+
 ### GitHub Issues
 
 When creating issues with `gh issue create`, always apply the most appropriate type label:
