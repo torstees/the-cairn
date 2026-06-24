@@ -472,7 +472,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   - `POST /practice/session/{id}/item/{item_id}/complete` — mark item done (HTMX)
   - `POST /practice/session/{id}/finish` — close session, record total time
 
-- [ ] **5.3 — Dashboard**
+- [x] **5.3 — Dashboard**
   Create `cairn/templates/dashboard.html` as the root `/` route.
   Show: active TuneBox name, active PracticeList name (if any), tunes due for
   retention today, current learning tunes with status, a "Start Practice" button

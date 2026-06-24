@@ -15,6 +15,7 @@ from cairn.routers import difficulty as difficulty_router
 from cairn.routers import lists as lists_router
 from cairn.routers import practice as practice_router
 from cairn.routers import progress as progress_router
+from cairn.routers import warmups as warmups_router
 from cairn.routers import settings as settings_router
 from cairn.routers import tunes as tunes_router
 from cairn.services.dashboard import get_dashboard_data
@@ -57,6 +58,7 @@ app.include_router(progress_router.router)
 app.include_router(boxes_router.router)
 app.include_router(lists_router.router)
 app.include_router(practice_router.router)
+app.include_router(warmups_router.router)
 
 
 _STUB_USER_ID = 1

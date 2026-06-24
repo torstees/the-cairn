@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ warmup.title }} — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <a href="/warmups" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Warmups</a>
+      <h1 class="text-3xl font-bold text-stone-800 mt-1">{{ warmup.title }}</h1>
+      <p class="text-stone-500 text-sm mt-1">
+        {{ warmup.warmup_type.label }}
+        {% if warmup.instrument %} · {{ warmup.instrument.label }}{% endif %}
+        · Difficulty {{ warmup.difficulty }}/5
+      </p>
+    </div>
+    <div class="flex gap-2 shrink-0">
+      <a href="/warmups/{{ warmup.id }}/edit"
+         class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
+        Edit
+      </a>
+      <button hx-delete="/warmups/{{ warmup.id }}"
+              hx-confirm="Delete this warmup?"
+              class="border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-medium">
+        Delete
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+    {% if is_abc %}
+    {# ── ABC notation render ────────────────────────────────────────────── #}
+    <div class="px-4 pt-4 pb-2">
+      <div id="warmup-abc" class="overflow-x-auto"></div>
+    </div>
+    <div class="px-4 pb-3 border-t border-stone-100 mt-2">
+      <details class="group">
+        <summary class="text-xs text-stone-400 cursor-pointer hover:text-stone-600 select-none py-1">
+          Show ABC source
+        </summary>
+        <pre class="mt-2 text-xs font-mono text-stone-600 bg-stone-50 rounded p-3 overflow-x-auto whitespace-pre-wrap">{{ warmup.content }}</pre>
+      </details>
+    </div>
+    <script>
+      ABCJS.renderAbc("warmup-abc", {{ warmup.content | tojson }}, { responsive: "resize", add_classes: true });
+    </script>
+    {% else %}
+    {# ── Plain text blurb ───────────────────────────────────────────────── #}
+    <div class="px-4 py-4 text-stone-700 whitespace-pre-wrap text-sm leading-relaxed">{{ warmup.content }}</div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

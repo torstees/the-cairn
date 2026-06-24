@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{% if warmup %}Edit {{ warmup.title }}{% else %}New Warmup{% endif %} — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+
+  <div class="flex items-center gap-3 mb-6">
+    <a href="/warmups" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Warmups</a>
+    <h1 class="text-3xl font-bold text-stone-800">
+      {% if warmup %}Edit Warmup{% else %}New Warmup{% endif %}
+    </h1>
+  </div>
+
+  <form method="POST"
+        action="{% if warmup %}/warmups/{{ warmup.id }}{% else %}/warmups{% endif %}"
+        class="bg-white rounded-lg shadow-sm p-6 space-y-5">
+
+    {% if error %}
+    <p class="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{{ error }}</p>
+    {% endif %}
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-1" for="title">Title</label>
+      <input id="title" name="title" type="text" required
+             value="{{ warmup.title if warmup else '' }}"
+             placeholder="e.g. D Major Scale, Long Roll Exercise"
+             class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1" for="warmup_type">Type</label>
+        <select id="warmup_type" name="warmup_type"
+                class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
+          {% for wt in warmup_types %}
+          <option value="{{ wt.value }}"
+            {% if warmup and warmup.warmup_type == wt %}selected{% endif %}>
+            {{ wt.label }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1" for="difficulty">Difficulty (1–5)</label>
+        <input id="difficulty" name="difficulty" type="number" min="1" max="5" required
+               value="{{ warmup.difficulty if warmup else 1 }}"
+               class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-1" for="instrument">Instrument (optional)</label>
+      <select id="instrument" name="instrument"
+              class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-white">
+        <option value="">Any instrument</option>
+        {% for inst in instruments %}
+        <option value="{{ inst.value }}"
+          {% if warmup and warmup.instrument == inst %}selected{% endif %}>
+          {{ inst.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-1" for="content">
+        Content
+        <span class="font-normal text-stone-400">(ABC notation for Scale/Snippet; plain text for Text Blurb)</span>
+      </label>
+      <textarea id="content" name="content" rows="6" required
+                placeholder="X:1&#10;T:D Major Scale&#10;M:4/4&#10;L:1/8&#10;K:D&#10;DEFG ABAG|FEDC DEFD|"
+                class="w-full border border-stone-300 rounded-lg px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">{{ warmup.content if warmup else '' }}</textarea>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button type="submit"
+              class="bg-stone-700 hover:bg-stone-600 text-white px-5 py-2 rounded-lg font-medium">
+        {% if warmup %}Save Changes{% else %}Create Warmup{% endif %}
+      </button>
+      <a href="{% if warmup %}/warmups/{{ warmup.id }}{% else %}/warmups{% endif %}"
+         class="px-5 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 font-medium">
+        Cancel
+      </a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
