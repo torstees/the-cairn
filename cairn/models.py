@@ -212,12 +212,21 @@ class WarmupItem(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     warmup_type: Mapped[WarmupType] = mapped_column(Enum(WarmupType), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
     difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
 
     __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_warmup_difficulty_range"),)
 
+    instruments: Mapped[list["WarmupInstrument"]] = relationship(back_populates="warmup", cascade="all, delete-orphan")
     session_items: Mapped[list["PracticeSessionItem"]] = relationship(back_populates="warmup")
+
+
+class WarmupInstrument(TimestampMixin, Base):
+    __tablename__ = "warmup_instruments"
+
+    warmup_id: Mapped[int] = mapped_column(ForeignKey("warmup_items.id"), primary_key=True)
+    instrument: Mapped[Instrument] = mapped_column(Enum(Instrument), primary_key=True)
+
+    warmup: Mapped["WarmupItem"] = relationship(back_populates="instruments")
 
 
 class TuneSet(TimestampMixin, Base):

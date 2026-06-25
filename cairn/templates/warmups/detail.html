@@ -10,7 +10,7 @@
       <h1 class="text-3xl font-bold text-stone-800 mt-1">{{ warmup.title }}</h1>
       <p class="text-stone-500 text-sm mt-1">
         {{ warmup.warmup_type.label }}
-        {% if warmup.instrument %} · {{ warmup.instrument.label }}{% endif %}
+        {% if warmup.instruments %} · {{ warmup.instruments | map(attribute='instrument') | map(attribute='label') | join(', ') }}{% endif %}
         · Difficulty {{ warmup.difficulty }}/5
       </p>
     </div>

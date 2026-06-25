@@ -200,7 +200,7 @@ class WarmupItemCreate(BaseModel):
     title: str
     warmup_type: WarmupType
     content: str
-    instrument: Instrument | None = None
+    instruments: list[Instrument] = []
     difficulty: int = Field(ge=1, le=5)
 
 
@@ -208,7 +208,7 @@ class WarmupItemUpdate(BaseModel):
     title: str | None = None
     warmup_type: WarmupType | None = None
     content: str | None = None
-    instrument: Instrument | None = None
+    instruments: list[Instrument] = []
     difficulty: int | None = Field(default=None, ge=1, le=5)
 
 
@@ -216,5 +216,5 @@ class WarmupItemRead(_ReadBase):
     title: str
     warmup_type: WarmupType
     content: str
-    instrument: Instrument | None
+    instruments: list[Instrument]
     difficulty: int

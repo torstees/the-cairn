@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import Instrument, WarmupType
+from cairn.models import Instrument, WarmupInstrument, WarmupType
 from cairn.services.warmups import (
     create_warmup,
     delete_warmup,
@@ -46,6 +46,7 @@ async def warmup_new(request: Request) -> Response:
             "warmup": None,
             "warmup_types": _WARMUP_TYPES,
             "instruments": _INSTRUMENTS,
+            "selected_instruments": set(),
             "error": None,
         },
     )
@@ -59,16 +60,16 @@ async def warmup_create(
     warmup_type: str = Form(...),
     content: str = Form(...),
     difficulty: int = Form(...),
-    instrument: str = Form(default=""),
+    instrument: list[str] = Form(default=[]),
 ) -> Response:
-    instrument_enum = Instrument(instrument) if instrument else None
+    instruments = [Instrument(v) for v in instrument if v]
     warmup = await create_warmup(
         db,
         title=title,
         warmup_type=WarmupType(warmup_type),
         content=content,
         difficulty=difficulty,
-        instrument=instrument_enum,
+        instruments=instruments,
     )
     logger.info("warmup created", extra={"warmup_id": warmup.id})
     return RedirectResponse(f"/warmups/{warmup.id}", status_code=303)
@@ -99,6 +100,7 @@ async def warmup_edit(
     warmup = await get_warmup(db, warmup_id)
     if warmup is None:
         raise HTTPException(status_code=404, detail="Warmup not found")
+    selected = {wi.instrument for wi in warmup.instruments}
     return templates.TemplateResponse(
         request,
         "warmups/form.html",
@@ -106,6 +108,7 @@ async def warmup_edit(
             "warmup": warmup,
             "warmup_types": _WARMUP_TYPES,
             "instruments": _INSTRUMENTS,
+            "selected_instruments": selected,
             "error": None,
         },
     )
@@ -120,9 +123,9 @@ async def warmup_update(
     warmup_type: str = Form(...),
     content: str = Form(...),
     difficulty: int = Form(...),
-    instrument: str = Form(default=""),
+    instrument: list[str] = Form(default=[]),
 ) -> Response:
-    instrument_enum = Instrument(instrument) if instrument else None
+    instruments = [Instrument(v) for v in instrument if v]
     warmup = await update_warmup(
         db,
         warmup_id=warmup_id,
@@ -130,7 +133,7 @@ async def warmup_update(
         warmup_type=WarmupType(warmup_type),
         content=content,
         difficulty=difficulty,
-        instrument=instrument_enum,
+        instruments=instruments,
     )
     if warmup is None:
         raise HTTPException(status_code=404, detail="Warmup not found")
