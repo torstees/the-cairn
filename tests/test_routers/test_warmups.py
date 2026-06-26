@@ -171,6 +171,62 @@ async def test_warmup_delete_404(client: AsyncClient) -> None:
     assert resp.status_code == 404
 
 
+async def test_warmup_create_with_default_tempo(client: AsyncClient, db: AsyncSession) -> None:
+    resp = await client.post(
+        "/warmups",
+        data={
+            "title": "Slow Scale",
+            "warmup_type": "scale",
+            "content": _ABC,
+            "difficulty": "1",
+            "default_tempo": "60",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+
+
+async def test_warmup_update_with_blank_default_tempo(client: AsyncClient, db: AsyncSession) -> None:
+    """Browser always submits default_tempo='' even when left blank; must not 422."""
+    w = await _seed(db)
+    resp = await client.post(
+        f"/warmups/{w.id}",
+        data={
+            "title": "Updated Title",
+            "warmup_type": "scale",
+            "content": _ABC,
+            "difficulty": "2",
+            "default_tempo": "",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    updated = await get_warmup(db, w.id)
+    assert updated is not None
+    assert updated.title == "Updated Title"
+    assert updated.default_tempo is None
+
+
+async def test_warmup_tempo_record(client: AsyncClient, db: AsyncSession) -> None:
+    w = await _seed(db)
+    resp = await client.post(f"/warmups/{w.id}/tempo", data={"tempo": "80"})
+    assert resp.status_code == 204
+
+
+async def test_warmup_tempo_record_updates_on_revisit(client: AsyncClient, db: AsyncSession) -> None:
+    w = await _seed(db)
+    await client.post(f"/warmups/{w.id}/tempo", data={"tempo": "80"})
+    await client.post(f"/warmups/{w.id}/tempo", data={"tempo": "120"})
+    resp = await client.get(f"/warmups/{w.id}")
+    assert resp.status_code == 200
+    assert "120" in resp.text
+
+
+async def test_warmup_tempo_record_404(client: AsyncClient) -> None:
+    resp = await client.post("/warmups/9999/tempo", data={"tempo": "80"})
+    assert resp.status_code == 404
+
+
 async def test_text_blurb_does_not_render_abc(client: AsyncClient, db: AsyncSession) -> None:
     w = await create_warmup(
         db,

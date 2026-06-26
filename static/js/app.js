@@ -890,8 +890,10 @@
     var tempoLabel = document.getElementById("abc-tempo-label");
 
     naturalBpm = extractBpm(currentAbcString);
-    if (tempoSlider && naturalBpm) tempoSlider.value = naturalBpm;
-    if (tempoLabel && naturalBpm) tempoLabel.textContent = naturalBpm + " bpm";
+    // Priority: user's last tempo → author default → ABC Q: field → 100
+    var seedBpm = window.__cairnLastTempo || window.__cairnDefaultTempo || naturalBpm || 100;
+    if (tempoSlider) tempoSlider.value = seedBpm;
+    if (tempoLabel) tempoLabel.textContent = seedBpm + " bpm";
 
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
@@ -911,6 +913,22 @@
       } else {
         playBtn.addEventListener("click", handlePlayStop);
       }
+    }
+
+    var metroBtn = document.getElementById("metro-play");
+    if (metroBtn && window.__cairnWarmupId) {
+      metroBtn.addEventListener("click", function () {
+        if (!metroTimer) {
+          var bpm = tempoSlider ? parseInt(tempoSlider.value, 10) : 100;
+          var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
+          var minDuration = (4 * 4 / bpm) * 60;
+          if (elapsed < minDuration) return;
+          var params = new URLSearchParams();
+          params.append("tempo", bpm);
+          fetch("/warmups/" + window.__cairnWarmupId + "/tempo", { method: "POST", body: params })
+            .catch(function () {});
+        }
+      });
     }
   }
 

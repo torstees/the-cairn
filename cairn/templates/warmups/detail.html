@@ -92,6 +92,9 @@
 {% block scripts %}
 {% if is_abc %}
 <script>
+  window.__cairnWarmupId = {{ warmup.id }};
+  window.__cairnLastTempo = {{ last_tempo | tojson }};
+  window.__cairnDefaultTempo = {{ warmup.default_tempo | tojson }};
   window.initWarmupTools({{ warmup.content | tojson }});
 </script>
 {% endif %}
