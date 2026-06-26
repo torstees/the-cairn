@@ -939,7 +939,7 @@
   var tunerAnalyser = null;
   var tunerAnimFrame = null;
   var tunerActive = false;
-  var tunerSmoothedCents = 0;
+  var tunerSmoothedFreq = null;
 
   var TUNER_NOTES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 
@@ -1023,11 +1023,14 @@
     var a4 = parseFloat((document.getElementById('tuner-a4') || {}).value) || 440;
     var freq = tunerDetectPitch(buf, tunerAudioCtx.sampleRate);
     if (freq !== null) {
-      var raw = tunerFreqToNote(freq, a4);
-      tunerSmoothedCents = tunerSmoothedCents * 0.7 + raw.cents * 0.3;
-      tunerUpdateDisplay({ name: raw.name, cents: Math.round(tunerSmoothedCents) });
+      // Smooth the raw frequency rather than cents — this stabilises the note
+      // name too, since note + cents are both derived from the smoothed value.
+      tunerSmoothedFreq = tunerSmoothedFreq === null
+        ? freq
+        : tunerSmoothedFreq * 0.8 + freq * 0.2;
+      tunerUpdateDisplay(tunerFreqToNote(tunerSmoothedFreq, a4));
     } else {
-      tunerSmoothedCents = 0;
+      tunerSmoothedFreq = null;
       tunerUpdateDisplay(null);
     }
     tunerAnimFrame = requestAnimationFrame(tunerTick);
@@ -1049,7 +1052,7 @@
         tunerAnalyser.fftSize = 2048;
         tunerAudioCtx.createMediaStreamSource(stream).connect(tunerAnalyser);
         tunerActive = true;
-        tunerSmoothedCents = 0;
+        tunerSmoothedFreq = null;
         if (statusEl) statusEl.textContent = '';
         if (btn) btn.textContent = 'Stop listening';
         tunerTick();
@@ -1069,7 +1072,7 @@
     if (tunerMicStream) { tunerMicStream.getTracks().forEach(function (t) { t.stop(); }); tunerMicStream = null; }
     if (tunerAudioCtx)  { tunerAudioCtx.close().catch(function () {}); tunerAudioCtx = null; }
     tunerAnalyser = null;
-    tunerSmoothedCents = 0;
+    tunerSmoothedFreq = null;
     var btn = document.getElementById('tuner-toggle');
     if (btn) btn.textContent = 'Start listening';
     var statusEl = document.getElementById('tuner-status');
