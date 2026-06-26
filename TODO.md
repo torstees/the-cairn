@@ -545,7 +545,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Generate Alembic migration covering all changes above.
   Safe to delete `cairn.db` and re-run `make migrate` — no production data.
 
-- [ ] **6b.2 — TuneSet CRUD service and ABC builder**
+- [x] **6b.2 — TuneSet CRUD service and ABC builder**
   Create `cairn/services/tune_sets.py`.
 
   **Service functions:**
