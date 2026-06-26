@@ -1,10 +1,10 @@
 [
   {
-    "title": "A Fig For A Kiss",
-    "tune_type": "slip_jig",
-    "key_root": "E",
+    "title": "The Abbey",
+    "tune_type": "reel",
+    "key_root": "A",
     "key_mode": "dorian",
-    "time_signature": "9/8",
+    "time_signature": "4/4",
     "composer": null,
     "origin": null,
     "region": null,
@@ -12,55 +12,7 @@
     "settings": [
       {
         "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|: G2B E2B BAG | F2A D2A AGF | G2B E2B BAG |\n[1 B/c/dB AGF DEF :|2 B/c/dB AGF E3 ||\n|: g2e g2e edB | f2d dcd fed |1 g2e g2e edB |\ndBG GBd e2f :|2 gfe fed ecA | B/c/dB AGF E2F ||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "A Noodle in the Mix",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "mixolydian",
-    "time_signature": "6/8",
-    "composer": "Eric?",
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:EAc e2e|def ecA|A2E G2A| BAG Bcd|\nEAc e2e|def ecA|A2E G2A| BAG A3:|\n|:eaa eaa|eab c'ba|gfe dBA|AGE D3\n|1eaa eaa|eab c'ba|gfe dBA|BAG A3:|\n|2EAc e2e|def ecA|A2E G2A| BAG A3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "An Rogaire Dubh",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "mixolydian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n| cAA BGG | cAA ABd | cAA BAG | AFD D2 B|\ncAA BGG | cAA AFD | G2 A (B/c/d)B |1 AFD D2 B :|2 AFD D3 ||\n|: ~f3 ~g3 | afd cBA| ~f3 gfg | afd dfg |\nagf gfe | fed e/f/ed | cBA BAG | AFD D3 :||\n",
+        "abc_notation": "L: 1/8\n\n~A3B A2GE|A2GA BGDB|~A3B AGEF|G2GA BGDB|\n~A3B A2GE|A2GA BGDB|A2dB AGEF|G2GA Bdd2||\neg~g2 a2ba|gabg aged|eg~g2 a2ga|bgef ged2|\neg~g2 ag~g2|a2bg aged|eg~g2 a2ga|bgea gedB||\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -69,13 +21,13 @@
         "mutation_notation": null
       },
       {
-        "label": "The Black Rogue",
-        "abc_notation": "L: 1/8\n\n| \"A\"cAA \"G\"BGG | \"A\"cAA A2d | \"A\"cAA \"G\"BAG | \"D\"AFD D2 d|\n\"A\"cAA \"G\"BGG | \"A\"cAA AFD | \"G\"G3  BAG |1 \"D\"AFD D2 d :|2 \"D\"AFD D3 ||\n|: \"D/F#\"f3 \"G\"g3 | \"D/A\"afd \"A\"cBA| \"D/F\"f3 \"G\"gfg | \"D/A\"afd dfg |\n\"D/F#\"agf \"G\"gfe | \"D/A\"fed efd | \"A\"cBA \"G\"BAG | \"D\"AFD D3 :||\n~\n",
+        "label": "Basic Ornamentation",
+        "abc_notation": "~A3B A2GE|A2GA BGDB|~A3B AGEF|G2GA BGDB|\n~A3B A2GE|A2GA BGDB|A2dB AGEF|G2GA Bdd2||\nK: Bmin\neg~g2 a2ba|gabg aged|eg~g2 a2ga|bgef ged2|\neg~g2 ag~g2|a2bg aged|eg~g2 a2ga|bgea gedB||",
         "is_core": false,
-        "instrument": null,
-        "source": "Gretchen Priest",
+        "instrument": "flute",
+        "source": null,
         "source_notes": null,
-        "ornamentation_level": "none",
+        "ornamentation_level": "minimal",
         "mutation_notation": null
       }
     ],
@@ -164,6 +116,54 @@
     "difficulties": []
   },
   {
+    "title": "The Ballintore Fancy",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:GB ~B2 GBdB|GBBG FGAF|GB ~B2 GBdg|1 ecAG FGAF:|2 ecAG FGAG||\n|:BE~E2 BEGA|BE ~E2 A2GA|BE ~E2 cABG|1 AGFG A2GA:|2 AGFG AcBA||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Ballydesmond No. 1",
+    "tune_type": "polka",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "2/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nAB|:\"C\"c2 \"G\"B2|\"Am\"AB/2A/2 \"Em\"GA|\"G\"B/2c/2d ef|g2 ed|\n\"Am\"ea \"G\"ge|dB GA/2B/2|\"C\"ce dB|1\"Am\"A2 AB|2\"Am\"A3 d:|\n|:ea ag/2e/2|\"G\"d g gd|\"Am\"ea ab|\"Em\"g2 ed|\n\"Am\"ea ge|\"G\"dB GA/2B/2|\"Am\"ce \"Em\"dB|1\"Am\"A3 d|2\"Am\"A2 AB:|\nT: The Ballydesmond No. 2\n|:\"Am\"EA AB|cd e2|\"G\"G>F GA|GE ED|\n|\"Am\"EA AB|B1/2c1/2d ef|\"G\"g1/2f1/2e\"Em\" dB|\"Am\"A2 A2:|\n|:\"Am\"a>g ab|ag ef|\"G\"g>f ga|ge d2|\n|\"Am\"ea ab|ag ef|\"G\"ge \"E7\"dB|\"Am\"A2 A2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "Banish Misfortune",
     "tune_type": "jig",
     "key_root": "D",
@@ -179,6 +179,50 @@
         "abc_notation": "L: 1/8\n\nde|:\"D\"fed \"C\"cAG| \"D\"Add \"C\"cAG| \"D\"F2D DED| FEF \"C\"GFG|\n\"D\"AGA \"C\"cAG| \"D\"AGA \"C\"cde|\"D\"fed \"C\"cAG| \"D\"Ad^c d2e:|\n|:\"D\"f2d d^cd| f2g agf| \"C\"e2c cBc|e2f gfe|\n\"D\"f2g agf| \"C\"e2f gfe|\"D\"fed \"C\"cAG|\"D\"Ad^c d2e:|\n|:\"D\"f2g \"C\"e2f| \"D\"d2e \"C\"c2d|\"D\"ABA \"C\"GAG| \"D\"F2F GED|\n\"C\"c3 cAG| AGA cde| \"D\"fed cAG|[1 \"C\"Ad^c \"D\"d2e:|[2 \"C\"Ad^c \"D\"d3|]\n",
         "is_core": true,
         "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Just a test",
+        "abc_notation": "S: A rabbit\nde|:\"D\"fed \"C\"cAG| \"D\"Add \"C\"cAG| \"D\"F2D DED| FEF \"C\"GFG|\n\"D\"AGA \"C\"cAG| \"D\"AGA \"C\"cde|\"D\"fed \"C\"cAG| \"D\"Ad^c d2e:|\n|:\"D\"f2d d^cd| f2g agf| \"C\"e2c cBc|e2f gfe|\n\"D\"f2g agf| \"C\"e2f gfe|\"D\"fed \"C\"cAG|\"D\"Ad^c d2e:|\n|:\"D\"f2g \"C\"e2f| \"D\"d2e \"C\"c2d|\"D\"ABA \"C\"GAG| \"D\"F2F GED|\n\"C\"c3 cAG| AGA cde| \"D\"fed cAG|[1 \"C\"Ad^c \"D\"d2e:|[2 \"C\"Ad^c \"D\"d3|]",
+        "is_core": false,
+        "instrument": "flute",
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Banshee",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:G2 GD EDEG|AGAB d2 Bd|eged BAGA|BAGE EDDE|\nG2 GD EDEG|AGAB d2 Bd|eged BAGA|BAGE ED D2:|\n|eaag egge|dBBA B2 Bd|e B3 gBfB|eBBA B3 d|\neaag efge dBBA B2 Bd|eged BAGA|BAGE E2 D2|\n|eaag egge|dBBA B2 Bd|e B3 egfg|eBBA B3 d|\neaag efge dBBA B2 Bd|eged BAGA|BAGE E2 D2||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Test Setting",
+        "abc_notation": "|:G2 GD EDEG|AGAB d2 Bd|eged BAGA|BAGE EDDE|\nG2 GD EDEG|AGAB d2 Bd|eged BAGA|BAGE ED D2:|\n|eaag egge|dBBA B2 Bd|e B3 gBfB|eBBA B3 d|\neaag efge dBBA B2 Bd|eged BAGA|BAGE E2 D2|\n|eaag egge|dBBA B2 Bd|e B3 egfg|eBBA B3 d|\neaag efge dBBA B2 Bd|eged BAGA|BAGE E2 D2||",
+        "is_core": false,
+        "instrument": "uilleann_pipes",
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
@@ -236,6 +280,54 @@
     "difficulties": []
   },
   {
+    "title": "The Black Haired Lass (Redican's Mother)",
+    "tune_type": "slip_jig",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "9/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nFAA FAd AFD|FAA FAd (B2 A)|FAA FAd AFD|EDB, DFA (B2 A):|\nf2f fa(f e)dB|Af(f fef) g2e|f3 fa(f e)dB|AFE DFA B2A:|\nT: The Black Haired Lass (Whistle Friendly )\n|FAA FAd AFD|FAA FAd (B2 A)|FAA FAd AFD|EDD DFA (B2 A):|\nf2f fa(f e)dB|Af(f fef) g2e|f3 fa(f e)dB|AFE DFA B2A:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": "Rose Flanagan",
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Blarney Pilgrim",
+    "tune_type": "jig",
+    "key_root": "D",
+    "key_mode": "mixolydian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:\"G\"DED DEG| \"D\"A2A ABc| \"G\"BAG \"Am\"AGE| \"Em\"GEA \"C\"GED|\n\"G\"DED DEG|\"D\"A2A ABc|\"G\"BAG \"Am\"AGE| \"D\"GED D3:|\n|:\"G\"ded dBG|\"D\"AGA \"G\"BGE| \"G\"ded dBG|\"D\"AGA \"G\"GAB|\n\"Em\"g2e \"G\"dBG|\"Am\"AGA \"Em\"BGE|\"G\"B2G \"C\"AGE| \"D\"GAG G3:|\n|:\"D\"A2D \"G\"B2D| \"D\"A2D ABc|\"G\"BAG \"Am\"AGE|\"Em\"GEA \"C\"GED|\n\"D\"ADD \"G\"BDD|\"D\"ADD ABc|\"G\"BAG \"Am\"AGE|\"C\"GED \"D\"D3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "Bolen's Fancy (Connie The Soldier)",
     "tune_type": "jig",
     "key_root": "D",
@@ -249,6 +341,64 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\nA3 BAB|=cBc E2D|EGG EGG|EAA ED2|\nA3 BAB|=cBc g3|fed cAG|1 FGE D2G:|2 FDC D2e||\n|:f2d ede|f2d Add|f2d ded|=cAG FED|\nefg efg|bge d2B|A=cB ABF|GED D3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Boy's Lament for His Dragon",
+    "tune_type": "march",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:A2|A2d2 d2e>f|g>fe>d f4|g2B2 B2c>d|e>fe>dd>cB>A|\nA2d2 d2e>f|g>fe>d f4|g2B2 f>ed>c|d4 d2:|\n|:fg|a2A2 A2c2|B2G2 A3B|A2d2 A2d2|e>dc>B A2f>g|\na2A2 A2c2|B2G2 A3B|A2d2 f>ed>c|d4 d2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Alternate 1",
+        "abc_notation": "L: 1/8\n\nA>B|A2d2 d2(ef)|g>f e<d f4|(g2B2) B2(cd)|e>f e>d d>cA>B|\n(A2d2) d2(ef)|g>f e<d f4|(g2B2) f>e d<c|d4 d2:|\nf>g|a2A2 A2 c2|B2G2 A2A<B|(A2d2) A2d2|e>d c<B A2f<g|\na2A2 A2((3AB=c)|B2G2 A2A<B|(A2d2) f>e d<c|d4 d2:|\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Boys Of Ballisodare",
+    "tune_type": "slip_jig",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "9/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:D2G G2A B2d|ege d2e g3|D2G G2B d2B|AGA B2G E2G|\nD2G G2A B2d|ege d2e g2a|b2a g2e d2B|AGA B2G E2G:|\n|:B2d d2B d2B|d3 def g3|B2d d2B d2B|AGA B2G E2G|\nB2d d2B d2B|d3 def g2a|b2a g2e d2B|AGA B2G E2G:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -366,6 +516,98 @@
     "difficulties": []
   },
   {
+    "title": "The Chicago",
+    "tune_type": "jig",
+    "key_root": "D",
+    "key_mode": "mixolydian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nAG|F2D DAG|F2D DAG|F2D DED|C2A, A,AG|\nF2D DAG|F2D DED|B3 cAF| AGF GAG|\nF2D DAG|F2D DAG|F2D DED|C2A, A,AG|\nF2D DAG|F2D DAD|BDB cAF|AGF G2A||\n|~B3 cBc|~d2 d ABc|B2G GAG|F2D DAD|\nB3 cBc|~d3 ABc|~B3 cAF| AGF G2A|\n|~B3 cBc|~d2 d ABc|B2G GAG|F2D DAD|\nBDB cDc|~d3 ABc|~B3 cAF| AGF GAG||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Cliffs Of Moher",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\r\n\r\neaa bag|eaf ged|c2A BAG|EFG ABd|\r\neaa bag|eaf ged|c2A BAG|EFG A3:|\r\nK:Ddor\r\n|:efe dBA|efe dBA|GAB dBA|GAB dBd|\r\n[1 efe dBA|efe dBA|GAB dBG|EFG A3:|\r\n[2 efe dee|cee Bee|EFG BAG|EDB, A,3||\r\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Flute test",
+        "abc_notation": "eaa bag|eaf ged|c2A BAG|EFG ABd|\neaa bag|eaf ged|c2A BAG|EFG A3:|\n|:efe dBA|efe dBA|GAB dBA|GAB dBd|\n[1 efe dBA|efe dBA|GAB dBG|EFG A3:|\n[2 efe dee|cee Bee|EFG BAG|EDB, A,3||",
+        "is_core": false,
+        "instrument": "flute",
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "crazy",
+        "abc_notation": "K:Ador\neaa bag|eaf ged|c2A BAG|EFG ABd|\neaa bag|eaf ged|c2A BAG|EFG A3:|\nK: Ddor\n|:efe dBA|efe dBA|GAB dBA|GAB dBd|\n[1 efe dBA|efe dBA|GAB dBG|EFG A3:|\n[2 efe dee|cee Bee|EFG BAG|EDB, A,3||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Cock And The Hen",
+    "tune_type": "slip_jig",
+    "key_root": "B",
+    "key_mode": "minor",
+    "time_signature": "9/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n~F3 FEF c2 A|~F3 FEF AFE|~F3 FEF c2 d|ecA BAF AFE:|\necA ABc d2 f|ecA ABc BAF|ecA ABc d2 B|cBA BAF AFE:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": "Rose",
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "Comb Your Hair And Curl It",
     "tune_type": "slip_jig",
     "key_root": "E",
@@ -414,6 +656,40 @@
     "difficulties": []
   },
   {
+    "title": "The Connaughtman's Rambles",
+    "tune_type": "jig",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nFAA dAA|BAB dAG|FAA dfe|dBB BAG|\nFAA dAA|BAB def|gfe dfe|1 dBA BAG:|2 dBB B2 g||\nfbb faa|fef deg|fbb faa|fed e2 g|\nfbb faa|fef def|gfe dfe|1 dBB B2 g:|2 dBA BAG||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Alternate 1",
+        "abc_notation": "L: 1/8\n\nFAA dAA|BAB dAG|FAd f3|gdB BAG|\nFAA dAA|BAB def|gfe dfe|1 dBA BAG:|2 dBB B2 g||\nfbb {g}a3|fef deg|fbb {g}a3|fed e2 g|\nfbb {g}a3|fef def|gfe dfe|1 dBB B2 g:|2 dBA BAG||\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "Contentment Is Wealth",
     "tune_type": "jig",
     "key_root": "E",
@@ -437,6 +713,40 @@
       {
         "label": "Alternate 1",
         "abc_notation": "L: 1/8\n\n|:f|~g3 edB|BAB EFG|~F3 DFA|dAF AFD|\n~g3 edB|BAB EGA|~B3 AGF|GED E2:|\n|:B|ege Beg|bge gfe|~d3 Adf|afd fed|\nege Beg|bge gfe|~B3 AGF|GED E2:|\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Cook In The Kitchen",
+    "tune_type": "jig",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": "Arranged by Gretchen Priest",
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:(E|D)GG GFG|=FDE ~F2(E|D)GG GFG|Add cAG|\nDGG GFG|=FDE F2 (d|c)AG FG(A|B)GF G2:|\n|:A|~B3 BAG|~A3 AGF|~GGG GFG|Add cAG|\n~B3 BAG|~A3 A2 (d|c)AG FG(A|B)GF G2:|\n|:B|d2 (e f2) (g|a2) g fed|cA(G F)GA|BdB cBA|\nd2 (e f2) (g|a2) g fed|cA(G F)GA|BGF G2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Just another one",
+        "abc_notation": "|:(E|D)GG GFG|=FDE ~F2(E|D)GG GFG|Add cAG|\nDGG GFG|=FDE F2 (d|c)AG FG(A|B)GF G2:|\n|:A|~B3 BAG|~A3 AGF|~GGG GFG|Add cAG|\n~B3 BAG|~A3 A2 (d|c)AG FG(A|B)GF G2:|\n|:B|d2 (e f2) (g|a2) g fed|cA(G F)GA|BdB cBA|\nd2 (e f2) (g|a2) g fed|cA(G F)GA|BGF G2:|",
         "is_core": false,
         "instrument": null,
         "source": null,
@@ -496,6 +806,54 @@
     "difficulties": []
   },
   {
+    "title": "The Crow In The Sun",
+    "tune_type": "air",
+    "key_root": "F",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:FG|A2 cA BA G>F|D2 C2 A,3 F/G/|A3 c dcBA|AB G2 G2 G>A|\nBFBc dc d<e|fcfa g2 fe|dcfc BA G>F|D2 E2 F2:|\n|:zf|d<c fc c2 Ac|c2 fa g3 g/a/|bB d<b aA c<a|gfed c2 c/d/_e|\ndcBA c2 F/G/A|BA G>F D2 C>B,|A,CFA G<B E<G|F6:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Cup Of Tea",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:\"Em\"BAGF GEEF|\"Em\"GEBE GEE/E/E|\"Em\"BAGF GEEG|\"D\"FDAG FDDF|\n\"Em\"BAGF GEEF|\"Em\"GEBE GEEA|\"Em\"BAGF GABc| \"D\"dBAG FDD2 :|\n|: \"D\"d2e/f/g fdec|\"Bm\"d2eg fBB/B/B|\"D\"d2eg fdec|\"A\"dBAG \"D\"FDD2|\n\"D\"d2e/f/g fdec|\"D\"dfaf \"G\"g2fg|\"D\"afge fdec|\"D\"dBAG FDD2 :|\n|: \"D\"FAdA FABA|\"D\"FAdA \"A\"FEE/E/E|\"D\"FAdA \"G\"BABc|\"A\"dBAG \"D\"FDD2|\n\"D\"FAdA FABA|\"D\"FAdf \"A\"fee/e/e|\"D\"f2ec \"G\"dfec|\"A\"dBAG \"D\" FDD2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "Drowsy Maggie",
     "tune_type": "reel",
     "key_root": "E",
@@ -509,6 +867,30 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\n|:E2BE dEBE|E2BE AFDF|E2BE dEBE|BABc dAFD:|\nd2fd c2ec|defg afge|d2fd c2ec|BABc dAFA|\nd2fd c2ec|defg afge|afge fdec|BABc dAFD|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Drunken Landlady",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nBE~E2 BAFA|BE~E2 BAFA|ABAF D2FD|FA~A2 BAFA|\nBE~E2 BAFA|BE~E2 BAFA|A2Bc dfec|dBAF E4:|\n|:Beed e2de|f2df efdB|ABAF D2FD|FA~A2 BAFA|\nBeed e2de|f2df efdB|A2Bc dfec|dBAF E4:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -534,6 +916,40 @@
         "label": "Standard",
         "abc_notation": "L: 1/8\n\nB2BB B2BB|B2E2 G2B2|A2AA A2AA|A2D2 F2A2|\nB2BB B2BB|B2c2 d2e2|d2B2 A2F2|E4 E4|\nB2BB B2BB|B2E2 G2B2|A2AA A2AA|A2D2 F2A2|\nB2BB B2BB|B2c2 d2e2|d2B2 A2F2|E4 E4||\n",
         "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Dunmore Lasses",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "minor",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n~E3F ~G3A|Be~e2 Be~e2|~E3F G2BG|A2BA (3GFE FD|\n~E3F ~G3A|Beed ~e3f| (3gfe fd edBG|(3ABc BA GEED:|\n|:g2eg fedA|Be~e2 Be~e2|g2eg fedB|A2BA (3GFE FD|\ng2eg fedA|Beed ~e3f|(3gfe fd edBG|(3ABc BA GEED:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Alternate 1",
+        "abc_notation": "L: 1/8\n\n~E3F GFGA|Beed Beed|~E3F G2BG|~A2BA GEFD|\n~E3F ~GFGA|Beed ~e3f| gefd edBG|AcBA GEFD:|\n|:g2eg fedA|Beed Beef|gfeg fedB|AcBA GE~E2|\ng2eg fedA|Beed ~e3f| gefd edBG|AcBA GEE2:|\n",
+        "is_core": false,
         "instrument": null,
         "source": null,
         "source_notes": null,
@@ -688,6 +1104,170 @@
     "difficulties": []
   },
   {
+    "title": "The Fermoy Lasses",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "minor",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nGE ~E2 BE ~E2|GE ~E2 BcBA|GE ~E2 BE ~E2|AFDF AcBA|\nGE ~E2 BE ~E2|GE ~E2 BcBA|~G3F GBdB|AFDF AcBA||\nG2 BG dGBG|G2 Bd efg2|G2 BG dGBG|AFDF AcBA|\nG2 BG dGBG|G2 Bd efg2|gage dedB|AFDF AcBA||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "A Fig For A Kiss",
+    "tune_type": "slip_jig",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "9/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|: G2B E2B BAG | F2A D2A AGF | G2B E2B BAG |\n[1 B/c/dB AGF DEF :|2 B/c/dB AGF E3 ||\n|: g2e g2e edB | f2d dcd fed |1 g2e g2e edB |\ndBG GBd e2f :|2 gfe fed ecA | B/c/dB AGF E2F ||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Finnish",
+    "tune_type": "polka",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "2/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:\"Bm\"B>B Bc|dB Bd|cA Ac|\"Bm\"d/c/B/A/ BF|\n\"Bm\"B>B Bc|dB B2|\"G\"ef/e/ \"A\"dc|1\"Bm\"BABF:|2\"Bm\"BAB/2c/2d/2e/2||\n|:\"D\"f>B Bf|\"A\"ec cd|\"Em\"ef/e/ \"A\"dc|\"Bm\"Bc \"A\"de|\n\"D\"f>B Bf|\"A\"ec cd|\"Em\"ef/e/ \"A\"dc|1\"Bm\"BAB/2c/2d/2e/2:|2\"Bm\"2BABz:||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Alternate 1",
+        "abc_notation": "L: 1/8\n\n|:\"Bm\"B>B Bc|dB Bd|cA Ac|\"Bm\"d/c/B/A/ BF|\n\"Bm\"B>B Bc|dB B2|\"G\"ef/e/ \"A\"dc|1\"Bm\"BABF:|2\"Bm\"BAB/2c/2d/2e/2||\n|:\"D\"f>d df|\"A\"ec cd|\"Em\"ef/e/ \"A\"dc|\"Bm\"Bc \"A\"de|\n|1\"D\"f>B Bf|\"A\"ec cd|\"Em\"ef/e/ \"A\"dc|\"Bm\"BAB/2c/2d/2e/2:|\n|2\"D\"f>B Bf|\"A\"ec a2|\"Em\"b/a/f/e/ \"A\"dc|\"Bm\"2B4:||\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Flowers Of Spring",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:\"Am\"A2 A ABd|\"G\"edB G2B|dBB GAG|ABd efg|\n\"Am\"ABA ABd|\"G\"edB G2B|dBB gBB|1\"Am\"ABA A2 B:|2\"Am\"ABAA2 d:|\n|:\"Am\"eaa aga|\"G\"b2 b age|ege GBd|ede ged|\n\"Am\"eaa aga|\"G\"b2 b age|e/f/ge dBG|1\"Am\"BAG A2 d|2\"Am\"BAG A2 B:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": "heathermillermusic.com",
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Foxhunters",
+    "tune_type": "slip_jig",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "9/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:F3 FED G2E|F3 FED E2D|F3 FEF G2B|AFD DEF E2D:|\n|:B3 BAG FGA|B2E E2F GAB|ABc dcB ABc|d2 D DEF  E2 D:|\n|:f3 fed g2e|f3 fed e2d|f3 fef g2b|afd def e2d:|\n|:gfe d=cB AGA|B2 E E2 F GAB|ABc dcB ABc|d2 D DEF E2 D:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "bonk",
+        "abc_notation": "|:F3 FED G2E|F3 FED E2D|F3 FEF G2B|AFD DEF E2D:|\n|:B3 BAG FGA|B2E E2F GAB|ABc dcB ABc|d2 D DEF  E2 D:|\n|:f3 fed g2e|f3 fed e2d|f3 fef g2b|afd def e2d:|\n|:gfe d=cB AGA|B2 E E2 F GAB|ABc dcB ABc|d2 D DEF E2 D:|\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "The Frieze Breeches",
+    "tune_type": "slide",
+    "key_root": "D",
+    "key_mode": "mixolydian",
+    "time_signature": "12/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nD2E F2G A2d cAG|1 A3 BAG AAA ABA:|2 F2A G2E D3 D3||\nd2e fed e2d cAG|1 AAA BAG AAA AAA:|2 F2A G2E D3 D2A||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "Gallagher's Frolics",
     "tune_type": "jig",
     "key_root": "E",
@@ -702,6 +1282,16 @@
         "label": "Standard",
         "abc_notation": "L: 1/8\n\nD|:~E3 GFE|BAB dBA|BdB BAB|GFG AFD|\n~E3 GFE|BAB dBA|BAG FAF|1 GED E2 D:|2 GED E2 B||\n|:e2f gfe|~g2a bge|dcd fed|faf fed|\ne2f gfe|dce dBA|BAG FAF|1 GED E2 e:|2 GED E2D||\n",
         "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "another",
+        "abc_notation": "D|:~E3 GFE|BAB dBA|BdB BAB|GFG AFD|\n~E3 GFE|BAB dBA|BAG FAF|1 GED E2 D:|2 GED E2 B||\n|:e2f gfe|~g2a bge|dcd fed|faf fed|\ne2f gfe|dce dBA|BAG FAF|1 GED E2 e:|2 GED E2D||",
+        "is_core": false,
         "instrument": null,
         "source": null,
         "source_notes": null,
@@ -808,1990 +1398,6 @@
     "difficulties": []
   },
   {
-    "title": "Good Morning To Your Nightcap",
-    "tune_type": "reel",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:e3 ^cd3B|cBcd e2d2|e/2f/2ge^c dedB|cABG EGD2|\ne3^c dedB|cBcd e2d2|e/2f/2gfa gedB|1cABG E2D2:|2cABGEGDG||\n|:EAAA BGGG|cBcd e2 d2|EAAA BGGG|cABG EGDG|\nEAAA BGGG|cBcd e2 d2|e/2f/2gfa gedB|1cABGEGDG:|2cABG E2D2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Greig's Pipes",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nB3A BAGA|B2GB AGEG|B3A BAGB|AcBG AGEG|\nB3A BAGA|B2GB AGEG|Bd d2 eBdB|AcBG AGEG||\nDG G2 DGBG|DGBG AGEG|DGGF GABc|dBAc BG G2|\nAG G2 DGBG|DGBG AGEG|DGGF GABc|dBAc BG G2||\nd2 (3Bcd egge|d2 BG AGEG|d2 (3Bcd eg g2|agbg ageg|\nd2 (3Bcd egge|d2 BG AGEG|d2 (3Bcd eg g2|agab aged||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Heaton Chapel",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nE2 B2 BAFB|BABc dedA|D2 A2 AGFA|BdAB FEDF|\nE2 B2 BAFB|BABc dedB|A2 dA fedf|edBA (FG)FD|\nE2 B2 BAFB|BABc dedA|D2 D2 AD D2|BdAB FEDF|\nE2 B2 BAFB|BABc dedB|A2 dA fedf|edBA Be e2|\ng2 e2 edBA|Be e2 edBe|dBAF AFDE|F/E/D FA dA A/B/d|\ng2 e2 edBA|Beed edBe|dF F2 DEFA|dBAF BE E2|\ng2 e2 edBA|Beed edBe|dBAF AFDE|F/E/D FA dA A/B/d|\ne2 ef gb e/f/g|f2 ed dBAF|BABc dfed|d2 BA (FG)FD||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Alternate 1",
-        "abc_notation": "L: 1/8\n\nE2B2 BAFA|BABc dedB|D2A2 AGFG|ADAB AGFG|\nE2B2 BAFA|BABc dedB|ABde fedf|1 edBA FGFD:|2 edBA Beef||\ng2e2 edBA|Beed edBe|dBAF DE (3FED|FAdA BAFA|\ng2e2 edBA|Beed edBe|dF3 DFAB|dBAF BEE2|\ng2e2 edBA|Beed edBe|dBAF DE (3FED|FAdA BAFA|\ne2ef gbge|f2ed BAFD|BABc dedB|edBA FGFD||\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "I Buried My Wife And Danced On Her Grave",
-    "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "mixolydian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:DED F2G|AdB cAF|G3 BAG|F3 GEA|\nD3 F2G|AdB cAF|G3 BAG|AFD D2A:|\n|:d2e fed|faf gfe|d2e fed|dcA dcA|\nd2e fed|faf gfe|dcA BAG|AFD D3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Idir Deighric 'Gus Breo'",
-    "tune_type": "waltz",
-    "key_root": "A",
-    "key_mode": "mixolydian",
-    "time_signature": "3/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nA3/2B/A {B}A3/2 G/A|c3/2d/e fza|{f}g/e/zec d2B/A/|\nG2E G2E/G/|A3/2B/A {B}A3/2 G/A|c3/2d/e fza/f/|\ng/e/zc d2(3B/A/G/|A3 {B}A3|Ja3/2b/a g3/2a/g|\nf3/2e/d c2d|{f}e {b}a/e/f/{a}g/ f3/2e/d|e3/2c/A G2E/G/|\nA3/2B/A {B}A3/2 G/A|c3/2d/e fza/f/|\ng/e/zc d2(3B/A/G/|A3 {B}A3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "In Memory Of Coleman",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": "Ed Reavy",
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:DGBd cBGF|DFEF GFDF|GABc dfga|(3bag af dgga|\nbgaf gfdc|(3Bcd BG F~D3|FGBd cABc|dgdc BG G2:|\nB3 d g3 f|e c3 A F3|Gdga fdcA|FGAc BGGA|\nB2~B2 gBfB|FBfB A~F3|GABc dgag|fdcA G4:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Inisheer",
-    "tune_type": "waltz",
-    "key_root": "D",
-    "key_mode": "mixolydian",
-    "time_signature": "3/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:B3A Bd|B3A Bd|E3B AB|D3B AG|\nB3A Bd|B3A Bd|G3B A/G/F|1 G3E DG:|2 G3A Bd||\ne3f ed|B3A Bd|ef ed B/c/d|\ne3A Bd|e3f ed|B3A Bd|G3B A/G/F|\nG3A Bd|e3f ed|B3A Bd|gf ed B/c/d|\ne3A Bd|e3f ed|B3A Bd|D3B A/G/F|1G3E DG|2G6||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Jenny's Chickens",
-    "tune_type": "reel",
-    "key_root": "B",
-    "key_mode": "minor",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|~f3e fece|~f3a eAce|~f3a fece|~f2af eAce|\n~f3a fece|~f3e~e2ce|~f3a fece|~f2af eAce|\nfBBA ~B3e|fB ~B2 ABce|fBBA ~B3e|~f2af eAce|\nfB~B2 fB~B2|fB ~B2 ABce|fBBA ~B3e|~f2af eAcA|\n|:~B2 bB aBgB|~B2 AB eAcA|B2 bB aBgB|1 ~f2af eAcA:|2 ~f2af eAce||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Jimmy Ward's",
-    "tune_type": "jig",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nG3 GAB|AGE GED|~G3 AGE|GED DEF|\nG3 GAB|AGE GAB|cBA BGE|1 DED DEF:|2 DED D2 B||\ncBA BAG|ABA AGE|cBA BGE|EDE GAB|\ncdc BAG|A3 ABc|dcA AGE|1 GED DAB:|2 GED DEF||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "John Ryan's",
-    "tune_type": "polka",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "2/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\ndd B/c/d/B/|AF ED|dd B/c/d/B/|AF ED|\ndd B/c/d/B/|AF Ad/2e/2|fd ec|d2 dz:||\nfd de/f/|gf ed/2e/2|fd Ae/f/|gd/f/ a(g|\nf)d de/f/|gf ed/e/|fd ec|d2 dz:||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Kitty Goes A-Milking",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|dG G2 d2 cA|dG G2 FGAB|dG G2 d2 eg|fdcA GABc|\ndG G2 d2 cA|dG G2 FGAB|dG G2 d2 eg|fdcA GABc|\ndg g2 ag g2|dggf d2 cA|dg g2 ag g2|dcAB c2 Bc|\ndg g2 ag g2|dggf d2 cA|defg a3 g|fdcA G4|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Lad O'Beirne's Jig (The Silver Vale)",
-    "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:dAF AGF|dAF AGF|AAE GFG|A,CE GFE|\nDFA DGB|Ace d2e|fed cBA|1 GFE D3:|2 GFE D2e||\n|:fdf a3|fdc d2f|ede gfg|efd cde|\nfef gfg|aga bag|fed cBA|1 GFE D2e:|2 GFE D3||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Last Night's Fun",
-    "tune_type": "reel",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:ADFD A2AB|ADFD EFGB|ADFD A2 Bd|e2fe dBAB:|\ndf (3fff af (3fff|defd e2fe|df (3fff af (3fff|egfe dBAB|\ndff2 aff2|defd e3f|a2bf afeg|fedc BcdB|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Last Night's Panic",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "minor",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:B^DF^D A2(3ABc|B^DF^D EFGc|B^DF^D A2 AG|FGGF FE^DF:|\n|:^df (3fff a3 ag|fgag fB3|^df (3fff a3 ag|fggf f^dB^d:|\n|: Aece aged|BGFG dGFG|| Aece agab| c'bag fdB2:|\n|: ea3 bgeg| dBGB fBAB|e a3 bc'gd|BGFD FEE2:|\n|:^dfbf a3g|fgag f^dB^d|b^df^d a3g|fgag f^B3:|\n|:b2 af b2 af|fegf ffe^d|b2 af b2 af|(3efg 3)fga b2:||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Little Mouse",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": "Eric Torstenson (Nov 2023)",
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:BcBcB2E2|Bcedc3B|ABcB AGFE|DFAF dAcA|\nBcBcB2E2|Bcedc3B|ABcB AGFE|1DFAF d3 A|2DFAF d2 Bc:||\n|:d2g2f3d|cdecA3G|FDAF cAec |geaf bafd|\nB2g2f3d|cdecA3G|FGAF DEFG|1A2 GFG2 G/2A/2B/2c/2|2A2 (3AGF  G3 A:||\nT: Little Mouse (Silver Flute)\nC: Eric Torstenson (Nov 2023)\nR: reel\nZ:\nL: 1/8\nK:G\n(Bc) (Bc)B2E2|(Bc) .e.d c3B|(AB).c.B (AG)(FE)|.D.F.A.F .d.A.c.A|\n(Bc)(Bc)B2E2|(Bc).e.dc3B|(AB).c.B .A.G.F.E|(DF)(AF) d3 A|\n(Bc) (Bc)B2E2|(Bc) .e.d c3B|(AB).c.B (AG)(FE)|.D.F.A.F .d.A.c.A|\n(Bc)(Bc)B2E2|(Bc).e.dc3B|(AB).c.B .A.G.F.E|DFAF d2 Bc|\n|d2g2f3d|(cd).e.cA3G|(FG)(AF) (DF)(AF)|(cA)(ec) (ge)(fd) |\nB2g2f3d|(cd).e.cA3G|(FG).A.F (DE).F.G|A2 GFG2 G/2A/2B/2c/2|\nd2g2f3d|(cd).e.cA3G|(FD)(AF) (cA)(ec) |(ge)(af) .b.a(fd)|\nB2g2f3d|(cd).e.cA3G|(FG).A.F (DE).F.G||A2 (3AGF  G3 A|\n(Bc) (Bc)B2E2|(Bc) .e.d c3B|(AB).c.B (AG)(FE)|.D.F.A.F .d.A.c.A|\n(Bc)(Bc)B2E2|(Bc).e.dc3B|(AB).c.B .A.G.F.E|(DF)(cA) g4||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Maggie's Pancakes",
-    "tune_type": "reel",
-    "key_root": "B",
-    "key_mode": "minor",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nf ~B3 fgfe|d ~B3 GBdB|cAAd AAeA|AfAA edBc|\nd ~B3 fgfe|d ~B3 GBdB|cAdA e ~a3|afec B2:|\nf2 dB GBdB|caec d ~B3|f2 dB GBdB|efdA Bcde|\n~f3 e fgfe|d ~B3 GBdB|cAdA e ~a3|afec B2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "March Of The Kings Of Laois",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "mixolydian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|e2c e2A|e2c e2A|f2d e2c|d2c B2A|\ne2c e2A|e2c e2a|f2a e>ad|c>ac B2A||c2A d>ef|\ne3 e>dc|B>gd B>GB|d>gd B>GB|A>BA A>BA|A>BA A>BA|\nf2d a2d|f2d a2d|e2a e2c|e2a e2c|\nf2a a>fe|d>gd B>cd|c2A d>cB|e3 e>dc|\nB>gd B>GB|d>gd B>GB|A>BA A>BA|A>BA A>BA||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Mary Grace",
-    "tune_type": "reel",
-    "key_root": "A",
-    "key_mode": "mixolydian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\ncA~A2 EA~A2|BG~G2 AG (3Bcd|cA~A2 EAcA|dBGB ~A3z|\ncA~A2 eA~A2|BGdG BG~G2|=c2cA BG~G2|dBGB ~A3z:|\n|:(3Bcd ef gedc|BGDG BG~G2|(3Bcd ef ~g3z|eaag aged|\n(3Bcd ef gedc|BGdG BG~G2|=c2cA BG~G2|dBGB ~A3z:|\ncA~A2 EA~A2|BGdG BG~G2|cA~A2 EA~A2|dBGB ~A3z|\ncA~A2 EA~A2|BGdG BG~G2|=c2cA BG~G2|dBGB ~A3z:|\n|:(3Bcd ef gedc|BGDG BG~G2|(3Bcd ef ~g3z|eaag aged|\n(3Bcd ef gedc|BGDG BG~G2|=c2cA BG~G2|dBGB ~A3z:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Maud Millar",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\ngf|edBA GEDE|G2BG dGBd|e2dB A2GA|Beed efgf|\nedBA GEDE|G2BG dGBd|e2dB A2GA|Beed e2ge|\ndega bgg2|agef g3e|dega bgg2|aged eage|\ndega bgg2|agef g3a|bgaf gfed|Beed e2|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Michael Gorman's",
-    "tune_type": "slip_jig",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "9/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:F3 A2F A2F|G3 B2G B2G|F3 A2F A2F|Bcd A2G FED:|\n|:d3 f2d cBA|B2e e2d cBA|1 d3 f2d cBA|\nBcd A2G FED:|2 fed edc d2B|A2B A2G FED||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Micho Russell's Reel (The Doonagore)",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nDG G2 FDBd|BG G2 ABcA|d2 cA BGG2|(3Bcd cA GFEF|\nDG G2 FDBd|BG G2 ABcA|dzcA BGG2|1 (3Bcd cAG2 zE:|2  (3Bcd cAG2 (3Bcd||\ng3e fd de|fdgd fd (3Bcd|g3e f3 e|defd g2 zd|\ngbag fddc|(3Bcd BG ABcA|d2 cA BGG2|1(3Bcd cA Gz (3Bcd|2(3Bcd cA G2z F:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Miss Monaghan",
-    "tune_type": "reel",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|: D2(3FED FAAd | B2BA FABc | d2dB ABde | fede fee2 |\n{E}D2(3FED FAAd | B2BA FABc | d2dB ABdB | AF EG FDD2 :|\n|: faab afdf | g2fg edBc | ~d2 dB ABde | fede fee2 |\nfaab afdf | (3gfe fd ed Bc | d2dB ABdB | AFEG FDD2 :|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Molly Bán",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nEBBA B2 AG|FDAD BDAD|EBBA B2 Bc|dBAF BAGF|\nEBBA B2 AG|FDAD BDAD|EBBA B2 Bc|dBAF GE E2:|\ne2 Be edeg|dBBc d3 d|e2 Be edeg|dBAF GE E2|\neBGB effe|dBBc d3 e|f3 e defe|dBAF GE E2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Alternate 1",
-        "abc_notation": "L: 1/8\n\n|EBBA B2 AG|(3FED AD BDAF|EBBA ~B3 c|dBA=c BEED|\nEBBA B2 AG|(3FED AD BDAF|EBBA ~B3 c|dBA=c B~E3||\ne2 Be (3eee fe|d~B3 d2 Bd|e Be (3eee fe|dBA=c B~E3|\ne2 Be (3eee fe|dB (3BBB ~d3 e|~f3 e defe|dBA=c BEED||\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Morrison's",
-    "tune_type": "jig",
-    "key_root": "E",
-    "key_mode": "dorian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:E3 EBE|EBE AFD|E3 B2c|dcB AFD|\nE3 EBE|EBE AFD|G3 FGA|dAG FED:|\nBee fee|aee fed|Bee fee|a2g fed|\nBee fee|aee fef|gfe d2A|BAG FGA|\nBee fee|aee fed|Bee fee|faf def|\ng3 gfe|def g2d|edc d2A|BAG FED|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Mountain Dew",
-    "tune_type": "reel",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": "Joe Cooley",
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n\"Em\"B2EB GBEB|BEGB \"D\"ADFA|\"Em\"B2EB GBEg|gedB \"D\"ADFA|\n\"Em\"B2EB GBEB|BEGB \"D\"ADFA|\"Em\"B2EB GBEg|gedB \"D\"ADFA||\n\"Em\"B2eg \"D\"fded|\"Em\"B2eg \"D\"fddA|\"Em\"B2eg \"D\"fded|(3Bcd AG FDDA|\n\"Em\"B2eg \"D\"fded|\"Em\"B2eg \"D\"fddc|dfaf gfed|(3BcB AF \"Em\"BEE2||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Mulvihill's",
-    "tune_type": "jig",
-    "key_root": "B",
-    "key_mode": "minor",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nBc|:dcB cBA|BAF F3|def ecA|cBB B3|\nd2 d cBA|(3Bcd B AFE|DFE F2 E|FBB B3|\ndcB cBA|BAF F3|dcB ecA|cBB B2 c|\nd2 d cBA|(3Bcd B AFE|DFE F2 E|FBB B3|\n|:dcd ede|fdB AFA|d2 d efe|dBc d2 e|\nfdf ece|dcB cBA|BAF F2 E|FBB B3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Music In The Glen",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nG2BG EGDC|B,DGB AGAB|c2ec B2dB|(3cBA BG AGEF|\nG2 BG EGDC|B,DGB AGAB|cdef gfge|dBAc BG G2:|\nBGdG eGdG|BGdB cAAc|BGdG edef|gedc BGGA|\nBGdG edef|g2fg afdf|g2fg egdB|cAdc BGG2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "My Love Is In America",
-    "tune_type": "reel",
-    "key_root": "D",
-    "key_mode": "mixolydian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:E|FEFG ABcB|Ad~d2 Ad~d2|FEFG ABcA|GBAG FDD2|\nFEFG ABcB|Add^c defg|afge fdAF|1GBAG FDDE:|2GBAG FDD g:|\n|:fdeg fdec|Ad~d2 Ad~d2|fdeg fdAF|GBAG FDDe|\nfdeg fdec|Add^c defg|afge fdAF|1GBAG FDDg:|2GBAG FDDE:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "New York Jig (Gretchen Priest arr)",
-    "tune_type": "jig",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:D|GFG DB,D|GBd ~e2d|gdB BAB|cBc E2F|\nGFG DB,D|GBd ~e2d|gdB BAB|1 cEF GBA:|2 cEF G2D||\n|:GBd GBd|GBd cBA|GBd efg|fd^c def|\ngeg fdf|ece dBG|cBc Adc|1 BGF G3:|2 BGF GBA||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "No Inclusion",
-    "tune_type": "waltz",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "3/4",
-    "composer": "Eric Torstenson - June '23",
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "E2||:A3 B cd|e2 a2 f2| g3 e dc| B3 AG2| G3E DE| G3 A Bc| dg fg  ed | c3 B A2|\nA3 E  AB|c2 e2 a2| b2 c'2 a2| g3 ed2| dc Bc de| B3 cd2|ed cB cB|1A4 E2:||2A4 ed||\n||:e~A3 ed | e~A3 ed | eA eA fA | g3 e d2| ^c3 d ea | | f3 ed2| BG DB ^cA| e4 ed|\n|e~A3 ed | e~A3 ed | eA eA fA | g3 e d2| c3 d ec | B3 c dB | AGED cB|1 A4 ed:||2 A4 E2||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "O'Connell's Lamentation",
-    "tune_type": "waltz",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "3/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nE2|:\"Am\" A4 dc|:\"Em\" A2G2E2|\"C\"G2c2d2|\"D\"e2a2f2|\"C\"g3ec2|\"Dm\" d3cA2|\"Em\" G2E2F2|\"G\"G4 E2|\n\"Am\" A4dc|\"Em\" A2G2E2|\"C\"c3 def|\"Em\" g2e2a2|\"C\" g3ec2|\"Dm\" d3cA2|\"Am\" A6|1 -A4 E2:|2 A4 ef||\n|:\"G\"g3 f af|\"Em\" g3 b ag|\"Dm\" =f>e de =fd|\"Am\" e4 A2|\n\"C\"c>B cd ef|g3e cA|\"Em\" G2E2c>A|\"G\" G2E2G2|\n\"Am\" A2 AB cA|\"G\" B2 Bc dB|\"C\"c3d ef|\"Em\" g2e2a2|\n\"C\" g3 ec2|\"Dm\" d3 cA|\"Am\" A6|1 A4 ef:|2 A4 AB||\n|:\"Am\" c2E2F2|\"Em\" G4 AB|\"C\" c>B cd ef|\"Em\" g2e2a2|\n\"C\" g>=f eg =fe|\"Dm\" d=f ed cB|\"Am\" c2E2F2|\"G\" G4 AB|\n\"Am\" c2E2F2|\"Em\" G4 AB|\"C\"c>B cd ef|\"Em\" g2e2a2|\n\"C\"g3e c2|\"Dm\" d3cA2|\"Am\" A6|-A4 AB:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "O'Keefe's Polka",
-    "tune_type": "polka",
-    "key_root": "B",
-    "key_mode": "minor",
-    "time_signature": "2/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nBc|:\"Bm\"dB bB|\"D\"de f>e|\"Bm\"dB bB|\"A\"c/B/A/c/ ef/e/|\n\"Bm\"dB bB|\"D\"de f>e|\"Bm\"d>e \"D\"f/e/d|1 \"Bm\" B2 B>c:|2 \"Bm\" B2B2||\n|:\"Bm\"fe/f/ ba|\"D\"fe f>e|\"Bm\"dB bB|\"A\"c/B/A/c/ ed/e/|\n\"Bm\"fe/f/ ba|\"D\"f/2e/2d/2e/2 f>e|\"Bm\"d>e \"D\"f/e/d|1 \"Bm\" B2 B2:|2 \"Bm\"B2 B>c||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Old Hag, You Have Killed Me",
-    "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "mixolydian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nFDD cAA|ded cAG|A3 ABG|ABA A2G|\nFDD cAA|ded cAF|G3 GcA|1 GAG G2E:|2 GAG G2e||\n|:f3 gfg|afd cAG|A3 ABG|ABA A2e|\nf3 gfg|afd cAF|G3 GcA|1 GAG G2e:|2 GAG G2E||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Out On The Ocean",
-    "tune_type": "jig",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nE|D2B BAG|BdB ABA|GED G2A|BdB AGE|\nD2B BAG|BdB ABA|GED G2A|BGF G2:|\nB/2d/2|e2e edB|e2e edB|ded def|gfe dBA|\nG2A B2d|ege dBA|GED G2A|BGF G2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Paddy's Return (Young Tim Murphy)",
-    "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\ndB|:AFD DFA|BdB BAF|A3 F2D|FEE E2B|\nAFD DFA|BdB BAF|A3 F2E|:1FDD D2B:||:2FDD D2e:|\n|:fdd dcd|fdd d2e|fef def|gfg eag|\nfed B2d|A2d F2g|ABA F2E|:1FDD D2e:||:2FDD D3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Porthole Of The Kelp",
-    "tune_type": "reel",
-    "key_root": "D",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n||:F2DE FGAG|F2DF ECCE|F2DE FGAG|FDEC A,D DE|\nF2DE FGAB|cAGF ECCE|D2E/2F/2G AddB|1cAGE EDDE|2cAGE EDDA:|\nd2 Ad dcAG|F2DF ECCc|d2Ad dcAG|Adce d2 de|\nfded dcAB|cAGF ECCE|D2 E/2F/2G AddB|1cAGE EDDA|2cAGE EDD2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Porthole Of The Kelp (Em)",
-        "abc_notation": "L: 1/8\n\n|:G2 EF GABA|G2EG FDDF|G2 EF GABA|GEFD E2 EF|\nG2 EF GA Bc|dBAG FDDF|E2 F/2G/2A Beec|1 dBAF FEEF:|2 dBAF FEEB||\n|:e2 Be edBA|G2EG FDDd|e2 BeedBA|Bedf e2 ef|\nge fe edBc|dBAG FDDF|E2F/2G/2A B eec|1 dBAF FEEB:|2 dBAF FE E2||\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Alternate 2",
-        "abc_notation": "L: 1/8\n\nDE||\"Dm\"F2DE FGAG|F2DF \"C\"ECCE|\"Dm\"F2DE FGAG|\"C\"FDEC A\"Am\",D DE|\n\"Dm\"F2DE FGAB|\"C\"cAGF ECCE|\"Bb\"D2 E/2F/2G AddB|1\"Am\"cAGE EDDE:|\"Am\"2cAGE EDDA|\n\"Dm\"d2 Ad dcAG|F2DF \"C\"ECCc|\"Dm\"d2(A d)dcAG|Adce \"C\"d2de|\n\"Gm\"fded dcAB|\"Am\"cAGF ECCE|\"Bb\"D2E/2F/2G AddB|\"C\"cAGE \"dm\"EDD2:|\n",
-        "is_core": false,
-        "instrument": null,
-        "source": "Gretchen Priest",
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Alternate 3",
-        "abc_notation": "L: 1/8\n\nEF|:G3F GFEF|GGGA FDDF|GFEF GABA|GEFD E2 EF|\nGFEF GABc|dBAG FEDF|EFGA Beec|dBAF FEEF:|\n|:e2ed edBA|G3A FDDF|Eeed edBA|B/2c/2def e2ef|\ngefd edBc|dBAG FEDF|EFGA Beec|dBAF FEEF:|\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "The Porthole Of The Kelp",
-        "abc_notation": "L: 1/8\n\n|:F2DE F2DE|FEFG EAAE|F2DE FGAG|FDEA EDDE|\nF2DE FGAB|cAGF EDFE|DEFG AddB|cAGE EDD2:|\n|:d2 Ad dcAG|F2DF EAA2|d2 Ad dcAG|Adce d2 de|\nfdec dcAB|cAGF EDFE|DEFG AddB|cAGE EDD2:|\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Pull The Knife And Stick It Again",
-    "tune_type": "jig",
-    "key_root": "E",
-    "key_mode": "dorian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:E3 GFE|DB,E DB,D|E3 GFE|ABG AFD|\nE2F GFE|DB,E DEF|G2E FED|B,ED E3:|\n|:edB BAF|EDB, D3|edB BAF|ABc def|\nedB BAF|EDB, DEF|G2E FED|B,ED E3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Return From Fingal",
-    "tune_type": "march",
-    "key_root": "E",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:\"Em\"B2GF EFGA|B2GF E3B|\"D\"AGFA d2A2|B2A2 Bcd2|\n\"Em\"B2GF EFGA|B2GF E3B|\"D\"AGFA d2AG|\"Em\"F2E2 E4:|\n|:\"Em\"f2e2 e2dc|\"D\"B2A2 d3A|B2A2 d2A2|B2A2 Bcde|\n\"Em\"f2e2 e2dc|\"D\"B2A2 d3B|AGFA d2AG|\"Em\"F2E2 E4:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Rosie Finn's Favourite",
-    "tune_type": "slide",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "12/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:G2B d2g b2g d2B|cBc agf g2d B2A|\nG2B d2g b2g d2B|cBc agf g3 g3:|\n|:g2b c'2b a2e e2g|f2a bag f2d d3|\ng2b c'2b a2e e2g|fef def g3 g3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Rowsome's",
-    "tune_type": "reel",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nG|A2 AG A3 F|GEAF GEEG|A3 c BGG2|BdBG c3 B|\nGAAG A3 F|GEAF GEEG|A3 c BGG2|1 BdBG cAB:|2 BdBG c3||\nd|e3 d efg2|G3 F GAEG|A3 c BGG2|BdBG c3 d|\ne3 d efg2|G3 F GAEG|A3 c BGG2|BdBG cAB||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Scarce O' Tatties",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "mixolydian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:A2e efg|e2B dBG|A2e efg|edB Ace|\na2a g2g|f2f ecA|A2e efg|dBG A3:|\naeg a2f|g2f eAA|aeg a2f|g2f e3|\ne3 A3|d2e fed|A2e efg|dBG A3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Scatter The Mud",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n\"Am\"eAA B2A|eAA ABd|eAA BAB|\"G\"dBG GBd|\n\"Am\"eAA B2A|eAA AGE|GAB dge|\"G\"dBA A3:|\n\"Am\"eaa egg|dBA ABd|eaa egg|\"G\"dBG GBd|\n\"Am\"eaf g2e|dBA AGE|GAB dge|\"G\"dBA ABd:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Sean Bui",
-    "tune_type": "jig",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:GBd edB ege dBG|GBd edB e2 f g3|\nGBe edB ege dBG|GBe edB e2 f g3:|\n|:bag agd efg dBG|bag agd e2 a a3|\nbag agd efg dBG|GBd edB e2 f g3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Sean Reid's",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:DG~G2 BG~G2|cA~A2 dBcA|DGGF GABd|cAFG AGG2|\nDG~G2 BG~G2|cA~A2 d2ef|g2ag gfde|fdcA AGG2:|\n|:dgga gfde|fdge fdcA|dg~g2 gfde|fdcA AGG2|\n~g3a gfde|~f3g fdcA|dg~g2 bgag|fdcA AGG2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Sir John Fenwick's The Flower Amang Them A'",
-    "tune_type": "waltz",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "3/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nD2||:G3 A Bc|d3 e g2|d3 e g2|ed cB AG|\nA3 B cd|e2 ef g2|e2 ef g2|e4 d2|\nG3 A Bc|d3 e g2|d3 e g2|ed cB AG|\nc2 dc BA|B2 cB AG|A2 B2 d2|e4 d2||\ng2 G2 B2|g2 G2 B2|g3 f g2|ed cB AG|\na2 A2 c2|a2 A2 c2|a3 g a2|f3 e d2|\ng2 G2 B2|g2 G2 B2|g3 f g2|ed cB AG|\nc2 dc BA|B2 cB AG|A3 Bc d2|e4 F2:||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Sir John Fenwick's The Flower Amang Them All",
-        "abc_notation": "L: 1/8\n\nG3 A BC|d2 de fg|d2 de fg|ed cB AG|\nA2 AB cd|e2 e2 g2|e2 e2 g2|e4 d2|\nG2 GA Bc|d2 e2 g2|d2 e2 g2|ed cB AG|\nc2 dc BA|B2 cB AG|A2 B2 d2|e4 d2||\ng2 G2 B2|g2 G2 B2|g2 G2 g2|ed cB AG|\na2 A2 c2|a2 A2 c2|a2 A2 a2|e4 d2|\ng2 G2 B2|g2 G2 B2|g2 G2 g2|ed cB AG|\nc2 dc BA|B2 cB AG|A2 B2 d2|e4 d2||\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Sliabh Russell",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": "Gretchen's class",
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "|:eAA Bcd|eaf ged|edB cBA|BGG Bcd|\r\neAA Bcd|eaf ged|edB cBA|BAG A3:|\r\n|:eaa efg|agf ged|eaa efg|fed e2 d|\r\neaa efg|agf ged|edB cBA|BAG A3:|",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "From the session",
-        "abc_notation": "|:eAA Bcd|eaf ged|edB cBA|BGG Bcd|\neAA Bcd|eaf ged|edB cBA|BAG A3:|\n|:eaa efg|agf ged|eaa efg|fed e2 d|\neaa efg|agf ged|edB cBA|BAG A3:|",
-        "is_core": false,
-        "instrument": "flute",
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": [
-      {
-        "instrument": "flute",
-        "difficulty": 2,
-        "notes": "I tend to play with a very rounded lilt that may not quite match what is purely traditional, but it feels right to me. "
-      }
-    ]
-  },
-  {
-    "title": "Sonny Brogan's (Gretchen Priest arr)",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:e|cAB c2A|d^cd e^de|ABA cde|dcA AGA|\nEAB c2A|dcd ede|aba ged|cAG A3:|\n|:eaa aba|gef ged|eaa aba|ged cAA|\neaa aba|gef g2e|aba ged|cAG A3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Sonny Brogan's",
-        "abc_notation": "L: 1/8\n\n|:cAB ~c3|~d3 ede|ABA cde|dcA AGA|\nEAB cBc|dcd ede|~a3 ged|cAG A3:|\n|:eaa aba|gef gfg|eaa aba|ged cAA|\neaa eaa|gef gfg|~a3 ged|cAG A3:|\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Spanish Lady",
-    "tune_type": "polka",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "2/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:\"D\"FA AB/c/|dd \"Bm\"de/f/|\"Em\"ge \"D\"fd|\"G\"BA \"A\"A/B/A/G/|\n\"D\"FA AB/c/|dd \"Bm\"de/f/|\"Em\"ge \"D\"fd|\"G\"BA \"A\"A2:|\n|:\"D\"fa a/b/a/f/|ed \"Bm\"de|\"Em\"fa \"D\"a/b/a/f/|\"G\"ae \"A\"e>g|\n\"D\"fa a/b/a/f/|ed \"Bm\"de/f/|\"Em\"ge \"D\"fd|\"G\"BA \"A\"A2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Spootiskerry",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nDE | G2 DE GDEG | DEGA B2 AB | G2 DE GABd |eged B2 AB |\nG2 DE GDEG | DEGA B2 AB | g2 ed edBA | B2 G2 G2 :|\nef | g2 ed ed B2 | BABG E2 DE | GABd eged | B2 A2 A2 ef |\ng2 ed ed B2 | BABG E2 DE | GABd eged | B2 G2 G2 ef |\ng2 ed ed B2 | BABG E2 DE | GABd eged | B2 A2 A2 DE|\nG2 DE GDEG | DEGA B2 AB | g2 ed edBA |B2 GB G2 ||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Sporting Paddy",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nEAAB GABG|EAAB GE D2|EAAB GABd|edge dBAG|\nEAAD GABG|EAAB G2 ED|EAAB GABd|efge d2 ef||\nge e2 gede|ge e2 a2 ba|ge e2 gedg|efge d2 ef|\nge e2 gede|ge e2 a2 ga|bgab ge d2|efge dBAG||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Stan Chapman's",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n~E3 EFA|~B3 Bce|fea fec|ecA BAF|\n~E3 EFA|~B3 Bce|fea fec|ecA A3:|\ne3 ecA|~f3 fga|fec BAB|cAF F af|\ne3 ecA|~f3 fga|fec BAB|1 cAA A af:|2 cAA A3||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Stasia's",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "minor",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nE3D E~B3|DEED EBGB|DEED EGBG|FAcA A/B/dgf|\neB^AB dc zc|AGFA cB zB|E~B3 EBAF|1 GEFD Ez ED:|2 G/F/EFD Ez2G||\n|:AGFA cBBB|Be^dB e2 ef|g~B3 gBaB|bB^AB dc zc|\nAGFA cBBB|Be^dB e2 ef|g~B3 GBAF|1 GEED E z2 G:|2 GEED E2 ED||\n|:[K:Emaj]E2 GB A2 ce|B2 df eB B2|[K:Emin]d~c3 AGFA|cB^AB cBAB|\n[K:Emaj]E2 GB A2 ce|B2 df eB B2|[K:Emin]d~c3 AGFA|1 GEFD E2 ED:|2 GEFD E4||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Sweeney's Buttermilk",
-    "tune_type": "reel",
-    "key_root": "B",
-    "key_mode": "minor",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:FB B2 fB B2|dcBc AE E2|FB B2 ABce|afec Ba^ga|\nf2 ec f2 ec|BABc BAFE|FB B2 ABce|afec B2 BA:|\n|:FBdc BF F2|EAcB AE E2|FBdc Bdfb|afec B3 c|\nBcde fB B2|afec ABce|f3a bf f2|afec B2 BA:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Tabhair Dom Do Lámh (Give me Your Hand)",
-    "tune_type": "waltz",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "3/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nD2|E2 G2 G2|G4 D2|E2 G2 G2|G4 D2|E2 G2 G2|G2 A2 B2|B2 e2 d2|B4 AG|\nA2 A2 ed|B2 B2 dB|A2 AB AG|E4 D2|E2 G2 G2|G4 D2|E2 G2 G2|G4 D2|\nE2 G2 G2|G2 A2 B2|D2 DB AB|G4 D2|E2 G2 G2|G2 A2 B2|B2 e2 d2|B4 AG|\nA2 A2 ed|B2 B2 dB|A2 A2 (3Bcd|e4 dB|d2 d2 e2|g4 ed|e2 e2 g2|a4 ge|\ng2 g2 de|g2 g2 de|g2 g2 a2|b6|b2 b2 b2|b4 ag|ag ab ab|a4 gf|\ne2 e2 ge|d2 d2 gd|B2 B2 dB|A4 (3cBA|G2 G2 (3Bcd|=f4 ed|e2 e2 g2|e4 dB|\nd2 d2 g2|B2 B2 dB|A2 Ac BA|G6||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Tempus Fugit",
-    "tune_type": "waltz",
-    "key_root": "B",
-    "key_mode": "minor",
-    "time_signature": "3/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nf3d BF|Bd c2-cd|B3c dF|G^A ce gb|f3d BF|B2 dB ed|f2d2B2|A3G FG|\nf3d BF|Bd c3d|B^A Bd- dG|GG Gc ga|f3d BF|B2dB ed|f2 d2 B2|AF GB ed|\nd3d cB|d3d cB|c3d c=F|^F^A ce dc|B2dB dB|B2dB dB|AF Ac AF|cF Ac AF|\nd3d cB|d3d cB|c3dc2|F^A ce dc|B2dB eB|dB BB dB|cA AA cA|dB BA B/c/d|\nfd BF Bd|fd BF Bd|ae cA ce|ag gf fe|fd BF Bd|fd BF Bd|e2 c2 A2-|AB Ae fg|\nfd BF Bd|fd BF Bd|ae cA ce|ag gf fe|fd BF Bd|fd BF Bd|e2c2A2|G3G FE|\nD2F2c2|B3AG2|FB DF GA|e3d cA|G2B2f2|d3B G2|FB D/E/D GA|e3d cA|\nd2f2c'2|b3a ag|fB df ga|e3d cA|g2b2f'2|d'4bg|fB d/e/d ga|e3d e/f/g||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Abbey",
-    "tune_type": "reel",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n~A3B A2GE|A2GA BGDB|~A3B AGEF|G2GA BGDB|\n~A3B A2GE|A2GA BGDB|A2dB AGEF|G2GA Bdd2||\neg~g2 a2ba|gabg aged|eg~g2 a2ga|bgef ged2|\neg~g2 ag~g2|a2bg aged|eg~g2 a2ga|bgea gedB||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Ballintore Fancy",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:GB ~B2 GBdB|GBBG FGAF|GB ~B2 GBdg|1 ecAG FGAF:|2 ecAG FGAG||\n|:BE~E2 BEGA|BE ~E2 A2GA|BE ~E2 cABG|1 AGFG A2GA:|2 AGFG AcBA||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Ballydesmond No. 1",
-    "tune_type": "polka",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "2/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nAB|:\"C\"c2 \"G\"B2|\"Am\"AB/2A/2 \"Em\"GA|\"G\"B/2c/2d ef|g2 ed|\n\"Am\"ea \"G\"ge|dB GA/2B/2|\"C\"ce dB|1\"Am\"A2 AB|2\"Am\"A3 d:|\n|:ea ag/2e/2|\"G\"d g gd|\"Am\"ea ab|\"Em\"g2 ed|\n\"Am\"ea ge|\"G\"dB GA/2B/2|\"Am\"ce \"Em\"dB|1\"Am\"A3 d|2\"Am\"A2 AB:|\nT: The Ballydesmond No. 2\n|:\"Am\"EA AB|cd e2|\"G\"G>F GA|GE ED|\n|\"Am\"EA AB|B1/2c1/2d ef|\"G\"g1/2f1/2e\"Em\" dB|\"Am\"A2 A2:|\n|:\"Am\"a>g ab|ag ef|\"G\"g>f ga|ge d2|\n|\"Am\"ea ab|ag ef|\"G\"ge \"E7\"dB|\"Am\"A2 A2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Banshee",
-    "tune_type": "reel",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:G2 GD EDEG|AGAB d2 Bd|eged BAGA|BAGE EDDE|\nG2 GD EDEG|AGAB d2 Bd|eged BAGA|BAGE ED D2:|\n|eaag egge|dBBA B2 Bd|e B3 gBfB|eBBA B3 d|\neaag efge dBBA B2 Bd|eged BAGA|BAGE E2 D2|\n|eaag egge|dBBA B2 Bd|e B3 egfg|eBBA B3 d|\neaag efge dBBA B2 Bd|eged BAGA|BAGE E2 D2||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Black Haired Lass (Redican's Mother)",
-    "tune_type": "slip_jig",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "9/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nFAA FAd AFD|FAA FAd (B2 A)|FAA FAd AFD|EDB, DFA (B2 A):|\nf2f fa(f e)dB|Af(f fef) g2e|f3 fa(f e)dB|AFE DFA B2A:|\nT: The Black Haired Lass (Whistle Friendly )\n|FAA FAd AFD|FAA FAd (B2 A)|FAA FAd AFD|EDD DFA (B2 A):|\nf2f fa(f e)dB|Af(f fef) g2e|f3 fa(f e)dB|AFE DFA B2A:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": "Rose Flanagan",
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Blarney Pilgrim",
-    "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "mixolydian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:\"G\"DED DEG| \"D\"A2A ABc| \"G\"BAG \"Am\"AGE| \"Em\"GEA \"C\"GED|\n\"G\"DED DEG|\"D\"A2A ABc|\"G\"BAG \"Am\"AGE| \"D\"GED D3:|\n|:\"G\"ded dBG|\"D\"AGA \"G\"BGE| \"G\"ded dBG|\"D\"AGA \"G\"GAB|\n\"Em\"g2e \"G\"dBG|\"Am\"AGA \"Em\"BGE|\"G\"B2G \"C\"AGE| \"D\"GAG G3:|\n|:\"D\"A2D \"G\"B2D| \"D\"A2D ABc|\"G\"BAG \"Am\"AGE|\"Em\"GEA \"C\"GED|\n\"D\"ADD \"G\"BDD|\"D\"ADD ABc|\"G\"BAG \"Am\"AGE|\"C\"GED \"D\"D3:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Boy's Lament for His Dragon",
-    "tune_type": "march",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:A2|A2d2 d2e>f|g>fe>d f4|g2B2 B2c>d|e>fe>dd>cB>A|\nA2d2 d2e>f|g>fe>d f4|g2B2 f>ed>c|d4 d2:|\n|:fg|a2A2 A2c2|B2G2 A3B|A2d2 A2d2|e>dc>B A2f>g|\na2A2 A2c2|B2G2 A3B|A2d2 f>ed>c|d4 d2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Alternate 1",
-        "abc_notation": "L: 1/8\n\nA>B|A2d2 d2(ef)|g>f e<d f4|(g2B2) B2(cd)|e>f e>d d>cA>B|\n(A2d2) d2(ef)|g>f e<d f4|(g2B2) f>e d<c|d4 d2:|\nf>g|a2A2 A2 c2|B2G2 A2A<B|(A2d2) A2d2|e>d c<B A2f<g|\na2A2 A2((3AB=c)|B2G2 A2A<B|(A2d2) f>e d<c|d4 d2:|\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Boys Of Ballisodare",
-    "tune_type": "slip_jig",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "9/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:D2G G2A B2d|ege d2e g3|D2G G2B d2B|AGA B2G E2G|\nD2G G2A B2d|ege d2e g2a|b2a g2e d2B|AGA B2G E2G:|\n|:B2d d2B d2B|d3 def g3|B2d d2B d2B|AGA B2G E2G|\nB2d d2B d2B|d3 def g2a|b2a g2e d2B|AGA B2G E2G:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Chicago",
-    "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "mixolydian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nAG|F2D DAG|F2D DAG|F2D DED|C2A, A,AG|\nF2D DAG|F2D DED|B3 cAF| AGF GAG|\nF2D DAG|F2D DAG|F2D DED|C2A, A,AG|\nF2D DAG|F2D DAD|BDB cAF|AGF G2A||\n|~B3 cBc|~d2 d ABc|B2G GAG|F2D DAD|\nB3 cBc|~d3 ABc|~B3 cAF| AGF G2A|\n|~B3 cBc|~d2 d ABc|B2G GAG|F2D DAD|\nBDB cDc|~d3 ABc|~B3 cAF| AGF GAG||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Cliffs Of Moher",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\neaa bag|eaf ged|c2A BAG|EFG ABd|\neaa bag|eaf ged|c2A BAG|EFG A3:|\n|:efe dBA|efe dBA|GAB dBA|GAB dBd|\n[1 efe dBA|efe dBA|GAB dBG|EFG A3:|\n[2 efe dee|cee Bee|EFG BAG|EDB, A,3||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Cock And The Hen",
-    "tune_type": "slip_jig",
-    "key_root": "B",
-    "key_mode": "minor",
-    "time_signature": "9/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n~F3 FEF c2 A|~F3 FEF AFE|~F3 FEF c2 d|ecA BAF AFE:|\necA ABc d2 f|ecA ABc BAF|ecA ABc d2 B|cBA BAF AFE:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": "Rose",
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Connaughtman's Rambles",
-    "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nFAA dAA|BAB dAG|FAA dfe|dBB BAG|\nFAA dAA|BAB def|gfe dfe|1 dBA BAG:|2 dBB B2 g||\nfbb faa|fef deg|fbb faa|fed e2 g|\nfbb faa|fef def|gfe dfe|1 dBB B2 g:|2 dBA BAG||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Alternate 1",
-        "abc_notation": "L: 1/8\n\nFAA dAA|BAB dAG|FAd f3|gdB BAG|\nFAA dAA|BAB def|gfe dfe|1 dBA BAG:|2 dBB B2 g||\nfbb {g}a3|fef deg|fbb {g}a3|fed e2 g|\nfbb {g}a3|fef def|gfe dfe|1 dBB B2 g:|2 dBA BAG||\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Cook In The Kitchen",
-    "tune_type": "jig",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": "Arranged by Gretchen Priest",
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:(E|D)GG GFG|=FDE ~F2(E|D)GG GFG|Add cAG|\nDGG GFG|=FDE F2 (d|c)AG FG(A|B)GF G2:|\n|:A|~B3 BAG|~A3 AGF|~GGG GFG|Add cAG|\n~B3 BAG|~A3 A2 (d|c)AG FG(A|B)GF G2:|\n|:B|d2 (e f2) (g|a2) g fed|cA(G F)GA|BdB cBA|\nd2 (e f2) (g|a2) g fed|cA(G F)GA|BGF G2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Crow In The Sun",
-    "tune_type": "air",
-    "key_root": "F",
-    "key_mode": "major",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:FG|A2 cA BA G>F|D2 C2 A,3 F/G/|A3 c dcBA|AB G2 G2 G>A|\nBFBc dc d<e|fcfa g2 fe|dcfc BA G>F|D2 E2 F2:|\n|:zf|d<c fc c2 Ac|c2 fa g3 g/a/|bB d<b aA c<a|gfed c2 c/d/_e|\ndcBA c2 F/G/A|BA G>F D2 C>B,|A,CFA G<B E<G|F6:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Cup Of Tea",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:\"Em\"BAGF GEEF|\"Em\"GEBE GEE/E/E|\"Em\"BAGF GEEG|\"D\"FDAG FDDF|\n\"Em\"BAGF GEEF|\"Em\"GEBE GEEA|\"Em\"BAGF GABc| \"D\"dBAG FDD2 :|\n|: \"D\"d2e/f/g fdec|\"Bm\"d2eg fBB/B/B|\"D\"d2eg fdec|\"A\"dBAG \"D\"FDD2|\n\"D\"d2e/f/g fdec|\"D\"dfaf \"G\"g2fg|\"D\"afge fdec|\"D\"dBAG FDD2 :|\n|: \"D\"FAdA FABA|\"D\"FAdA \"A\"FEE/E/E|\"D\"FAdA \"G\"BABc|\"A\"dBAG \"D\"FDD2|\n\"D\"FAdA FABA|\"D\"FAdf \"A\"fee/e/e|\"D\"f2ec \"G\"dfec|\"A\"dBAG \"D\" FDD2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Drunken Landlady",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nBE~E2 BAFA|BE~E2 BAFA|ABAF D2FD|FA~A2 BAFA|\nBE~E2 BAFA|BE~E2 BAFA|A2Bc dfec|dBAF E4:|\n|:Beed e2de|f2df efdB|ABAF D2FD|FA~A2 BAFA|\nBeed e2de|f2df efdB|A2Bc dfec|dBAF E4:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Dunmore Lasses",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "minor",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n~E3F ~G3A|Be~e2 Be~e2|~E3F G2BG|A2BA (3GFE FD|\n~E3F ~G3A|Beed ~e3f| (3gfe fd edBG|(3ABc BA GEED:|\n|:g2eg fedA|Be~e2 Be~e2|g2eg fedB|A2BA (3GFE FD|\ng2eg fedA|Beed ~e3f|(3gfe fd edBG|(3ABc BA GEED:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Alternate 1",
-        "abc_notation": "L: 1/8\n\n~E3F GFGA|Beed Beed|~E3F G2BG|~A2BA GEFD|\n~E3F ~GFGA|Beed ~e3f| gefd edBG|AcBA GEFD:|\n|:g2eg fedA|Beed Beef|gfeg fedB|AcBA GE~E2|\ng2eg fedA|Beed ~e3f| gefd edBG|AcBA GEE2:|\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Fermoy Lasses",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "minor",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nGE ~E2 BE ~E2|GE ~E2 BcBA|GE ~E2 BE ~E2|AFDF AcBA|\nGE ~E2 BE ~E2|GE ~E2 BcBA|~G3F GBdB|AFDF AcBA||\nG2 BG dGBG|G2 Bd efg2|G2 BG dGBG|AFDF AcBA|\nG2 BG dGBG|G2 Bd efg2|gage dedB|AFDF AcBA||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Finnish",
-    "tune_type": "polka",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "2/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:\"Bm\"B>B Bc|dB Bd|cA Ac|\"Bm\"d/c/B/A/ BF|\n\"Bm\"B>B Bc|dB B2|\"G\"ef/e/ \"A\"dc|1\"Bm\"BABF:|2\"Bm\"BAB/2c/2d/2e/2||\n|:\"D\"f>B Bf|\"A\"ec cd|\"Em\"ef/e/ \"A\"dc|\"Bm\"Bc \"A\"de|\n\"D\"f>B Bf|\"A\"ec cd|\"Em\"ef/e/ \"A\"dc|1\"Bm\"BAB/2c/2d/2e/2:|2\"Bm\"2BABz:||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Alternate 1",
-        "abc_notation": "L: 1/8\n\n|:\"Bm\"B>B Bc|dB Bd|cA Ac|\"Bm\"d/c/B/A/ BF|\n\"Bm\"B>B Bc|dB B2|\"G\"ef/e/ \"A\"dc|1\"Bm\"BABF:|2\"Bm\"BAB/2c/2d/2e/2||\n|:\"D\"f>d df|\"A\"ec cd|\"Em\"ef/e/ \"A\"dc|\"Bm\"Bc \"A\"de|\n|1\"D\"f>B Bf|\"A\"ec cd|\"Em\"ef/e/ \"A\"dc|\"Bm\"BAB/2c/2d/2e/2:|\n|2\"D\"f>B Bf|\"A\"ec a2|\"Em\"b/a/f/e/ \"A\"dc|\"Bm\"2B4:||\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Flowers Of Spring",
-    "tune_type": "jig",
-    "key_root": "A",
-    "key_mode": "dorian",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:\"Am\"A2 A ABd|\"G\"edB G2B|dBB GAG|ABd efg|\n\"Am\"ABA ABd|\"G\"edB G2B|dBB gBB|1\"Am\"ABA A2 B:|2\"Am\"ABAA2 d:|\n|:\"Am\"eaa aga|\"G\"b2 b age|ege GBd|ede ged|\n\"Am\"eaa aga|\"G\"b2 b age|e/f/ge dBG|1\"Am\"BAG A2 d|2\"Am\"BAG A2 B:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": "heathermillermusic.com",
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Foxhunters",
-    "tune_type": "slip_jig",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "9/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:F3 FED G2E|F3 FED E2D|F3 FEF G2B|AFD DEF E2D:|\n|:B3 BAG FGA|B2E E2F GAB|ABc dcB ABc|d2 D DEF  E2 D:|\n|:f3 fed g2e|f3 fed e2d|f3 fef g2b|afd def e2d:|\n|:gfe d=cB AGA|B2 E E2 F GAB|ABc dcB ABc|d2 D DEF E2 D:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "The Frieze Breeches",
-    "tune_type": "slide",
-    "key_root": "D",
-    "key_mode": "mixolydian",
-    "time_signature": "12/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nD2E F2G A2d cAG|1 A3 BAG AAA ABA:|2 F2A G2E D3 D3||\nd2e fed e2d cAG|1 AAA BAG AAA AAA:|2 F2A G2E D3 D2A||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
     "title": "The Glass Of Beer",
     "tune_type": "reel",
     "key_root": "B",
@@ -2807,6 +1413,16 @@
         "abc_notation": "L: 1/8\n\nba|fB B2 fBaB|fB B2 e2 de|fB B2 f3e|dfaf e2 ba|\nfB B2 fBaB|fB B2 e2 de|fB B2 f3e|dfaf e2 fe||\nd3e f3e|defd e~A3|d3e f3e|dfaf e2 fe|\nd3e f3e|defd e~A3|d3e f3e|dfaf e2 ba||\n",
         "is_core": true,
         "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Flutey Copy",
+        "abc_notation": "ba|fB B2 fBaB|fB B2 e2 de|fB B2 f3e|dfaf e2 ba|\nfB B2 fBaB|fB B2 e2 de|fB B2 f3e|dfaf e2 fe||\nd3e f3e|defd e~A3|d3e f3e|dfaf e2 fe|\nd3e f3e|defd e~A3|d3e f3e|dfaf e2 ba||\n",
+        "is_core": false,
+        "instrument": "flute",
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
@@ -2829,6 +1445,30 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\n|:B2AF BFAF|E3F EDBA|B2AF BFAF|DFAF GE E2|\nB2AF BFAF|E3F EDBA|BE E2 DEGB|dBAF FE E2:|\n|:eB B2 efge|fd d2 Adfd|eB B2 egfe|dBAF FGE E2|\neB B2 efge|fd (3dcd Adfd|B3d (3efg fe|dBAF GE E2:|\nT: The Glen Of Aherlow (Fiddle)\n|:B2AF BFAF|E3F EDB,D|B2AF BFAF|DFAF GE E2|\nB2AF BFAF|E3F EDB,A,|B,E E2 B,DGB|dBAF FE E2:|\n|:eB B2 efge|fd d2 Adfd|eB B2 egfe|dBAF FGE E2|\neB B2 efge|fd (3dcd Adfd|B3d (3efg fe|dBAF GE E2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Good Morning To Your Nightcap",
+    "tune_type": "reel",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:e3 ^cd3B|cBcd e2d2|e/2f/2ge^c dedB|cABG EGD2|\ne3^c dedB|cBcd e2d2|e/2f/2gfa gedB|1cABG E2D2:|2cABGEGDG||\n|:EAAA BGGG|cBcd e2 d2|EAAA BGGG|cABG EGDG|\nEAAA BGGG|cBcd e2 d2|e/2f/2gfa gedB|1cABGEGDG:|2cABG E2D2:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -2912,6 +1552,30 @@
     "difficulties": []
   },
   {
+    "title": "Greig's Pipes",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nB3A BAGA|B2GB AGEG|B3A BAGB|AcBG AGEG|\nB3A BAGA|B2GB AGEG|Bd d2 eBdB|AcBG AGEG||\nDG G2 DGBG|DGBG AGEG|DGGF GABc|dBAc BG G2|\nAG G2 DGBG|DGBG AGEG|DGGF GABc|dBAc BG G2||\nd2 (3Bcd egge|d2 BG AGEG|d2 (3Bcd eg g2|agbg ageg|\nd2 (3Bcd egge|d2 BG AGEG|d2 (3Bcd eg g2|agab aged||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Hag At The Churn",
     "tune_type": "jig",
     "key_root": "D",
@@ -2974,6 +1638,40 @@
         "label": "Standard",
         "abc_notation": "L: 1/8\n\nDGBG dGBG|DFAF cFAF|DGBG dGBG|BdcA BGGE|\nDGBG dGBG|DFAF cFAF|DGBG dGBG|BdcA BGGd||\ng2 gf gbag|fdde fgaf|g2 gf gbag|fdcA BGGd|\ng2 gf gbag|fdde fgaf|g2 gf gbag|fdcA BGGF||\n",
         "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Heaton Chapel",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nE2 B2 BAFB|BABc dedA|D2 A2 AGFA|BdAB FEDF|\nE2 B2 BAFB|BABc dedB|A2 dA fedf|edBA (FG)FD|\nE2 B2 BAFB|BABc dedA|D2 D2 AD D2|BdAB FEDF|\nE2 B2 BAFB|BABc dedB|A2 dA fedf|edBA Be e2|\ng2 e2 edBA|Be e2 edBe|dBAF AFDE|F/E/D FA dA A/B/d|\ng2 e2 edBA|Beed edBe|dF F2 DEFA|dBAF BE E2|\ng2 e2 edBA|Beed edBe|dBAF AFDE|F/E/D FA dA A/B/d|\ne2 ef gb e/f/g|f2 ed dBAF|BABc dfed|d2 BA (FG)FD||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Alternate 1",
+        "abc_notation": "L: 1/8\n\nE2B2 BAFA|BABc dedB|D2A2 AGFG|ADAB AGFG|\nE2B2 BAFA|BABc dedB|ABde fedf|1 edBA FGFD:|2 edBA Beef||\ng2e2 edBA|Beed edBe|dBAF DE (3FED|FAdA BAFA|\ng2e2 edBA|Beed edBe|dF3 DFAB|dBAF BEE2|\ng2e2 edBA|Beed edBe|dBAF DE (3FED|FAdA BAFA|\ne2ef gbge|f2ed BAFD|BABc dedB|edBA FGFD||\n",
+        "is_core": false,
         "instrument": null,
         "source": null,
         "source_notes": null,
@@ -3152,6 +1850,102 @@
     "difficulties": []
   },
   {
+    "title": "I Buried My Wife And Danced On Her Grave",
+    "tune_type": "jig",
+    "key_root": "D",
+    "key_mode": "mixolydian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:DED F2G|AdB cAF|G3 BAG|F3 GEA|\nD3 F2G|AdB cAF|G3 BAG|AFD D2A:|\n|:d2e fed|faf gfe|d2e fed|dcA dcA|\nd2e fed|faf gfe|dcA BAG|AFD D3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Idir Deighric 'Gus Breo'",
+    "tune_type": "waltz",
+    "key_root": "A",
+    "key_mode": "mixolydian",
+    "time_signature": "3/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nA3/2B/A {B}A3/2 G/A|c3/2d/e fza|{f}g/e/zec d2B/A/|\nG2E G2E/G/|A3/2B/A {B}A3/2 G/A|c3/2d/e fza/f/|\ng/e/zc d2(3B/A/G/|A3 {B}A3|Ja3/2b/a g3/2a/g|\nf3/2e/d c2d|{f}e {b}a/e/f/{a}g/ f3/2e/d|e3/2c/A G2E/G/|\nA3/2B/A {B}A3/2 G/A|c3/2d/e fza/f/|\ng/e/zc d2(3B/A/G/|A3 {B}A3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "In Memory Of Coleman",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": "Ed Reavy",
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:DGBd cBGF|DFEF GFDF|GABc dfga|(3bag af dgga|\nbgaf gfdc|(3Bcd BG F~D3|FGBd cABc|dgdc BG G2:|\nB3 d g3 f|e c3 A F3|Gdga fdcA|FGAc BGGA|\nB2~B2 gBfB|FBfB A~F3|GABc dgag|fdcA G4:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Inisheer",
+    "tune_type": "waltz",
+    "key_root": "D",
+    "key_mode": "mixolydian",
+    "time_signature": "3/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:B3A Bd|B3A Bd|E3B AB|D3B AG|\nB3A Bd|B3A Bd|G3B A/G/F|1 G3E DG:|2 G3A Bd||\ne3f ed|B3A Bd|ef ed B/c/d|\ne3A Bd|e3f ed|B3A Bd|G3B A/G/F|\nG3A Bd|e3f ed|B3A Bd|gf ed B/c/d|\ne3A Bd|e3f ed|B3A Bd|D3B A/G/F|1G3E DG|2G6||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Island Of Woods",
     "tune_type": "reel",
     "key_root": "D",
@@ -3165,6 +1959,30 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\ndc|B2 BA A2 AB|A2 AB AFdc|B2 BA B3 A|B2 Bc BA d/2e/2f|\ng2 gf e2 fe|f2 ed d2 cA|d2 cA GAFD|1 E5:|2 E4 z E||\nF/2G/2A|BAAF E3 D|EFED D2 F/2G/2A|BdAd GAFD|E5 F/2G/2A|\nBAAF E3 D|EFED D2 F/2G/2A|GAFD E2 dc|A4||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Jenny's Chickens",
+    "tune_type": "reel",
+    "key_root": "B",
+    "key_mode": "minor",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|~f3e fece|~f3a eAce|~f3a fece|~f2af eAce|\n~f3a fece|~f3e~e2ce|~f3a fece|~f2af eAce|\nfBBA ~B3e|fB ~B2 ABce|fBBA ~B3e|~f2af eAce|\nfB~B2 fB~B2|fB ~B2 ABce|fBBA ~B3e|~f2af eAcA|\n|:~B2 bB aBgB|~B2 AB eAcA|B2 bB aBgB|1 ~f2af eAcA:|2 ~f2af eAce||\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -3192,6 +2010,54 @@
         "is_core": true,
         "instrument": null,
         "source": "Gretchen Priest",
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Jimmy Ward's",
+    "tune_type": "jig",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nG3 GAB|AGE GED|~G3 AGE|GED DEF|\nG3 GAB|AGE GAB|cBA BGE|1 DED DEF:|2 DED D2 B||\ncBA BAG|ABA AGE|cBA BGE|EDE GAB|\ncdc BAG|A3 ABc|dcA AGE|1 GED DAB:|2 GED DEF||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "John Ryan's",
+    "tune_type": "polka",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "2/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\ndd B/c/d/B/|AF ED|dd B/c/d/B/|AF ED|\ndd B/c/d/B/|AF Ad/2e/2|fd ec|d2 dz:||\nfd de/f/|gf ed/2e/2|fd Ae/f/|gd/f/ a(g|\nf)d de/f/|gf ed/e/|fd ec|d2 dz:||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
         "mutation_notation": null
@@ -3271,6 +2137,102 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\nBEE BEE|Bdf edB|BAF FEF|DFA BAF|\nBEE BEE|Bdf edB|BAB dAF|FED E3:|\ne2f gfe|faf edB|BAF FEF|DFA dBA|\ne2f gfe|faf edB|BAB dAF|FED E3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Kitty Goes A-Milking",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|dG G2 d2 cA|dG G2 FGAB|dG G2 d2 eg|fdcA GABc|\ndG G2 d2 cA|dG G2 FGAB|dG G2 d2 eg|fdcA GABc|\ndg g2 ag g2|dggf d2 cA|dg g2 ag g2|dcAB c2 Bc|\ndg g2 ag g2|dggf d2 cA|defg a3 g|fdcA G4|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Lad O'Beirne's Jig (The Silver Vale)",
+    "tune_type": "jig",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:dAF AGF|dAF AGF|AAE GFG|A,CE GFE|\nDFA DGB|Ace d2e|fed cBA|1 GFE D3:|2 GFE D2e||\n|:fdf a3|fdc d2f|ede gfg|efd cde|\nfef gfg|aga bag|fed cBA|1 GFE D2e:|2 GFE D3||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Last Night's Fun",
+    "tune_type": "reel",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:ADFD A2AB|ADFD EFGB|ADFD A2 Bd|e2fe dBAB:|\ndf (3fff af (3fff|defd e2fe|df (3fff af (3fff|egfe dBAB|\ndff2 aff2|defd e3f|a2bf afeg|fedc BcdB|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Last Night's Panic",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "minor",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:B^DF^D A2(3ABc|B^DF^D EFGc|B^DF^D A2 AG|FGGF FE^DF:|\n|:^df (3fff a3 ag|fgag fB3|^df (3fff a3 ag|fggf f^dB^d:|\n|: Aece aged|BGFG dGFG|| Aece agab| c'bag fdB2:|\n|: ea3 bgeg| dBGB fBAB|e a3 bc'gd|BGFD FEE2:|\n|:^dfbf a3g|fgag f^dB^d|b^df^d a3g|fgag f^B3:|\n|:b2 af b2 af|fegf ffe^d|b2 af b2 af|(3efg 3)fga b2:||\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -3388,6 +2350,54 @@
     "difficulties": []
   },
   {
+    "title": "Little Mouse",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": "Eric Torstenson (Nov 2023)",
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:BcBcB2E2|Bcedc3B|ABcB AGFE|DFAF dAcA|\nBcBcB2E2|Bcedc3B|ABcB AGFE|1DFAF d3 A|2DFAF d2 Bc:||\n|:d2g2f3d|cdecA3G|FDAF cAec |geaf bafd|\nB2g2f3d|cdecA3G|FGAF DEFG|1A2 GFG2 G/2A/2B/2c/2|2A2 (3AGF  G3 A:||\nT: Little Mouse (Silver Flute)\nC: Eric Torstenson (Nov 2023)\nR: reel\nZ:\nL: 1/8\nK:G\n(Bc) (Bc)B2E2|(Bc) .e.d c3B|(AB).c.B (AG)(FE)|.D.F.A.F .d.A.c.A|\n(Bc)(Bc)B2E2|(Bc).e.dc3B|(AB).c.B .A.G.F.E|(DF)(AF) d3 A|\n(Bc) (Bc)B2E2|(Bc) .e.d c3B|(AB).c.B (AG)(FE)|.D.F.A.F .d.A.c.A|\n(Bc)(Bc)B2E2|(Bc).e.dc3B|(AB).c.B .A.G.F.E|DFAF d2 Bc|\n|d2g2f3d|(cd).e.cA3G|(FG)(AF) (DF)(AF)|(cA)(ec) (ge)(fd) |\nB2g2f3d|(cd).e.cA3G|(FG).A.F (DE).F.G|A2 GFG2 G/2A/2B/2c/2|\nd2g2f3d|(cd).e.cA3G|(FD)(AF) (cA)(ec) |(ge)(af) .b.a(fd)|\nB2g2f3d|(cd).e.cA3G|(FG).A.F (DE).F.G||A2 (3AGF  G3 A|\n(Bc) (Bc)B2E2|(Bc) .e.d c3B|(AB).c.B (AG)(FE)|.D.F.A.F .d.A.c.A|\n(Bc)(Bc)B2E2|(Bc).e.dc3B|(AB).c.B .A.G.F.E|(DF)(cA) g4||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Maggie's Pancakes",
+    "tune_type": "reel",
+    "key_root": "B",
+    "key_mode": "minor",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nf ~B3 fgfe|d ~B3 GBdB|cAAd AAeA|AfAA edBc|\nd ~B3 fgfe|d ~B3 GBdB|cAdA e ~a3|afec B2:|\nf2 dB GBdB|caec d ~B3|f2 dB GBdB|efdA Bcde|\n~f3 e fgfe|d ~B3 GBdB|cAdA e ~a3|afec B2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Maids Of Mitchelstown",
     "tune_type": "reel",
     "key_root": "D",
@@ -3425,6 +2435,126 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\n\"Em\"E2BE GABG|\"Em\"E2BE \"D\"AFDF|\"Em\"E2BE GAB^c|\"D\"dBAd BEED|\n\"Em\"E2BE GABG|\"Em\"EGBG \"D\"AFDF|\"Em\"E2BE GAB^c|\"D\"dBAd Beed||\n\"Em\"e2ge \"D/F#\"fgaf|\"G\"gfed \"D/F#\"ed B/2c/2d|\"Em\"efge \"D/F#\"fgaf|\"G\"gfed \"D/F#\"Beed|\n\"#m\"e2ge \"D/F#\"fgaf|\"G\"gfed efga|\"D\"bgaf gfed|\"D\"eBBA GBFB||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "March Of The Kings Of Laois",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "mixolydian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|e2c e2A|e2c e2A|f2d e2c|d2c B2A|\ne2c e2A|e2c e2a|f2a e>ad|c>ac B2A||c2A d>ef|\ne3 e>dc|B>gd B>GB|d>gd B>GB|A>BA A>BA|A>BA A>BA|\nf2d a2d|f2d a2d|e2a e2c|e2a e2c|\nf2a a>fe|d>gd B>cd|c2A d>cB|e3 e>dc|\nB>gd B>GB|d>gd B>GB|A>BA A>BA|A>BA A>BA||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Mary Grace",
+    "tune_type": "reel",
+    "key_root": "A",
+    "key_mode": "mixolydian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\ncA~A2 EA~A2|BG~G2 AG (3Bcd|cA~A2 EAcA|dBGB ~A3z|\ncA~A2 eA~A2|BGdG BG~G2|=c2cA BG~G2|dBGB ~A3z:|\n|:(3Bcd ef gedc|BGDG BG~G2|(3Bcd ef ~g3z|eaag aged|\n(3Bcd ef gedc|BGdG BG~G2|=c2cA BG~G2|dBGB ~A3z:|\ncA~A2 EA~A2|BGdG BG~G2|cA~A2 EA~A2|dBGB ~A3z|\ncA~A2 EA~A2|BGdG BG~G2|=c2cA BG~G2|dBGB ~A3z:|\n|:(3Bcd ef gedc|BGDG BG~G2|(3Bcd ef ~g3z|eaag aged|\n(3Bcd ef gedc|BGDG BG~G2|=c2cA BG~G2|dBGB ~A3z:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Maud Millar",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\ngf|edBA GEDE|G2BG dGBd|e2dB A2GA|Beed efgf|\nedBA GEDE|G2BG dGBd|e2dB A2GA|Beed e2ge|\ndega bgg2|agef g3e|dega bgg2|aged eage|\ndega bgg2|agef g3a|bgaf gfed|Beed e2|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Michael Gorman's",
+    "tune_type": "slip_jig",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "9/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:F3 A2F A2F|G3 B2G B2G|F3 A2F A2F|Bcd A2G FED:|\n|:d3 f2d cBA|B2e e2d cBA|1 d3 f2d cBA|\nBcd A2G FED:|2 fed edc d2B|A2B A2G FED||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Micho Russell's Reel (The Doonagore)",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nDG G2 FDBd|BG G2 ABcA|d2 cA BGG2|(3Bcd cA GFEF|\nDG G2 FDBd|BG G2 ABcA|dzcA BGG2|1 (3Bcd cAG2 zE:|2  (3Bcd cAG2 (3Bcd||\ng3e fd de|fdgd fd (3Bcd|g3e f3 e|defd g2 zd|\ngbag fddc|(3Bcd BG ABcA|d2 cA BGG2|1(3Bcd cA Gz (3Bcd|2(3Bcd cA G2z F:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -3484,6 +2614,64 @@
     "difficulties": []
   },
   {
+    "title": "Miss Monaghan",
+    "tune_type": "reel",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|: D2(3FED FAAd | B2BA FABc | d2dB ABde | fede fee2 |\n{E}D2(3FED FAAd | B2BA FABc | d2dB ABdB | AF EG FDD2 :|\n|: faab afdf | g2fg edBc | ~d2 dB ABde | fede fee2 |\nfaab afdf | (3gfe fd ed Bc | d2dB ABdB | AFEG FDD2 :|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Molly Bán",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nEBBA B2 AG|FDAD BDAD|EBBA B2 Bc|dBAF BAGF|\nEBBA B2 AG|FDAD BDAD|EBBA B2 Bc|dBAF GE E2:|\ne2 Be edeg|dBBc d3 d|e2 Be edeg|dBAF GE E2|\neBGB effe|dBBc d3 e|f3 e defe|dBAF GE E2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Alternate 1",
+        "abc_notation": "L: 1/8\n\n|EBBA B2 AG|(3FED AD BDAF|EBBA ~B3 c|dBA=c BEED|\nEBBA B2 AG|(3FED AD BDAF|EBBA ~B3 c|dBA=c B~E3||\ne2 Be (3eee fe|d~B3 d2 Bd|e Be (3eee fe|dBA=c B~E3|\ne2 Be (3eee fe|dB (3BBB ~d3 e|~f3 e defe|dBA=c BEED||\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Mooncoin",
     "tune_type": "jig",
     "key_root": "A",
@@ -3497,6 +2685,54 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\ned|:cBA AEA|AEA Bcd|cBA Ace|dBG Bcd|\ncBA AEA|AEA Bcd|Ace ~gfe|dBG Bcd:|\n|:cde efg|f/g/a(f g)ed|cde efg|(f/g/a)A Bcd|\ncde ef(g|a)fd bge|afd gec|dBG Bcd:|\n|:cBA a2 (f|e)cA Bcd|cBA ~g3|dBG Bcd|\ncBA Aaa|Agg Aff|Aee efg|dBG Bcd:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Morrison's",
+    "tune_type": "jig",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:E3 EBE|EBE AFD|E3 B2c|dcB AFD|\nE3 EBE|EBE AFD|G3 FGA|dAG FED:|\nBee fee|aee fed|Bee fee|a2g fed|\nBee fee|aee fef|gfe d2A|BAG FGA|\nBee fee|aee fed|Bee fee|faf def|\ng3 gfe|def g2d|edc d2A|BAG FED|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Mountain Dew",
+    "tune_type": "reel",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": "Joe Cooley",
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n\"Em\"B2EB GBEB|BEGB \"D\"ADFA|\"Em\"B2EB GBEg|gedB \"D\"ADFA|\n\"Em\"B2EB GBEB|BEGB \"D\"ADFA|\"Em\"B2EB GBEg|gedB \"D\"ADFA||\n\"Em\"B2eg \"D\"fded|\"Em\"B2eg \"D\"fddA|\"Em\"B2eg \"D\"fded|(3Bcd AG FDDA|\n\"Em\"B2eg \"D\"fded|\"Em\"B2eg \"D\"fddc|dfaf gfed|(3BcB AF \"Em\"BEE2||\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -3532,6 +2768,54 @@
     "difficulties": []
   },
   {
+    "title": "Mulvihill's",
+    "tune_type": "jig",
+    "key_root": "B",
+    "key_mode": "minor",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nBc|:dcB cBA|BAF F3|def ecA|cBB B3|\nd2 d cBA|(3Bcd B AFE|DFE F2 E|FBB B3|\ndcB cBA|BAF F3|dcB ecA|cBB B2 c|\nd2 d cBA|(3Bcd B AFE|DFE F2 E|FBB B3|\n|:dcd ede|fdB AFA|d2 d efe|dBc d2 e|\nfdf ece|dcB cBA|BAF F2 E|FBB B3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Music In The Glen",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nG2BG EGDC|B,DGB AGAB|c2ec B2dB|(3cBA BG AGEF|\nG2 BG EGDC|B,DGB AGAB|cdef gfge|dBAc BG G2:|\nBGdG eGdG|BGdB cAAc|BGdG edef|gedc BGGA|\nBGdG edef|g2fg afdf|g2fg egdB|cAdc BGG2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Musical Priest",
     "tune_type": "reel",
     "key_root": "B",
@@ -3545,6 +2829,30 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\nBA||:FBBA B2Bd|cBAf ecBA|FBBA B2Bd||1cBAc B2 BA:||2cBAc B2 Bc:||\n|:d2dc dfed|(3cBA eA fAeA|dcBc defb|afec B2Bc:||\n|:dBB2 bafb|afec ABce||1dB B2 bafb|afec B2Bc:||2dcBc defb|afec B2:||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "My Love Is In America",
+    "tune_type": "reel",
+    "key_root": "D",
+    "key_mode": "mixolydian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:E|FEFG ABcB|Ad~d2 Ad~d2|FEFG ABcA|GBAG FDD2|\nFEFG ABcB|Add^c defg|afge fdAF|1GBAG FDDE:|2GBAG FDD g:|\n|:fdeg fdec|Ad~d2 Ad~d2|fdeg fdAF|GBAG FDDe|\nfdeg fdec|Add^c defg|afge fdAF|1GBAG FDDg:|2GBAG FDDE:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -3604,6 +2912,126 @@
     "difficulties": []
   },
   {
+    "title": "New York Jig (Gretchen Priest arr)",
+    "tune_type": "jig",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:D|GFG DB,D|GBd ~e2d|gdB BAB|cBc E2F|\nGFG DB,D|GBd ~e2d|gdB BAB|1 cEF GBA:|2 cEF G2D||\n|:GBd GBd|GBd cBA|GBd efg|fd^c def|\ngeg fdf|ece dBG|cBc Adc|1 BGF G3:|2 BGF GBA||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "No Inclusion",
+    "tune_type": "waltz",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "3/4",
+    "composer": "Eric Torstenson - June '23",
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "E2||:A3 B cd|e2 a2 f2| g3 e dc| B3 AG2| G3E DE| G3 A Bc| dg fg  ed | c3 B A2|\nA3 E  AB|c2 e2 a2| b2 c'2 a2| g3 ed2| dc Bc de| B3 cd2|ed cB cB|1A4 E2:||2A4 ed||\n||:e~A3 ed | e~A3 ed | eA eA fA | g3 e d2| ^c3 d ea | | f3 ed2| BG DB ^cA| e4 ed|\n|e~A3 ed | e~A3 ed | eA eA fA | g3 e d2| c3 d ec | B3 c dB | AGED cB|1 A4 ed:||2 A4 E2||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "A Noodle in the Mix",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "mixolydian",
+    "time_signature": "6/8",
+    "composer": "Eric?",
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:EAc e2e|def ecA|A2E G2A| BAG Bcd|\nEAc e2e|def ecA|A2E G2A| BAG A3:|\n|:eaa eaa|eab c'ba|gfe dBA|AGE D3\n|1eaa eaa|eab c'ba|gfe dBA|BAG A3:|\n|2EAc e2e|def ecA|A2E G2A| BAG A3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "O'Connell's Lamentation",
+    "tune_type": "waltz",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "3/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nE2|:\"Am\" A4 dc|:\"Em\" A2G2E2|\"C\"G2c2d2|\"D\"e2a2f2|\"C\"g3ec2|\"Dm\" d3cA2|\"Em\" G2E2F2|\"G\"G4 E2|\n\"Am\" A4dc|\"Em\" A2G2E2|\"C\"c3 def|\"Em\" g2e2a2|\"C\" g3ec2|\"Dm\" d3cA2|\"Am\" A6|1 -A4 E2:|2 A4 ef||\n|:\"G\"g3 f af|\"Em\" g3 b ag|\"Dm\" =f>e de =fd|\"Am\" e4 A2|\n\"C\"c>B cd ef|g3e cA|\"Em\" G2E2c>A|\"G\" G2E2G2|\n\"Am\" A2 AB cA|\"G\" B2 Bc dB|\"C\"c3d ef|\"Em\" g2e2a2|\n\"C\" g3 ec2|\"Dm\" d3 cA|\"Am\" A6|1 A4 ef:|2 A4 AB||\n|:\"Am\" c2E2F2|\"Em\" G4 AB|\"C\" c>B cd ef|\"Em\" g2e2a2|\n\"C\" g>=f eg =fe|\"Dm\" d=f ed cB|\"Am\" c2E2F2|\"G\" G4 AB|\n\"Am\" c2E2F2|\"Em\" G4 AB|\"C\"c>B cd ef|\"Em\" g2e2a2|\n\"C\"g3e c2|\"Dm\" d3cA2|\"Am\" A6|-A4 AB:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "O'Keefe's Polka",
+    "tune_type": "polka",
+    "key_root": "B",
+    "key_mode": "minor",
+    "time_signature": "2/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nBc|:\"Bm\"dB bB|\"D\"de f>e|\"Bm\"dB bB|\"A\"c/B/A/c/ ef/e/|\n\"Bm\"dB bB|\"D\"de f>e|\"Bm\"d>e \"D\"f/e/d|1 \"Bm\" B2 B>c:|2 \"Bm\" B2B2||\n|:\"Bm\"fe/f/ ba|\"D\"fe f>e|\"Bm\"dB bB|\"A\"c/B/A/c/ ed/e/|\n\"Bm\"fe/f/ ba|\"D\"f/2e/2d/2e/2 f>e|\"Bm\"d>e \"D\"f/e/d|1 \"Bm\" B2 B2:|2 \"Bm\"B2 B>c||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Old Copperplate",
     "tune_type": "reel",
     "key_root": "A",
@@ -3652,6 +3080,30 @@
     "difficulties": []
   },
   {
+    "title": "Old Hag, You Have Killed Me",
+    "tune_type": "jig",
+    "key_root": "D",
+    "key_mode": "mixolydian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nFDD cAA|ded cAG|A3 ABG|ABA A2G|\nFDD cAA|ded cAF|G3 GcA|1 GAG G2E:|2 GAG G2e||\n|:f3 gfg|afd cAG|A3 ABG|ABA A2e|\nf3 gfg|afd cAF|G3 GcA|1 GAG G2e:|2 GAG G2E||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Otter's Holt",
     "tune_type": "reel",
     "key_root": "B",
@@ -3665,6 +3117,54 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\ne|:fBBA FEFB|A3F ABde|fBBA FEFA|BdcA B2 de|\nfBBA FEFB|A3F ABde|fbaf efde|1 fBBA B3e:|2 fBBA B3c||\nd2 fd Adfa|bfaf effe|(3ddd fd Adfa|bfaf egfe|\ndefd Adfa|bfaf efde|fBBA FEFA|(3Bcd cA B3c|\n~d3f a2 fa|(3baf af effe|d2 fd adfa|bfaf effe|\ndcdf a2 fa|(3baf af effe|fBBA FEFA|(3Bcd cA ~B3e||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Out On The Ocean",
+    "tune_type": "jig",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nE|D2B BAG|BdB ABA|GED G2A|BdB AGE|\nD2B BAG|BdB ABA|GED G2A|BGF G2:|\nB/2d/2|e2e edB|e2e edB|ded def|gfe dBA|\nG2A B2d|ege dBA|GED G2A|BGF G2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Paddy's Return (Young Tim Murphy)",
+    "tune_type": "jig",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\ndB|:AFD DFA|BdB BAF|A3 F2D|FEE E2B|\nAFD DFA|BdB BAF|A3 F2E|:1FDD D2B:||:2FDD D2e:|\n|:fdd dcd|fdd d2e|fef def|gfg eag|\nfed B2d|A2d F2g|ABA F2E|:1FDD D2e:||:2FDD D3:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -3772,6 +3272,94 @@
     "difficulties": []
   },
   {
+    "title": "Porthole Of The Kelp",
+    "tune_type": "reel",
+    "key_root": "D",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n||:F2DE FGAG|F2DF ECCE|F2DE FGAG|FDEC A,D DE|\nF2DE FGAB|cAGF ECCE|D2E/2F/2G AddB|1cAGE EDDE|2cAGE EDDA:|\nd2 Ad dcAG|F2DF ECCc|d2Ad dcAG|Adce d2 de|\nfded dcAB|cAGF ECCE|D2 E/2F/2G AddB|1cAGE EDDA|2cAGE EDD2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Porthole Of The Kelp (Em)",
+        "abc_notation": "L: 1/8\n\n|:G2 EF GABA|G2EG FDDF|G2 EF GABA|GEFD E2 EF|\nG2 EF GA Bc|dBAG FDDF|E2 F/2G/2A Beec|1 dBAF FEEF:|2 dBAF FEEB||\n|:e2 Be edBA|G2EG FDDd|e2 BeedBA|Bedf e2 ef|\nge fe edBc|dBAG FDDF|E2F/2G/2A B eec|1 dBAF FEEB:|2 dBAF FE E2||\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Alternate 2",
+        "abc_notation": "L: 1/8\n\nDE||\"Dm\"F2DE FGAG|F2DF \"C\"ECCE|\"Dm\"F2DE FGAG|\"C\"FDEC A\"Am\",D DE|\n\"Dm\"F2DE FGAB|\"C\"cAGF ECCE|\"Bb\"D2 E/2F/2G AddB|1\"Am\"cAGE EDDE:|\"Am\"2cAGE EDDA|\n\"Dm\"d2 Ad dcAG|F2DF \"C\"ECCc|\"Dm\"d2(A d)dcAG|Adce \"C\"d2de|\n\"Gm\"fded dcAB|\"Am\"cAGF ECCE|\"Bb\"D2E/2F/2G AddB|\"C\"cAGE \"dm\"EDD2:|\n",
+        "is_core": false,
+        "instrument": null,
+        "source": "Gretchen Priest",
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Alternate 3",
+        "abc_notation": "L: 1/8\n\nEF|:G3F GFEF|GGGA FDDF|GFEF GABA|GEFD E2 EF|\nGFEF GABc|dBAG FEDF|EFGA Beec|dBAF FEEF:|\n|:e2ed edBA|G3A FDDF|Eeed edBA|B/2c/2def e2ef|\ngefd edBc|dBAG FEDF|EFGA Beec|dBAF FEEF:|\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "The Porthole Of The Kelp",
+        "abc_notation": "L: 1/8\n\n|:F2DE F2DE|FEFG EAAE|F2DE FGAG|FDEA EDDE|\nF2DE FGAB|cAGF EDFE|DEFG AddB|cAGE EDD2:|\n|:d2 Ad dcAG|F2DF EAA2|d2 Ad dcAG|Adce d2 de|\nfdec dcAB|cAGF EDFE|DEFG AddB|cAGE EDD2:|\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Pull The Knife And Stick It Again",
+    "tune_type": "jig",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:E3 GFE|DB,E DB,D|E3 GFE|ABG AFD|\nE2F GFE|DB,E DEF|G2E FED|B,ED E3:|\n|:edB BAF|EDB, D3|edB BAF|ABc def|\nedB BAF|EDB, DEF|G2E FED|B,ED E3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Rambling Pitchfork",
     "tune_type": "jig",
     "key_root": "D",
@@ -3854,6 +3442,30 @@
     "difficulties": []
   },
   {
+    "title": "Return From Fingal",
+    "tune_type": "march",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:\"Em\"B2GF EFGA|B2GF E3B|\"D\"AGFA d2A2|B2A2 Bcd2|\n\"Em\"B2GF EFGA|B2GF E3B|\"D\"AGFA d2AG|\"Em\"F2E2 E4:|\n|:\"Em\"f2e2 e2dc|\"D\"B2A2 d3A|B2A2 d2A2|B2A2 Bcde|\n\"Em\"f2e2 e2dc|\"D\"B2A2 d3B|AGFA d2AG|\"Em\"F2E2 E4:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Road To Lisdoonvarna",
     "tune_type": "jig",
     "key_root": "E",
@@ -3880,6 +3492,40 @@
         "is_core": false,
         "instrument": null,
         "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "An Rogaire Dubh",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "mixolydian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n| cAA BGG | cAA ABd | cAA BAG | AFD D2 B|\ncAA BGG | cAA AFD | G2 A (B/c/d)B |1 AFD D2 B :|2 AFD D3 ||\n|: ~f3 ~g3 | afd cBA| ~f3 gfg | afd dfg |\nagf gfe | fed e/f/ed | cBA BAG | AFD D3 :||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "The Black Rogue",
+        "abc_notation": "L: 1/8\n\n| \"A\"cAA \"G\"BGG | \"A\"cAA A2d | \"A\"cAA \"G\"BAG | \"D\"AFD D2 d|\n\"A\"cAA \"G\"BGG | \"A\"cAA AFD | \"G\"G3  BAG |1 \"D\"AFD D2 d :|2 \"D\"AFD D3 ||\n|: \"D/F#\"f3 \"G\"g3 | \"D/A\"afd \"A\"cBA| \"D/F\"f3 \"G\"gfg | \"D/A\"afd dfg |\n\"D/F#\"agf \"G\"gfe | \"D/A\"fed efd | \"A\"cBA \"G\"BAG | \"D\"AFD D3 :||\n~\n",
+        "is_core": false,
+        "instrument": null,
+        "source": "Gretchen Priest",
         "source_notes": null,
         "ornamentation_level": "none",
         "mutation_notation": null
@@ -3949,6 +3595,54 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\n|:D2 F EFE|DFA BAF|ABd ede|fdB AFE|\nF3 E3|DFA BAF|AdB AFE|FDD D3:|\n|:fdB ABd|faa afd|g3 fed|Bee efg|\nfdB ABd|faa afa|baf gfe fdc d3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Rosie Finn's Favourite",
+    "tune_type": "slide",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "12/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:G2B d2g b2g d2B|cBc agf g2d B2A|\nG2B d2g b2g d2B|cBc agf g3 g3:|\n|:g2b c'2b a2e e2g|f2a bag f2d d3|\ng2b c'2b a2e e2g|fef def g3 g3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Rowsome's",
+    "tune_type": "reel",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nG|A2 AG A3 F|GEAF GEEG|A3 c BGG2|BdBG c3 B|\nGAAG A3 F|GEAF GEEG|A3 c BGG2|1 BdBG cAB:|2 BdBG c3||\nd|e3 d efg2|G3 F GAEG|A3 c BGG2|BdBG c3 d|\ne3 d efg2|G3 F GAEG|A3 c BGG2|BdBG cAB||\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -4042,6 +3736,54 @@
     "difficulties": []
   },
   {
+    "title": "Scarce O' Tatties",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "mixolydian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:A2e efg|e2B dBG|A2e efg|edB Ace|\na2a g2g|f2f ecA|A2e efg|dBG A3:|\naeg a2f|g2f eAA|aeg a2f|g2f e3|\ne3 A3|d2e fed|A2e efg|dBG A3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Scatter The Mud",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n\"Am\"eAA B2A|eAA ABd|eAA BAB|\"G\"dBG GBd|\n\"Am\"eAA B2A|eAA AGE|GAB dge|\"G\"dBA A3:|\n\"Am\"eaa egg|dBA ABd|eaa egg|\"G\"dBG GBd|\n\"Am\"eaf g2e|dBA AGE|GAB dge|\"G\"dBA ABd:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Scotsman Over The Border",
     "tune_type": "jig",
     "key_root": "D",
@@ -4055,6 +3797,54 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\n|:DED FDF|AFA d2A|{c}BAB BAB|dgf edB|\nADD FDF|AFA d2A|~B3 AFA|dAF E3:|\n|:dfa afa|bag fef|dfa afe|def edB|\ndfa afa|bag fed|B2B AFA|dAF E3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Sean Bui",
+    "tune_type": "jig",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:GBd edB ege dBG|GBd edB e2 f g3|\nGBe edB ege dBG|GBe edB e2 f g3:|\n|:bag agd efg dBG|bag agd e2 a a3|\nbag agd efg dBG|GBd edB e2 f g3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Sean Reid's",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:DG~G2 BG~G2|cA~A2 dBcA|DGGF GABd|cAFG AGG2|\nDG~G2 BG~G2|cA~A2 d2ef|g2ag gfde|fdcA AGG2:|\n|:dgga gfde|fdge fdcA|dg~g2 gfde|fdcA AGG2|\n~g3a gfde|~f3g fdcA|dg~g2 bgag|fdcA AGG2:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -4112,6 +3902,80 @@
       }
     ],
     "difficulties": []
+  },
+  {
+    "title": "Sir John Fenwick's The Flower Amang Them A'",
+    "tune_type": "waltz",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "3/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nD2||:G3 A Bc|d3 e g2|d3 e g2|ed cB AG|\nA3 B cd|e2 ef g2|e2 ef g2|e4 d2|\nG3 A Bc|d3 e g2|d3 e g2|ed cB AG|\nc2 dc BA|B2 cB AG|A2 B2 d2|e4 d2||\ng2 G2 B2|g2 G2 B2|g3 f g2|ed cB AG|\na2 A2 c2|a2 A2 c2|a3 g a2|f3 e d2|\ng2 G2 B2|g2 G2 B2|g3 f g2|ed cB AG|\nc2 dc BA|B2 cB AG|A3 Bc d2|e4 F2:||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Sir John Fenwick's The Flower Amang Them All",
+        "abc_notation": "L: 1/8\n\nG3 A BC|d2 de fg|d2 de fg|ed cB AG|\nA2 AB cd|e2 e2 g2|e2 e2 g2|e4 d2|\nG2 GA Bc|d2 e2 g2|d2 e2 g2|ed cB AG|\nc2 dc BA|B2 cB AG|A2 B2 d2|e4 d2||\ng2 G2 B2|g2 G2 B2|g2 G2 g2|ed cB AG|\na2 A2 c2|a2 A2 c2|a2 A2 a2|e4 d2|\ng2 G2 B2|g2 G2 B2|g2 G2 g2|ed cB AG|\nc2 dc BA|B2 cB AG|A2 B2 d2|e4 d2||\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Sliabh Russell",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": "Gretchen's class",
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "|:eAA Bcd|eaf ged|edB cBA|BGG Bcd|\r\neAA Bcd|eaf ged|edB cBA|BAG A3:|\r\n|:eaa efg|agf ged|eaa efg|fed e2 d|\r\neaa efg|agf ged|edB cBA|BAG A3:|",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "From the session",
+        "abc_notation": "|:eAA Bcd|eaf ged|edB cBA|BGG Bcd|\neAA Bcd|eaf ged|edB cBA|BAG A3:|\n|:eaa efg|agf ged|eaa efg|fed e2 d|\neaa efg|agf ged|edB cBA|BAG A3:|",
+        "is_core": false,
+        "instrument": "flute",
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": [
+      {
+        "instrument": "flute",
+        "difficulty": 2,
+        "notes": "I tend to play with a very rounded lilt that may not quite match what is purely traditional, but it feels right to me. "
+      }
+    ]
   },
   {
     "title": "The Sligo Maid",
@@ -4172,6 +4036,112 @@
     "difficulties": []
   },
   {
+    "title": "Sonny Brogan's (Gretchen Priest arr)",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "dorian",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:e|cAB c2A|d^cd e^de|ABA cde|dcA AGA|\nEAB c2A|dcd ede|aba ged|cAG A3:|\n|:eaa aba|gef ged|eaa aba|ged cAA|\neaa aba|gef g2e|aba ged|cAG A3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Sonny Brogan's",
+        "abc_notation": "L: 1/8\n\n|:cAB ~c3|~d3 ede|ABA cde|dcA AGA|\nEAB cBc|dcd ede|~a3 ged|cAG A3:|\n|:eaa aba|gef gfg|eaa aba|ged cAA|\neaa eaa|gef gfg|~a3 ged|cAG A3:|\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Spanish Lady",
+    "tune_type": "polka",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "2/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:\"D\"FA AB/c/|dd \"Bm\"de/f/|\"Em\"ge \"D\"fd|\"G\"BA \"A\"A/B/A/G/|\n\"D\"FA AB/c/|dd \"Bm\"de/f/|\"Em\"ge \"D\"fd|\"G\"BA \"A\"A2:|\n|:\"D\"fa a/b/a/f/|ed \"Bm\"de|\"Em\"fa \"D\"a/b/a/f/|\"G\"ae \"A\"e>g|\n\"D\"fa a/b/a/f/|ed \"Bm\"de/f/|\"Em\"ge \"D\"fd|\"G\"BA \"A\"A2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Spootiskerry",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nDE | G2 DE GDEG | DEGA B2 AB | G2 DE GABd |eged B2 AB |\nG2 DE GDEG | DEGA B2 AB | g2 ed edBA | B2 G2 G2 :|\nef | g2 ed ed B2 | BABG E2 DE | GABd eged | B2 A2 A2 ef |\ng2 ed ed B2 | BABG E2 DE | GABd eged | B2 G2 G2 ef |\ng2 ed ed B2 | BABG E2 DE | GABd eged | B2 A2 A2 DE|\nG2 DE GDEG | DEGA B2 AB | g2 ed edBA |B2 GB G2 ||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Sporting Paddy",
+    "tune_type": "reel",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nEAAB GABG|EAAB GE D2|EAAB GABd|edge dBAG|\nEAAD GABG|EAAB G2 ED|EAAB GABd|efge d2 ef||\nge e2 gede|ge e2 a2 ba|ge e2 gedg|efge d2 ef|\nge e2 gede|ge e2 a2 ga|bgab ge d2|efge dBAG||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Spotted Dog",
     "tune_type": "jig",
     "key_root": "A",
@@ -4196,6 +4166,30 @@
     "difficulties": []
   },
   {
+    "title": "Stan Chapman's",
+    "tune_type": "jig",
+    "key_root": "A",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n~E3 EFA|~B3 Bce|fea fec|ecA BAF|\n~E3 EFA|~B3 Bce|fea fec|ecA A3:|\ne3 ecA|~f3 fga|fec BAB|cAF F af|\ne3 ecA|~f3 fga|fec BAB|1 cAA A af:|2 cAA A3||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Star Of Munster",
     "tune_type": "reel",
     "key_root": "A",
@@ -4209,6 +4203,30 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\ned|c2Ac B2GB|AGEF GEDG|EAAB cBcd|eaaf gfed|\ncBAc BAGB|AGEF GEDG|EAAB cded|1cABG A2:|2edcBA2 z2 :|\n|eaab ageg|agbg agef|g2ga gfef|(3gfeaf gfed|\neaab ageg|agbg agef|g2eg a2ga|1b3agf|2b3 a gfed:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Stasia's",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "minor",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nE3D E~B3|DEED EBGB|DEED EGBG|FAcA A/B/dgf|\neB^AB dc zc|AGFA cB zB|E~B3 EBAF|1 GEFD Ez ED:|2 G/F/EFD Ez2G||\n|:AGFA cBBB|Be^dB e2 ef|g~B3 gBaB|bB^AB dc zc|\nAGFA cBBB|Be^dB e2 ef|g~B3 GBAF|1 GEED E z2 G:|2 GEED E2 ED||\n|:[K:Emaj]E2 GB A2 ce|B2 df eB B2|[K:Emin]d~c3 AGFA|cB^AB cBAB|\n[K:Emaj]E2 GB A2 ce|B2 df eB B2|[K:Emin]d~c3 AGFA|1 GEFD E2 ED:|2 GEFD E4||\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -4268,6 +4286,54 @@
     "difficulties": []
   },
   {
+    "title": "Sweeney's Buttermilk",
+    "tune_type": "reel",
+    "key_root": "B",
+    "key_mode": "minor",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:FB B2 fB B2|dcBc AE E2|FB B2 ABce|afec Ba^ga|\nf2 ec f2 ec|BABc BAFE|FB B2 ABce|afec B2 BA:|\n|:FBdc BF F2|EAcB AE E2|FBdc Bdfb|afec B3 c|\nBcde fB B2|afec ABce|f3a bf f2|afec B2 BA:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Tabhair Dom Do Lámh (Give me Your Hand)",
+    "tune_type": "waltz",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "3/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nD2|E2 G2 G2|G4 D2|E2 G2 G2|G4 D2|E2 G2 G2|G2 A2 B2|B2 e2 d2|B4 AG|\nA2 A2 ed|B2 B2 dB|A2 AB AG|E4 D2|E2 G2 G2|G4 D2|E2 G2 G2|G4 D2|\nE2 G2 G2|G2 A2 B2|D2 DB AB|G4 D2|E2 G2 G2|G2 A2 B2|B2 e2 d2|B4 AG|\nA2 A2 ed|B2 B2 dB|A2 A2 (3Bcd|e4 dB|d2 d2 e2|g4 ed|e2 e2 g2|a4 ge|\ng2 g2 de|g2 g2 de|g2 g2 a2|b6|b2 b2 b2|b4 ag|ag ab ab|a4 gf|\ne2 e2 ge|d2 d2 gd|B2 B2 dB|A4 (3cBA|G2 G2 (3Bcd|=f4 ed|e2 e2 g2|e4 dB|\nd2 d2 g2|B2 B2 dB|A2 Ac BA|G6||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Templehouse",
     "tune_type": "reel",
     "key_root": "E",
@@ -4281,6 +4347,30 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\nEFGA BFAF|D2FD ADFD|EFGA BE~E2|1 dBAc BEED:|2 dBAc Bdef||\ngfef gfeg|fdde fddf|gfef gfed|B2Ac BE~E2|\ngfef gfeg|fdde fddf|edef gfed|B2Ac BEED||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Tempus Fugit",
+    "tune_type": "waltz",
+    "key_root": "B",
+    "key_mode": "minor",
+    "time_signature": "3/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nf3d BF|Bd c2-cd|B3c dF|G^A ce gb|f3d BF|B2 dB ed|f2d2B2|A3G FG|\nf3d BF|Bd c3d|B^A Bd- dG|GG Gc ga|f3d BF|B2dB ed|f2 d2 B2|AF GB ed|\nd3d cB|d3d cB|c3d c=F|^F^A ce dc|B2dB dB|B2dB dB|AF Ac AF|cF Ac AF|\nd3d cB|d3d cB|c3dc2|F^A ce dc|B2dB eB|dB BB dB|cA AA cA|dB BA B/c/d|\nfd BF Bd|fd BF Bd|ae cA ce|ag gf fe|fd BF Bd|fd BF Bd|e2 c2 A2-|AB Ae fg|\nfd BF Bd|fd BF Bd|ae cA ce|ag gf fe|fd BF Bd|fd BF Bd|e2c2A2|G3G FE|\nD2F2c2|B3AG2|FB DF GA|e3d cA|G2B2f2|d3B G2|FB D/E/D GA|e3d cA|\nd2f2c'2|b3a ag|fB df ga|e3d cA|g2b2f'2|d'4bg|fB d/e/d ga|e3d e/f/g||\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -4316,6 +4406,64 @@
     "difficulties": []
   },
   {
+    "title": "Toss The Feathers",
+    "tune_type": "reel",
+    "key_root": "E",
+    "key_mode": "dorian",
+    "time_signature": "4/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:\"Em\"EBB2 dBB2|\"Em\"EBBA \"D\"FDFA|\"Em\"BE E2 BA(3Bcd)|\n[1\"C\"e2fe \"D\"dBAF:|2\"C\"e2fe \"D\"dBAF||\n\"Em\" Beed e2de | \"D\"fede \"Bm\"fe e2|\"Em\"(3gfebe (3gfebe|\"D\"fede \"Bm\"feed|\n\"Em\"Beed e2 de|\"D\"fede fa a2|\"G\"b2bf \"D\"a2af|\"C\"(3efgfe \"Bm\"dBAF|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Trasna da dTonnta",
+    "tune_type": "reel",
+    "key_root": "Bb",
+    "key_mode": "dorian",
+    "time_signature": "2/2",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n||Bcdc BAFA|defd e2 fa|bafe dBAF|AGAB c2 dc|\n||Bcdc BAFA|defd e2 fa|bafe dBcA|B4||\n||bafe defg|agab a2fa|bafe dBAF|AGAB c2 dc|\n|Bcdc BAFA|defd e2 fa|bafe dBcA|B4||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "Trasna da dTonnta (Am)",
+        "abc_notation": "L: 1/8\n\n||ABcB AGEG|cdec d2 eg|aged cAGE|GFGA B2 cB|\n|ABcB AGEG|cdec d2 eg|aged cABG|A4||\n||aged cdef|gfga g2 eg|aged cAGE|GFGA B2 cB|\n|ABcB AGEG|cdec d2 eg|aged cABG|A4||\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Trip To Durrow",
     "tune_type": "reel",
     "key_root": "D",
@@ -4340,6 +4488,54 @@
     "difficulties": []
   },
   {
+    "title": "Tripping to the Well",
+    "tune_type": "polka",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "2/4",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "|:G>A BG|EG ED|G>A Bd|BA A2|G>A BG|EG ED|dB D/E/F/G/|AG G2:|\n|:dB G>A|BG ED|dB G>A|BA A2|dB G>A|BG ED|dB D/E/F/G/|AG G2:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Up In The Air",
+    "tune_type": "jig",
+    "key_root": "B",
+    "key_mode": "minor",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nFBB BAB|c2c AFE|FBB BAB|cBA B2A|\nFBB BAB|c2c ABc|def ecA|1 FBB B2A:|2 FBB B2c||\n|:d2d ede|fdB BAB|d2d ede|\nfdB B2c|dcd ede|1 fdB def|gfe dBA|\nFBB B2c:|2 fgf ecA|fgf ecA|FBB B2A||\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Virginia",
     "tune_type": "reel",
     "key_root": "D",
@@ -4353,6 +4549,30 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\nDBBA ~B3A|BAdB A(FEF)|D(FF2) ~A3B|AFBF A(FEF)|\nD(BBA) ~B3A|BAd(B AB)de|~f3e d(efe)|dBAF B(EE2):|\n|:defe d3A|BAFA dAFA|d(efe) defg|afb(f af)eg|\n~f3d efdB|A(FF2) ABde|~f3e d(efe)|dBAF B(EE2):|\nT: Alternate A Part\nDBBA ~B3A|BAdB A(FEF)|D(FF2) A(FF2)|AFBF A(FEF)|\nD(BBA) ~B3A|BAd(B AB)de|~f3e d(efe)|dBAF B(EE2):|\n|:defe d3A|BAFA dAFA|d(efe) defg|afb(f af)eg|\n~f3d efdB|A(FF2) ABde|~f3e d(efe)|dBAF B(EE2):|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
+    "title": "Wallop The Spot",
+    "tune_type": "jig",
+    "key_root": "D",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\n|:FEF DFA|BAF dAG|FEF DFA|BAF AFE|\nFEF DFA|BAF d2e|f2d edB|BAF AFE:|\n|:Bcd eAA|fed eAA|Bcd eAA|BAF AFE|\nBcd eAA|fed efg|age edB|BAF AFE:|\n|:DFA dcd|edc dAF|DFA d2A|BAF AFE|\nDFA dcd|edc d2e|f2d edB|BAF AFE:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
@@ -4436,6 +4656,30 @@
     "difficulties": []
   },
   {
+    "title": "Willie Coleman's",
+    "tune_type": "jig",
+    "key_root": "G",
+    "key_mode": "major",
+    "time_signature": "6/8",
+    "composer": null,
+    "origin": null,
+    "region": null,
+    "notes": null,
+    "settings": [
+      {
+        "label": "Standard",
+        "abc_notation": "L: 1/8\n\nB2G AGE|GED G2d|edB dgb|age dBA|\nB2G AGE|GED G2d|edB dBA|BGG G3:|\n~g3 edB|dgb age|~g3 edB|GBd e3|\n~g3 edB|dgb age|dBd gdB|AGF G3:|\n",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      }
+    ],
+    "difficulties": []
+  },
+  {
     "title": "The Wind In The Woods",
     "tune_type": "jig",
     "key_root": "D",
@@ -4508,160 +4752,6 @@
         "label": "Alternate 1",
         "abc_notation": "L: 1/8\n\n|:DE|F2FG FEDE|FAAB AFED|d2eg fdec|dBAG BEED|\nF2FG FEDE|FAAB AFED|d2eg fdec|dBAG FD:|\n|:FA|d2AG FDFA|dfaf gfeg|fedf eAcA|dfed cA A2|\nBAGB ADFD|dfaf gfed|Bdce dBAG|FGEF D2:|\n",
         "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Toss The Feathers",
-    "tune_type": "reel",
-    "key_root": "E",
-    "key_mode": "dorian",
-    "time_signature": "4/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:\"Em\"EBB2 dBB2|\"Em\"EBBA \"D\"FDFA|\"Em\"BE E2 BA(3Bcd)|\n[1\"C\"e2fe \"D\"dBAF:|2\"C\"e2fe \"D\"dBAF||\n\"Em\" Beed e2de | \"D\"fede \"Bm\"fe e2|\"Em\"(3gfebe (3gfebe|\"D\"fede \"Bm\"feed|\n\"Em\"Beed e2 de|\"D\"fede fa a2|\"G\"b2bf \"D\"a2af|\"C\"(3efgfe \"Bm\"dBAF|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Trasna da dTonnta",
-    "tune_type": "reel",
-    "key_root": "Bb",
-    "key_mode": "dorian",
-    "time_signature": "2/2",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n||Bcdc BAFA|defd e2 fa|bafe dBAF|AGAB c2 dc|\n||Bcdc BAFA|defd e2 fa|bafe dBcA|B4||\n||bafe defg|agab a2fa|bafe dBAF|AGAB c2 dc|\n|Bcdc BAFA|defd e2 fa|bafe dBcA|B4||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      },
-      {
-        "label": "Trasna da dTonnta (Am)",
-        "abc_notation": "L: 1/8\n\n||ABcB AGEG|cdec d2 eg|aged cAGE|GFGA B2 cB|\n|ABcB AGEG|cdec d2 eg|aged cABG|A4||\n||aged cdef|gfga g2 eg|aged cAGE|GFGA B2 cB|\n|ABcB AGEG|cdec d2 eg|aged cABG|A4||\n",
-        "is_core": false,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Tripping to the Well",
-    "tune_type": "polka",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "2/4",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "|:G>A BG|EG ED|G>A Bd|BA A2|G>A BG|EG ED|dB D/E/F/G/|AG G2:|\n|:dB G>A|BG ED|dB G>A|BA A2|dB G>A|BG ED|dB D/E/F/G/|AG G2:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Up In The Air",
-    "tune_type": "jig",
-    "key_root": "B",
-    "key_mode": "minor",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nFBB BAB|c2c AFE|FBB BAB|cBA B2A|\nFBB BAB|c2c ABc|def ecA|1 FBB B2A:|2 FBB B2c||\n|:d2d ede|fdB BAB|d2d ede|\nfdB B2c|dcd ede|1 fdB def|gfe dBA|\nFBB B2c:|2 fgf ecA|fgf ecA|FBB B2A||\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Wallop The Spot",
-    "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\n|:FEF DFA|BAF dAG|FEF DFA|BAF AFE|\nFEF DFA|BAF d2e|f2d edB|BAF AFE:|\n|:Bcd eAA|fed eAA|Bcd eAA|BAF AFE|\nBcd eAA|fed efg|age edB|BAF AFE:|\n|:DFA dcd|edc dAF|DFA d2A|BAF AFE|\nDFA dcd|edc d2e|f2d edB|BAF AFE:|\n",
-        "is_core": true,
-        "instrument": null,
-        "source": null,
-        "source_notes": null,
-        "ornamentation_level": "none",
-        "mutation_notation": null
-      }
-    ],
-    "difficulties": []
-  },
-  {
-    "title": "Willie Coleman's",
-    "tune_type": "jig",
-    "key_root": "G",
-    "key_mode": "major",
-    "time_signature": "6/8",
-    "composer": null,
-    "origin": null,
-    "region": null,
-    "notes": null,
-    "settings": [
-      {
-        "label": "Standard",
-        "abc_notation": "L: 1/8\n\nB2G AGE|GED G2d|edB dgb|age dBA|\nB2G AGE|GED G2d|edB dBA|BGG G3:|\n~g3 edB|dgb age|~g3 edB|GBd e3|\n~g3 edB|dgb age|dBd gdB|AGF G3:|\n",
-        "is_core": true,
         "instrument": null,
         "source": null,
         "source_notes": null,

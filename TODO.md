@@ -490,6 +490,236 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ---
 
+### 6b. TuneSet Management
+
+- [ ] **6b.1 — TuneSet model updates and migration**
+  Extend the existing `TuneSet` and `TuneSetMember` models (from task 1.4)
+  and add a box-set join model.
+
+  **`TuneSet` — new fields:**
+  - `source: Mapped[str | None] = mapped_column(String(200), nullable=True)`
+    Where this set came from (e.g. "Tommy Peoples session", "Catskills 2023").
+    Maps to the ABC `S:` header when building the combined ABC string.
+  - `abc_header: Mapped[str | None] = mapped_column(Text, nullable=True)`
+    Raw ABC header lines supplied by the user. These are injected verbatim
+    into the combined ABC output and take priority over auto-populated headers
+    when the same letter appears in both. One header per line, e.g. `P:AABB`.
+
+  **`TuneSetMember` — new field:**
+  - `setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)`
+    Optionally pins a specific `TuneSetting` for this member. When null, the
+    tune's active box setting (or its core setting) is used.
+  - Add relationship: `setting: Mapped["TuneSetting | None"] = relationship()`
+
+  **New model `TuneBoxSetEntry`** in `cairn/models.py`:
+  Links a TuneSet to a TuneBox (parallel to `TuneBoxEntry` for individual tunes).
+  ```
+  TuneBoxSetEntry: id, box_id FK → tune_boxes.id, set_id FK → tune_sets.id
+  Unique constraint: (box_id, set_id)
+  ```
+  Relationships: `box: Mapped["TuneBox"]`, `tune_set: Mapped["TuneSet"]`.
+  Add `box_set_entries: Mapped[list["TuneBoxSetEntry"]]` relationship to `TuneBox`.
+
+  **New model `TuneSetTempo`** in `cairn/models.py`:
+  Records the last-used metronome tempo per user/box/set context.
+  Box is part of the key because the same set can appear in multiple boxes
+  and the natural tempo may differ (different keys, different settings per box).
+  ```python
+  class TuneSetTempo(TimestampMixin, Base):
+      __tablename__ = "tune_set_tempos"
+
+      user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+      box_id:  Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), primary_key=True)
+      set_id:  Mapped[int] = mapped_column(ForeignKey("tune_sets.id"), primary_key=True)
+      tempo:   Mapped[int] = mapped_column(Integer, nullable=False)
+  ```
+  Composite PK `(user_id, box_id, set_id)`. Upsert on write (same pattern as
+  `WarmupTempo`). `box_id` is required; when the detail page is viewed outside
+  a box context, tempo is not recorded.
+
+  **Update Pydantic schemas** in `cairn/schemas.py`:
+  - `TuneSetCreate` / `TuneSetUpdate` / `TuneSetRead`: add `source`, `abc_header`
+  - `TuneSetMemberCreate` / `TuneSetMemberUpdate` / `TuneSetMemberRead`: add `setting_id`
+  - Add `TuneBoxSetEntryRead`
+
+  Generate Alembic migration covering all changes above.
+  Safe to delete `cairn.db` and re-run `make migrate` — no production data.
+
+- [ ] **6b.2 — TuneSet CRUD service and ABC builder**
+  Create `cairn/services/tune_sets.py`.
+
+  **Service functions:**
+  - `create_set(db, title, description, source, abc_header, flow_difficulty,
+    flow_difficulty_notes) -> TuneSet`
+  - `get_set(db, set_id) -> TuneSet | None`
+    Eager-load `members`, `members.tune`, `members.setting`, `members.tune.settings`.
+  - `list_sets(db) -> list[TuneSet]`
+    Ordered by title; eager-load member count only (no deep loading).
+  - `update_set(db, set_id, **fields) -> TuneSet | None`
+  - `delete_set(db, set_id) -> bool`
+  - `set_members(db, set_id, member_data: list[dict]) -> TuneSet`
+    Replaces the full member list in one transaction. Each dict has keys
+    `tune_id` (required) and `setting_id` (optional, nullable). `order` is
+    assigned from list position (0-based). Deletes removed members, upserts
+    existing ones, inserts new ones. Returns the updated TuneSet.
+  - `add_box_set(db, box_id, set_id) -> TuneBoxSetEntry`
+  - `remove_box_set(db, box_id, set_id) -> bool`
+
+  **ABC builder** `build_set_abc(tune_set, box=None) -> str` in
+  `cairn/services/abc_utils.py`:
+  Builds a multi-tune ABC string (one X: section per member, in member order).
+  Header assembly for each member tune (X: index increments per member):
+  - Use existing `build_abc(tune, setting, x=N)` for each member's tune body.
+    The `setting` passed is `member.setting` if set, otherwise the tune's
+    core setting.
+  Set-level headers are inserted before the first X: block:
+  - `T:` → `tune_set.title`
+  - `S:` → `tune_set.source` (omit if null)
+  - `G:` → `box.name` (omit if box is None)
+  If `tune_set.abc_header` is set, its lines are injected after `G:` (or
+  after `S:` / `T:` if G is absent); any letter that already appeared in
+  the auto-populated set-level headers is replaced by the user-supplied line.
+  Write unit tests in `tests/test_services/test_tune_sets.py` covering:
+  - `create_set` and round-trip via `get_set`
+  - `set_members` with reorder (verify `order` column)
+  - `set_members` strips removed members
+  - `build_set_abc` with and without `box`, with and without `source`/`abc_header`
+  - `build_set_abc` user-supplied header overrides auto-populated header of same letter
+  - `add_box_set` / `remove_box_set`
+
+- [ ] **6b.3 — TuneSet CRUD routes and templates**
+  Router: `cairn/routers/tune_sets.py`, prefix `/sets`.
+  Mount in `cairn/main.py`. Add a "Sets" link to `base.html` nav.
+
+  **Routes:**
+  - `GET /sets` — list all sets → `sets/index.html`
+  - `GET /sets/new` — blank create form → `sets/form.html`
+  - `POST /sets` — create set → redirect to `/sets/{id}`
+  - `GET /sets/{id}/edit` — edit form → `sets/form.html`
+  - `POST /sets/{id}` — update set → redirect to `/sets/{id}`
+  - `DELETE /sets/{id}` — delete (HTMX, returns HX-Redirect to `/sets`)
+  - `GET /sets/{id}/settings/{tune_id}` — HTMX partial: returns a `<select>`
+    of available settings for `tune_id`, for the setting picker.
+
+  **Form (`sets/form.html`) features:**
+  - Text inputs: title (required), description (optional), source (optional)
+  - Difficulty slider 1–5 with live numeric label (same pattern as warmup form)
+  - ABC header textarea (collapsible `<details>` block, same styling as the
+    ABC notation reference block on `warmups/form.html`); placeholder shows
+    example lines like `P:AABB\nQ:1/4=120`
+  - Member list — drag-to-reorder using the HTML5 `draggable` attribute and
+    Alpine.js drag handlers. Each row shows:
+    - Tune title (read-only; lookup from hidden `tune_id` input)
+    - Setting picker: an inline `<select>` populated via
+      `GET /sets/{id}/settings/{tune_id}` (HTMX on page load per row);
+      the first option is always "— default —" (null setting_id)
+    - Setting label shown in parentheses after the tune title, truncated to
+      ~30 chars with CSS `text-overflow: ellipsis`
+    - Remove button (×)
+  - Tune search / add: a text input with HTMX search that returns matching
+    tunes as clickable rows; clicking a row appends it to the member list
+    and fires the settings fetch for that tune
+  - Live combined ABC preview (`<div id="set-abc-preview">`) below the
+    member list, rendered via ABCJS and updated on every member change,
+    reorder, or setting pick. Build the combined ABC string client-side
+    from inline JSON data attributes (pre-populated from the server) so the
+    preview round-trips without a server call. ABC string is regenerated in
+    JS whenever the member list changes; pass `build_set_abc` output as the
+    initial value via `window.__cairnSetAbc = {{ set_abc | tojson }}` and
+    re-render on each edit.
+  - Hidden `member[]` inputs (JSON-encoded array of `{tune_id, setting_id}`)
+    submitted with the form; decoded in the route handler and passed to
+    `set_members()`
+
+  **Index (`sets/index.html`):**
+  Table or card list: title, member count, flow_difficulty badge, edit link.
+
+- [ ] **6b.4 — TuneSet detail/read page**
+  Route: `GET /sets/{id}` → `sets/detail.html`.
+  The route handler calls `build_set_abc(tune_set, box=active_box)` where
+  `active_box` is looked up via the stub user's active TuneBox (may be None).
+
+  **Combined ABC render:**
+  Render the full multi-tune ABC string via ABCJS in a `<div id="set-abc-render">`.
+  Use the same approach as `tunes/detail.html`: a `<template id="abc-source">`
+  holding the raw ABC, initialised via `window.initTuneTools(abcString)` or an
+  equivalent set-aware init function in `app.js`.
+
+  **Playback controls:**
+  Metronome, drone, and tuner buttons using the same shared infrastructure
+  as `tunes/detail.html` (tempo slider, metro/play buttons, tuner drawer).
+
+  **Tempo recording:**
+  On metro stop, if the session lasted at least 4 bars at the current BPM,
+  POST to `POST /sets/{id}/tempo` with `tempo` and `box_id` form fields.
+  The route handler calls `upsert_set_tempo(db, user_id, box_id, set_id, tempo)`
+  (SQLite upsert, same pattern as `upsert_warmup_tempo`). Returns 204.
+  When rendering the detail page, the route handler calls
+  `get_set_tempo(db, user_id, box_id, set_id) -> int | None` and passes
+  `last_tempo` to the template. The slider seeds from:
+  `window.__cairnLastTempo || naturalBpm || 100`
+  (no `default_tempo` on TuneSet; the stored value is always from a real session).
+  If `box_id` is absent (no active box), skip the fetch and disable recording.
+
+  **Per-member bars-to-show controls:**
+  Below (or overlaying) the rendered score, show a row of controls — one per
+  member — labelled by tune title. Each control cycles through:
+  `2 bars → 8 bars → Full → 2 bars …`
+  Default value is determined by the lowest progress level among all members
+  for the stub user:
+  - `just_learning` or no record → 2 bars
+  - `getting_familiar` → 8 bars
+  - `committed` or higher → Full
+  Clicking cycles to the next option. The ABCJS render is re-scoped on click
+  to show only the selected bar range for that tune (using the ABCJS
+  `startingTune` / `oneSvgPerLine` options or by slicing the ABC body).
+  A "►" arrow button advances to the next member's segment after the current
+  one finishes (or the user clicks it).
+
+  **Member list sidebar or footer:**
+  Shows tune titles in order with their current bars-to-show state and a
+  progress badge (status from `StudentProgress` for the stub user).
+
+- [ ] **6b.5 — Extend seed scripts to cover all content types**
+  Update `scripts/export_seed.py` and `scripts/seed.py` to handle warmups,
+  boxes, and lists in addition to the existing tunes support. TuneSet export
+  and import will be added here once 6b.1 is implemented.
+
+  **`scripts/export_seed.py`** — write one file per entity type to `seeds/`:
+  - `seeds/tunes.json` — existing (no change to format)
+  - `seeds/warmups.json` — title, warmup_type, content, difficulty,
+    default_tempo, instruments list
+  - `seeds/boxes.json` — name, instruments list, entries list
+    (each entry: `tune_title`, `setting_label` or null)
+  - `seeds/lists.json` — name, box_name, list_type, progress_goal,
+    target_date, is_active, entries list
+    (each entry: `tune_title`, `setting_label` or null)
+  All cross-references use stable human-readable keys (title / label / name)
+  rather than database IDs so seeds survive a fresh database.
+  Default output directory: `seeds/` (positional arg overrides).
+
+  **`scripts/seed.py`** — read from `seeds/` directory, in dependency order:
+  tunes → warmups → boxes → lists.
+  Each file is optional — missing files are skipped with a notice.
+  Deduplication per type:
+  - Tunes: by title (existing behaviour)
+  - Warmups: by title
+  - Boxes: by (user_id, name)
+  - Lists: by (user_id, box_id, name)
+  FK resolution during import:
+  - Box entry `tune_title` → look up `Tune.id` by title; warn and skip entry if not found
+  - Box entry `setting_label` → look up `TuneSetting.id` by (tune_id, label); null if not found or label is null
+  - List `box_name` → look up `TuneBox.id` by (user_id, name); error and skip list if not found
+  - List entry resolution: same pattern as box entries
+  Restore `is_active` on lists (at most one per user will be active, matching
+  the constraint enforced by `activate_list`).
+
+  **After 6b.1**: add TuneSet export (title, description, source, abc_header,
+  flow_difficulty, flow_difficulty_notes, members list with tune_title and
+  setting_label) and import (dedup by title, member FK resolution by title).
+
+---
+
 ### 7. Content Management
 
 Markdown-based content system for authored pages (onboarding, help, feature

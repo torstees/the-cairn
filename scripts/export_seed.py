@@ -1,10 +1,22 @@
 #!/usr/bin/env python
 """
-Export all tunes from the database to seeds/tunes.json.
+Export all seedable data to the seeds/ directory.
+
+Files written:
+  seeds/tunes.json    — Tune + TuneSetting + TuneDifficulty
+  seeds/warmups.json  — WarmupItem + WarmupInstrument
+  seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry
+  seeds/lists.json    — PracticeList + TuneListEntry
+
+Cross-references (box entries, list entries) use stable human-readable keys
+(tune title, setting label, box name) so seeds survive a fresh database.
 
 Usage:
-    uv run python scripts/export_seed.py [output_path]
-    Defaults to seeds/tunes.json relative to the project root.
+    uv run python scripts/export_seed.py [seeds_dir]
+    Defaults to seeds/ relative to the project root.
+    Also: make export-seed
+
+Note: TuneSet export will be added after task 6b.1 is implemented.
 """
 
 import asyncio
@@ -14,41 +26,26 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
 from cairn.database import AsyncSessionLocal
+from cairn.models import PracticeList, TuneBox, TuneBoxEntry, TuneListEntry, WarmupItem
 from cairn.services.tunes import list_tunes
+from cairn.services.warmups import list_warmups
+
+_STUB_USER_ID = 1
 
 
-async def main(out_path: Path) -> None:
-    async with AsyncSessionLocal() as db:
-        tunes = await list_tunes(db)
+def _write(path: Path, records: list) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(records, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
+
+async def export_tunes(db, out_dir: Path) -> int:
+    tunes = await list_tunes(db)
     records = []
     for tune in tunes:
-        settings = []
-        for s in tune.settings:
-            settings.append(
-                {
-                    "label": s.label,
-                    "abc_notation": s.abc_notation,
-                    "is_core": s.is_core,
-                    "instrument": s.instrument.value if s.instrument else None,
-                    "source": s.source,
-                    "source_notes": s.source_notes,
-                    "ornamentation_level": s.ornamentation_level.value,
-                    "mutation_notation": s.mutation_notation,
-                }
-            )
-
-        difficulties = []
-        for d in tune.difficulties:
-            difficulties.append(
-                {
-                    "instrument": d.instrument.value,
-                    "difficulty": d.difficulty,
-                    "notes": d.notes,
-                }
-            )
-
         records.append(
             {
                 "title": tune.title,
@@ -60,16 +57,128 @@ async def main(out_path: Path) -> None:
                 "origin": tune.origin,
                 "region": tune.region,
                 "notes": tune.notes,
-                "settings": settings,
-                "difficulties": difficulties,
+                "settings": [
+                    {
+                        "label": s.label,
+                        "abc_notation": s.abc_notation,
+                        "is_core": s.is_core,
+                        "instrument": s.instrument.value if s.instrument else None,
+                        "source": s.source,
+                        "source_notes": s.source_notes,
+                        "ornamentation_level": s.ornamentation_level.value,
+                        "mutation_notation": s.mutation_notation,
+                    }
+                    for s in tune.settings
+                ],
+                "difficulties": [
+                    {
+                        "instrument": d.instrument.value,
+                        "difficulty": d.difficulty,
+                        "notes": d.notes,
+                    }
+                    for d in tune.difficulties
+                ],
             }
         )
+    _write(out_dir / "tunes.json", records)
+    return len(records)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(records, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Exported {len(records)} tunes to {out_path}")
+
+async def export_warmups(db, out_dir: Path) -> int:
+    warmups = await list_warmups(db)
+    records = [
+        {
+            "title": w.title,
+            "warmup_type": w.warmup_type.value,
+            "content": w.content,
+            "difficulty": w.difficulty,
+            "default_tempo": w.default_tempo,
+            "instruments": [i.instrument.value for i in w.instruments],
+        }
+        for w in warmups
+    ]
+    _write(out_dir / "warmups.json", records)
+    return len(records)
+
+
+async def export_boxes(db, out_dir: Path) -> int:
+    result = await db.execute(
+        select(TuneBox)
+        .where(TuneBox.user_id == _STUB_USER_ID)
+        .options(
+            selectinload(TuneBox.instruments),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.tune),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.setting),
+        )
+        .order_by(TuneBox.name)
+    )
+    boxes = list(result.scalars().all())
+    records = [
+        {
+            "name": box.name,
+            "instruments": [i.instrument.value for i in box.instruments],
+            "entries": [
+                {
+                    "tune_title": entry.tune.title,
+                    "setting_label": entry.setting.label if entry.setting else None,
+                }
+                for entry in box.entries
+            ],
+        }
+        for box in boxes
+    ]
+    _write(out_dir / "boxes.json", records)
+    return len(records)
+
+
+async def export_lists(db, out_dir: Path) -> int:
+    result = await db.execute(
+        select(PracticeList)
+        .where(PracticeList.user_id == _STUB_USER_ID)
+        .options(
+            selectinload(PracticeList.box),
+            selectinload(PracticeList.entries).selectinload(TuneListEntry.tune),
+            selectinload(PracticeList.entries).selectinload(TuneListEntry.setting),
+        )
+        .order_by(PracticeList.name)
+    )
+    lists = list(result.scalars().all())
+    records = [
+        {
+            "name": pl.name,
+            "box_name": pl.box.name,
+            "list_type": pl.list_type.value,
+            "progress_goal": pl.progress_goal.value,
+            "target_date": pl.target_date.isoformat() if pl.target_date else None,
+            "is_active": pl.is_active,
+            "entries": [
+                {
+                    "tune_title": entry.tune.title,
+                    "setting_label": entry.setting.label if entry.setting else None,
+                }
+                for entry in pl.entries
+            ],
+        }
+        for pl in lists
+    ]
+    _write(out_dir / "lists.json", records)
+    return len(records)
+
+
+async def main(out_dir: Path) -> None:
+    async with AsyncSessionLocal() as db:
+        n_tunes = await export_tunes(db, out_dir)
+        n_warmups = await export_warmups(db, out_dir)
+        n_boxes = await export_boxes(db, out_dir)
+        n_lists = await export_lists(db, out_dir)
+
+    print(f"Exported to {out_dir}/")
+    print(f"  {n_tunes:>4} tunes")
+    print(f"  {n_warmups:>4} warmups")
+    print(f"  {n_boxes:>4} boxes")
+    print(f"  {n_lists:>4} lists")
 
 
 if __name__ == "__main__":
-    out_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent.parent / "seeds" / "tunes.json"
-    asyncio.run(main(out_path))
+    out_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent.parent / "seeds"
+    asyncio.run(main(out_dir))
