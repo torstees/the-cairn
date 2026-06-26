@@ -213,8 +213,15 @@ class WarmupItem(TimestampMixin, Base):
     warmup_type: Mapped[WarmupType] = mapped_column(Enum(WarmupType), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
+    default_tempo: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_warmup_difficulty_range"),)
+    __table_args__ = (
+        CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_warmup_difficulty_range"),
+        CheckConstraint(
+            "default_tempo IS NULL OR (default_tempo >= 20 AND default_tempo <= 300)",
+            name="ck_warmup_default_tempo_range",
+        ),
+    )
 
     instruments: Mapped[list["WarmupInstrument"]] = relationship(back_populates="warmup", cascade="all, delete-orphan")
     session_items: Mapped[list["PracticeSessionItem"]] = relationship(back_populates="warmup")
@@ -227,6 +234,14 @@ class WarmupInstrument(TimestampMixin, Base):
     instrument: Mapped[Instrument] = mapped_column(Enum(Instrument), primary_key=True)
 
     warmup: Mapped["WarmupItem"] = relationship(back_populates="instruments")
+
+
+class WarmupTempo(TimestampMixin, Base):
+    __tablename__ = "warmup_tempos"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    warmup_id: Mapped[int] = mapped_column(ForeignKey("warmup_items.id"), primary_key=True)
+    tempo: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class TuneSet(TimestampMixin, Base):
