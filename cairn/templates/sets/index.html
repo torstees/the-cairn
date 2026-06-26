@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Sets — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold text-stone-800">Sets</h1>
+    <a href="/sets/new"
+       class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+      + New Set
+    </a>
+  </div>
+
+  {% if sets %}
+  <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100">
+    {% for s in sets %}
+    <div class="flex items-center gap-3 px-4 py-3">
+      <div class="flex-1 min-w-0">
+        <a href="/sets/{{ s.id }}/edit"
+           class="block font-medium text-stone-800 hover:text-stone-600 truncate">{{ s.title }}</a>
+        <span class="text-xs text-stone-400">
+          {{ s.members | length }} tune{% if s.members | length != 1 %}s{% endif %}
+          {% if s.source %} · {{ s.source }}{% endif %}
+        </span>
+      </div>
+      {% if s.flow_difficulty %}
+      <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+        {% if s.flow_difficulty <= 2 %}bg-green-100 text-green-700
+        {% elif s.flow_difficulty <= 3 %}bg-amber-100 text-amber-700
+        {% else %}bg-red-100 text-red-700{% endif %}">
+        Flow {{ s.flow_difficulty }}/5
+      </span>
+      {% endif %}
+      <a href="/sets/{{ s.id }}/edit"
+         class="shrink-0 text-xs text-stone-400 hover:text-stone-600">Edit</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-lg shadow-sm p-8 text-center text-stone-400">
+    <p>No sets yet.</p>
+    <a href="/sets/new"
+       class="mt-2 inline-block text-sm text-stone-600 underline underline-offset-2">
+      Create your first set
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
