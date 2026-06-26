@@ -250,6 +250,8 @@ class TuneSet(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    abc_header: Mapped[str | None] = mapped_column(Text, nullable=True)
     flow_difficulty: Mapped[int | None] = mapped_column(Integer, nullable=True)
     flow_difficulty_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -263,6 +265,9 @@ class TuneSet(TimestampMixin, Base):
     members: Mapped[list["TuneSetMember"]] = relationship(
         back_populates="tune_set", cascade="all, delete-orphan", order_by="TuneSetMember.order"
     )
+    box_set_entries: Mapped[list["TuneBoxSetEntry"]] = relationship(
+        back_populates="tune_set", cascade="all, delete-orphan"
+    )
 
 
 class TuneSetMember(TimestampMixin, Base):
@@ -271,10 +276,12 @@ class TuneSetMember(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     set_id: Mapped[int] = mapped_column(ForeignKey("tune_sets.id"), nullable=False)
     tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
+    setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
     order: Mapped[int] = mapped_column(Integer, nullable=False)
 
     tune_set: Mapped["TuneSet"] = relationship(back_populates="members")
     tune: Mapped["Tune"] = relationship(back_populates="set_members")
+    setting: Mapped["TuneSetting | None"] = relationship()
 
 
 class User(TimestampMixin, Base):
@@ -303,6 +310,7 @@ class TuneBox(TimestampMixin, Base):
     user: Mapped["User"] = relationship(back_populates="tune_boxes")
     instruments: Mapped[list["TuneBoxInstrument"]] = relationship(back_populates="box", cascade="all, delete-orphan")
     entries: Mapped[list["TuneBoxEntry"]] = relationship(back_populates="box", cascade="all, delete-orphan")
+    box_set_entries: Mapped[list["TuneBoxSetEntry"]] = relationship(back_populates="box", cascade="all, delete-orphan")
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="box")
 
 
@@ -328,6 +336,28 @@ class TuneBoxEntry(TimestampMixin, Base):
     box: Mapped["TuneBox"] = relationship(back_populates="entries")
     tune: Mapped["Tune"] = relationship(back_populates="box_entries")
     setting: Mapped["TuneSetting | None"] = relationship()
+
+
+class TuneBoxSetEntry(TimestampMixin, Base):
+    __tablename__ = "tune_box_set_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), nullable=False)
+    set_id: Mapped[int] = mapped_column(ForeignKey("tune_sets.id"), nullable=False)
+
+    __table_args__ = (UniqueConstraint("box_id", "set_id", name="uq_tune_box_set_entry_box_set"),)
+
+    box: Mapped["TuneBox"] = relationship(back_populates="box_set_entries")
+    tune_set: Mapped["TuneSet"] = relationship(back_populates="box_set_entries")
+
+
+class TuneSetTempo(TimestampMixin, Base):
+    __tablename__ = "tune_set_tempos"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), primary_key=True)
+    set_id: Mapped[int] = mapped_column(ForeignKey("tune_sets.id"), primary_key=True)
+    tempo: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class PracticeList(TimestampMixin, Base):
