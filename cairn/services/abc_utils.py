@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
 from cairn.models import Tune, TuneSetting
+
+if TYPE_CHECKING:
+    from cairn.models import TuneBox, TuneSet
 
 _MAPPED_HEADERS = frozenset("XTCOARMSZNK")
 
@@ -101,6 +107,53 @@ def build_abc(tune: Tune, setting: TuneSetting, x: int = 1) -> str:
         music_lines.pop()
 
     return "\n".join(headers + music_lines) + "\n"
+
+
+def build_set_abc(tune_set: TuneSet, box: TuneBox | None = None) -> str:
+    """Assemble a multi-tune ABC string for a TuneSet.
+
+    A file-header block (T:, S:, G: plus any user-supplied abc_header lines)
+    precedes the individual X: sections produced by build_abc() for each member.
+    User-supplied lines that share a letter with an auto-header replace that
+    header; other user-supplied lines are appended after the auto-headers.
+    """
+    auto: dict[str, str] = {}
+    auto["T"] = f"T:{tune_set.title}"
+    if tune_set.source:
+        auto["S"] = f"S:{tune_set.source}"
+    if box is not None:
+        auto["G"] = f"G:{box.name}"
+
+    extra: list[str] = []
+    if tune_set.abc_header:
+        for line in tune_set.abc_header.splitlines():
+            s = line.strip()
+            if len(s) >= 2 and s[1] == ":" and s[0].isalpha():
+                letter = s[0].upper()
+                if letter in auto:
+                    auto[letter] = line
+                else:
+                    extra.append(line)
+
+    file_header = "\n".join(list(auto.values()) + extra)
+
+    parts: list[str] = []
+    for i, member in enumerate(tune_set.members, start=1):
+        tune = member.tune
+        if member.setting is not None:
+            setting = member.setting
+        else:
+            setting = next((s for s in tune.settings if s.is_core), None)
+            if setting is None and tune.settings:
+                setting = tune.settings[0]
+        if setting is None:
+            continue
+        parts.append(build_abc(tune, setting, x=i))
+
+    if not parts:
+        return file_header + "\n"
+
+    return file_header + "\n\n" + "\n".join(parts)
 
 
 def truncate_to_bars(abc: str, n_bars: int) -> str:
