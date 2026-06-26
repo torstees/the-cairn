@@ -22,39 +22,33 @@
   <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen" x-data="cairnApp()">
-  <nav class="bg-stone-800 text-stone-100 px-6 py-3 flex items-center gap-6">
-    <span class="font-semibold tracking-wide">The Cairn</span>
-    <a href="/" class="hover:text-stone-300 text-sm">Home</a>
-    <a href="/tunes" class="hover:text-stone-300 text-sm">Tunes</a>
-    <a href="/progress" class="hover:text-stone-300 text-sm">Progress</a>
-    <a href="/boxes" class="hover:text-stone-300 text-sm">Boxes</a>
-    <a href="/lists" class="hover:text-stone-300 text-sm">Lists</a>
-    <a href="/practice/plan" class="hover:text-stone-300 text-sm">Practice</a>
-    <a href="/warmups" class="hover:text-stone-300 text-sm">Warmups</a>
-    <button @click="openTuner()"
-            class="ml-auto text-stone-300 hover:text-white text-sm font-medium px-3 py-1 rounded border border-stone-600 hover:border-stone-400 transition-colors">
-      &#119070; Tuner
-    </button>
-  </nav>
-  <main class="container mx-auto px-4 py-8">
-    {% block content %}{% endblock %}
-  </main>
+
+  <!-- Page content shifts left when tuner opens -->
+  <div :style="{ marginRight: tunerOpen ? '20rem' : '0', transition: 'margin-right 0.3s ease' }">
+    <nav class="bg-stone-800 text-stone-100 px-6 py-3 flex items-center gap-6">
+      <span class="font-semibold tracking-wide">The Cairn</span>
+      <a href="/" class="hover:text-stone-300 text-sm">Home</a>
+      <a href="/tunes" class="hover:text-stone-300 text-sm">Tunes</a>
+      <a href="/progress" class="hover:text-stone-300 text-sm">Progress</a>
+      <a href="/boxes" class="hover:text-stone-300 text-sm">Boxes</a>
+      <a href="/lists" class="hover:text-stone-300 text-sm">Lists</a>
+      <a href="/practice/plan" class="hover:text-stone-300 text-sm">Practice</a>
+      <a href="/warmups" class="hover:text-stone-300 text-sm">Warmups</a>
+      <button @click="toggleTuner()"
+              :class="tunerOpen ? 'text-white border-stone-400' : 'text-stone-300 border-stone-600'"
+              class="ml-auto text-sm font-medium px-3 py-1 rounded border hover:text-white hover:border-stone-400 transition-colors">
+        &#119070; Tuner
+      </button>
+    </nav>
+    <main class="container mx-auto px-4 py-8">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
   <script src="/static/js/app.js?v=20"></script>
   {% block scripts %}{% endblock %}
 
-  <!-- Tuner drawer backdrop -->
-  <div x-show="tunerOpen"
-       x-transition:enter="transition-opacity ease-out duration-200"
-       x-transition:enter-start="opacity-0"
-       x-transition:enter-end="opacity-100"
-       x-transition:leave="transition-opacity ease-in duration-150"
-       x-transition:leave-start="opacity-100"
-       x-transition:leave-end="opacity-0"
-       @click="closeTuner()"
-       class="fixed inset-0 bg-black/40 z-40"
-       x-cloak></div>
-
-  <!-- Tuner drawer panel -->
+  <!-- Tuner drawer — fixed panel, no backdrop so page content stays readable -->
   <div x-show="tunerOpen"
        x-transition:enter="transition ease-out duration-300"
        x-transition:enter-start="translate-x-full"
@@ -62,7 +56,7 @@
        x-transition:leave="transition ease-in duration-200"
        x-transition:leave-start="translate-x-0"
        x-transition:leave-end="translate-x-full"
-       class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 flex flex-col"
+       class="fixed top-0 right-0 h-full w-80 bg-white border-l border-stone-200 shadow-xl z-50 flex flex-col"
        x-cloak>
 
     <!-- Header -->

@@ -1087,8 +1087,9 @@
   function cairnApp() {
     return {
       tunerOpen: false,
-      openTuner:  function () { this.tunerOpen = true; },
-      closeTuner: function () { this.tunerOpen = false; stopTuner(); },
+      openTuner:    function () { this.tunerOpen = true; },
+      closeTuner:   function () { this.tunerOpen = false; stopTuner(); },
+      toggleTuner:  function () { if (this.tunerOpen) this.closeTuner(); else this.openTuner(); },
     };
   }
 
