@@ -932,12 +932,173 @@
     }
   }
 
+  // ── chromatic tuner ────────────────────────────────────────────────────────
+
+  var tunerMicStream = null;
+  var tunerAudioCtx = null;
+  var tunerAnalyser = null;
+  var tunerAnimFrame = null;
+  var tunerActive = false;
+  var tunerSmoothedCents = 0;
+
+  var TUNER_NOTES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+
+  function tunerDetectPitch(buffer, sampleRate) {
+    var SIZE = buffer.length;
+    var HALF = Math.floor(SIZE / 2);
+    var rms = 0;
+    for (var i = 0; i < SIZE; i++) rms += buffer[i] * buffer[i];
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.01) return null;
+
+    var best = -1, bestCorr = 0, lastCorr = 1, foundGood = false;
+    var corrs = new Float32Array(HALF);
+    for (var offset = 1; offset < HALF; offset++) {
+      var c = 0;
+      for (var i = 0; i < HALF; i++) c += Math.abs(buffer[i] - buffer[i + offset]);
+      c = 1 - c / HALF;
+      corrs[offset] = c;
+      if (c > 0.9 && c > lastCorr) {
+        foundGood = true;
+        if (c > bestCorr) { bestCorr = c; best = offset; }
+      } else if (foundGood) {
+        var shift = 0;
+        if (best > 1 && best < HALF - 1) {
+          var y0 = corrs[best - 1], y1 = corrs[best], y2 = corrs[best + 1];
+          var denom = 2 * y1 - y0 - y2;
+          if (denom !== 0) shift = (y2 - y0) / (2 * denom);
+        }
+        var freq = sampleRate / (best + shift);
+        return (freq >= 60 && freq <= 2100) ? freq : null;
+      }
+      lastCorr = c;
+    }
+    if (bestCorr > 0.01 && best !== -1) {
+      var freq = sampleRate / best;
+      return (freq >= 60 && freq <= 2100) ? freq : null;
+    }
+    return null;
+  }
+
+  function tunerFreqToNote(freq, a4) {
+    var semitones = 12 * Math.log2(freq / a4) + 69;
+    var midi = Math.round(semitones);
+    var cents = Math.round((semitones - midi) * 100);
+    return { name: TUNER_NOTES[((midi % 12) + 12) % 12], cents: cents };
+  }
+
+  function tunerUpdateDisplay(result) {
+    var noteEl = document.getElementById('tuner-note');
+    var accEl  = document.getElementById('tuner-accidental');
+    var centsEl = document.getElementById('tuner-cents');
+    var needleEl = document.getElementById('tuner-needle');
+
+    if (result) {
+      var sharp = result.name.indexOf('♯') !== -1;
+      if (noteEl) noteEl.textContent = sharp ? result.name[0] : result.name;
+      if (accEl)  accEl.textContent  = sharp ? '♯' : '';
+      var c = result.cents;
+      if (centsEl) centsEl.textContent = (c >= 0 ? '+' : '') + c + '¢';
+      if (needleEl) {
+        var pct = Math.max(0, Math.min(100, c + 50));
+        needleEl.style.left = 'calc(' + pct + '% - 2px)';
+        needleEl.style.backgroundColor =
+          Math.abs(c) <= 10 ? '#16a34a' : Math.abs(c) <= 25 ? '#d97706' : '#dc2626';
+      }
+    } else {
+      if (noteEl) noteEl.textContent = '—';
+      if (accEl)  accEl.textContent  = '';
+      if (centsEl) centsEl.textContent = '—';
+      if (needleEl) {
+        needleEl.style.left = 'calc(50% - 2px)';
+        needleEl.style.backgroundColor = '#a8a29e';
+      }
+    }
+  }
+
+  function tunerTick() {
+    if (!tunerActive || !tunerAnalyser) return;
+    var buf = new Float32Array(tunerAnalyser.fftSize);
+    tunerAnalyser.getFloatTimeDomainData(buf);
+    var a4 = parseFloat((document.getElementById('tuner-a4') || {}).value) || 440;
+    var freq = tunerDetectPitch(buf, tunerAudioCtx.sampleRate);
+    if (freq !== null) {
+      var raw = tunerFreqToNote(freq, a4);
+      tunerSmoothedCents = tunerSmoothedCents * 0.7 + raw.cents * 0.3;
+      tunerUpdateDisplay({ name: raw.name, cents: Math.round(tunerSmoothedCents) });
+    } else {
+      tunerSmoothedCents = 0;
+      tunerUpdateDisplay(null);
+    }
+    tunerAnimFrame = requestAnimationFrame(tunerTick);
+  }
+
+  function startTuner() {
+    if (tunerActive) return;
+    var statusEl = document.getElementById('tuner-status');
+    var errorEl  = document.getElementById('tuner-error');
+    var btn      = document.getElementById('tuner-toggle');
+    if (statusEl) statusEl.textContent = 'Requesting mic…';
+    if (errorEl)  errorEl.classList.add('hidden');
+
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      .then(function (stream) {
+        tunerMicStream = stream;
+        tunerAudioCtx  = new AudioContext();
+        tunerAnalyser  = tunerAudioCtx.createAnalyser();
+        tunerAnalyser.fftSize = 2048;
+        tunerAudioCtx.createMediaStreamSource(stream).connect(tunerAnalyser);
+        tunerActive = true;
+        tunerSmoothedCents = 0;
+        if (statusEl) statusEl.textContent = '';
+        if (btn) btn.textContent = 'Stop listening';
+        tunerTick();
+      })
+      .catch(function () {
+        if (statusEl) statusEl.textContent = '';
+        if (errorEl) {
+          errorEl.textContent = 'Microphone access denied. Allow mic access in browser settings to use the tuner.';
+          errorEl.classList.remove('hidden');
+        }
+      });
+  }
+
+  function stopTuner() {
+    tunerActive = false;
+    if (tunerAnimFrame) { cancelAnimationFrame(tunerAnimFrame); tunerAnimFrame = null; }
+    if (tunerMicStream) { tunerMicStream.getTracks().forEach(function (t) { t.stop(); }); tunerMicStream = null; }
+    if (tunerAudioCtx)  { tunerAudioCtx.close().catch(function () {}); tunerAudioCtx = null; }
+    tunerAnalyser = null;
+    tunerSmoothedCents = 0;
+    var btn = document.getElementById('tuner-toggle');
+    if (btn) btn.textContent = 'Start listening';
+    var statusEl = document.getElementById('tuner-status');
+    if (statusEl) statusEl.textContent = 'Tap to start';
+    tunerUpdateDisplay(null);
+  }
+
+  function tunerToggle() {
+    if (tunerActive) stopTuner(); else startTuner();
+  }
+
+  function cairnApp() {
+    return {
+      tunerOpen: false,
+      openTuner:  function () { this.tunerOpen = true; },
+      closeTuner: function () { this.tunerOpen = false; stopTuner(); },
+    };
+  }
+
   // Expose to Alpine and templates
   window.clearCairnModal = clearCairnModal;
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
   window.initWarmupPreview = initWarmupPreview;
   window.initWarmupTools = initWarmupTools;
+  window.cairnApp = cairnApp;
+  window.tunerToggle = tunerToggle;
+  window.startTuner = startTuner;
+  window.stopTuner = stopTuner;
 
   // ── init ───────────────────────────────────────────────────────────────────
 
