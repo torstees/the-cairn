@@ -119,6 +119,8 @@ class TuneDifficultyRead(_ReadBase):
 class TuneSetCreate(BaseModel):
     title: str
     description: str | None = None
+    source: str | None = None
+    abc_header: str | None = None
     flow_difficulty: int | None = Field(default=None, ge=1, le=5)
     flow_difficulty_notes: str | None = None
 
@@ -126,6 +128,8 @@ class TuneSetCreate(BaseModel):
 class TuneSetUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
+    source: str | None = None
+    abc_header: str | None = None
     flow_difficulty: int | None = Field(default=None, ge=1, le=5)
     flow_difficulty_notes: str | None = None
 
@@ -133,6 +137,8 @@ class TuneSetUpdate(BaseModel):
 class TuneSetRead(_ReadBase):
     title: str
     description: str | None
+    source: str | None
+    abc_header: str | None
     flow_difficulty: int | None
     flow_difficulty_notes: str | None
 
@@ -143,17 +149,28 @@ class TuneSetRead(_ReadBase):
 class TuneSetMemberCreate(BaseModel):
     set_id: int
     tune_id: int
+    setting_id: int | None = None
     order: int
 
 
 class TuneSetMemberUpdate(BaseModel):
     order: int | None = None
+    setting_id: int | None = None
 
 
 class TuneSetMemberRead(_ReadBase):
     set_id: int
     tune_id: int
+    setting_id: int | None
     order: int
+
+
+# ── TuneBoxSetEntry ───────────────────────────────────────────────────────────
+
+
+class TuneBoxSetEntryRead(_ReadBase):
+    box_id: int
+    set_id: int
 
 
 # ── StudentProgress ───────────────────────────────────────────────────────────

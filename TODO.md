@@ -492,7 +492,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### 6b. TuneSet Management
 
-- [ ] **6b.1 — TuneSet model updates and migration**
+- [x] **6b.1 — TuneSet model updates and migration**
   Extend the existing `TuneSet` and `TuneSetMember` models (from task 1.4)
   and add a box-set join model.
 
