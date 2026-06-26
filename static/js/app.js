@@ -920,6 +920,9 @@
       metroBtn.addEventListener("click", function () {
         if (!metroTimer) {
           var bpm = tempoSlider ? parseInt(tempoSlider.value, 10) : 100;
+          var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
+          var minDuration = (4 * 4 / bpm) * 60;
+          if (elapsed < minDuration) return;
           var params = new URLSearchParams();
           params.append("tempo", bpm);
           fetch("/warmups/" + window.__cairnWarmupId + "/tempo", { method: "POST", body: params })
