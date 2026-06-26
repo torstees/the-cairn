@@ -1,0 +1,30 @@
+[
+  {
+    "title": "D, G Arpeggio",
+    "warmup_type": "scale",
+    "content": "T: D Arpeggios\r\nM: 4/4\r\nL: 1/4\r\nK: D\r\n||DFAF|DFAF|D4||\r\nK: G\r\n||GBdB|GBdB|G4||",
+    "difficulty": 1,
+    "default_tempo": 65,
+    "instruments": []
+  },
+  {
+    "title": "Long Tones Ascending Basic",
+    "warmup_type": "text_blurb",
+    "content": "While watching your tuner, start on A4 (A above your lowest D) and hold for 4 beats before slurring up to the next available note on your flute (Bb if you have keys otherwise B). Take a breath and start on the second note and continuing upward. ",
+    "difficulty": 1,
+    "default_tempo": null,
+    "instruments": [
+      "flute"
+    ]
+  },
+  {
+    "title": "Long Tones Descending Scale",
+    "warmup_type": "snippet",
+    "content": "X:1\r\nT:D Long Tones Descend\r\nM:4/4\r\nL:1/4\r\nK:D\r\n|(b2a2)|(a2g2)|(g2f2)|",
+    "difficulty": 1,
+    "default_tempo": 85,
+    "instruments": [
+      "flute"
+    ]
+  }
+]

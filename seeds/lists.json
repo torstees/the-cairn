@@ -1,0 +1,106 @@
+[
+  {
+    "name": "Another List",
+    "box_name": "Flute Tunes",
+    "list_type": "woodshed",
+    "progress_goal": "committed",
+    "target_date": null,
+    "is_active": false,
+    "entries": [
+      {
+        "tune_title": "The Abbey",
+        "setting_label": "Basic Ornamentation"
+      },
+      {
+        "tune_title": "The Ballintore Fancy",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The Banshee",
+        "setting_label": "Test Setting"
+      },
+      {
+        "tune_title": "The Foxhunters",
+        "setting_label": "bonk"
+      },
+      {
+        "tune_title": "Comb Your Hair And Curl It",
+        "setting_label": null
+      }
+    ]
+  },
+  {
+    "name": "Favorite Tunes",
+    "box_name": "Flute Tunes",
+    "list_type": "repertoire",
+    "progress_goal": "committed",
+    "target_date": null,
+    "is_active": true,
+    "entries": [
+      {
+        "tune_title": "Gillan's Apples",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Come West Along The Road",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The Cock And The Hen",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The Boys Of Ballisodare",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Sporting Paddy",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Maud Millar",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Dusty Windowsills",
+        "setting_label": null
+      },
+      {
+        "tune_title": "A Fig For A Kiss",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Drowsy Maggie",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The Banshee",
+        "setting_label": "Test Setting"
+      },
+      {
+        "tune_title": "The Cliffs Of Moher",
+        "setting_label": "Flute test"
+      },
+      {
+        "tune_title": "The Cook In The Kitchen",
+        "setting_label": "Just another one"
+      },
+      {
+        "tune_title": "Gallagher's Frolics",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The Foxhunters",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The Ballintore Fancy",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Comb Your Hair And Curl It",
+        "setting_label": null
+      }
+    ]
+  }
+]
