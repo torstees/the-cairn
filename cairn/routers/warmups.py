@@ -64,7 +64,7 @@ async def warmup_create(
     content: str = Form(...),
     difficulty: int = Form(...),
     instrument: list[str] = Form(default=[]),
-    default_tempo: int | None = Form(default=None),
+    default_tempo: str | None = Form(default=None),
 ) -> Response:
     instruments = [Instrument(v) for v in instrument if v]
     warmup = await create_warmup(
@@ -74,7 +74,7 @@ async def warmup_create(
         content=content,
         difficulty=difficulty,
         instruments=instruments,
-        default_tempo=default_tempo,
+        default_tempo=int(default_tempo) if default_tempo else None,
     )
     logger.info("warmup created", extra={"warmup_id": warmup.id})
     return RedirectResponse(f"/warmups/{warmup.id}", status_code=303)
@@ -134,7 +134,7 @@ async def warmup_update(
     content: str = Form(...),
     difficulty: int = Form(...),
     instrument: list[str] = Form(default=[]),
-    default_tempo: int | None = Form(default=None),
+    default_tempo: str | None = Form(default=None),
 ) -> Response:
     instruments = [Instrument(v) for v in instrument if v]
     warmup = await update_warmup(
@@ -145,7 +145,7 @@ async def warmup_update(
         content=content,
         difficulty=difficulty,
         instruments=instruments,
-        default_tempo=default_tempo,
+        default_tempo=int(default_tempo) if default_tempo else None,
     )
     if warmup is None:
         raise HTTPException(status_code=404, detail="Warmup not found")

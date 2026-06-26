@@ -186,6 +186,27 @@ async def test_warmup_create_with_default_tempo(client: AsyncClient, db: AsyncSe
     assert resp.status_code == 200
 
 
+async def test_warmup_update_with_blank_default_tempo(client: AsyncClient, db: AsyncSession) -> None:
+    """Browser always submits default_tempo='' even when left blank; must not 422."""
+    w = await _seed(db)
+    resp = await client.post(
+        f"/warmups/{w.id}",
+        data={
+            "title": "Updated Title",
+            "warmup_type": "scale",
+            "content": _ABC,
+            "difficulty": "2",
+            "default_tempo": "",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    updated = await get_warmup(db, w.id)
+    assert updated is not None
+    assert updated.title == "Updated Title"
+    assert updated.default_tempo is None
+
+
 async def test_warmup_tempo_record(client: AsyncClient, db: AsyncSession) -> None:
     w = await _seed(db)
     resp = await client.post(f"/warmups/{w.id}/tempo", data={"tempo": "80"})
