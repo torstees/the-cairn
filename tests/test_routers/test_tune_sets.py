@@ -232,7 +232,7 @@ async def test_set_detail_404(client: AsyncClient) -> None:
     assert resp.status_code == 404
 
 
-async def test_set_detail_with_members_shows_run_through(
+async def test_set_detail_with_members_shows_bar_controls(
     client: AsyncClient, db: AsyncSession
 ) -> None:
     t = await _tune(db, "The Foxhunter's")
@@ -241,18 +241,18 @@ async def test_set_detail_with_members_shows_run_through(
     await client.post(f"/sets/{s.id}", data={"title": "Reel Set", "members": members_json})
     resp = await client.get(f"/sets/{s.id}")
     assert resp.status_code == 200
-    assert "Run Through" in resp.text
+    assert "Bars visible per tune" in resp.text
     assert "The Foxhunter's" in resp.text
 
 
-async def test_set_detail_shows_abc_source(client: AsyncClient, db: AsyncSession) -> None:
+async def test_set_detail_shows_set_abc(client: AsyncClient, db: AsyncSession) -> None:
     t = await _tune(db)
     s = await _set(db)
     members_json = json.dumps([{"tune_id": t.id, "setting_id": None}])
     await client.post(f"/sets/{s.id}", data={"title": s.title, "members": members_json})
     resp = await client.get(f"/sets/{s.id}")
     assert resp.status_code == 200
-    assert "abc-source" in resp.text
+    assert "initSetTools" in resp.text
     assert "X:1" in resp.text
 
 

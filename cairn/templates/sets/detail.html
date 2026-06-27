@@ -26,12 +26,28 @@
   </div>
   {% endif %}
 
-  {# ── Score ─────────────────────────────────────────────────────────────────── #}
+  {# ── Score + controls ──────────────────────────────────────────────────────── #}
   <section class="mb-6">
     <div class="bg-white rounded-lg shadow-sm p-4">
+
       <div id="abc-render" class="mb-4 overflow-x-auto"></div>
 
-      <div class="flex items-center gap-4 flex-wrap border-t border-stone-100 pt-3">
+      {# Per-member bars controls — limit how much of each tune is visible #}
+      {% set has_any_abc = members_display | selectattr('has_abc') | list | length > 0 %}
+      {% if has_any_abc %}
+      <div class="mb-3 pb-3 border-b border-stone-100">
+        <p class="text-xs text-stone-400 mb-2 select-none">Bars visible per tune &mdash; click to cycle</p>
+        <div class="flex flex-wrap gap-2">
+          {% for m in members_display %}{% if m.has_abc %}
+          <button id="member-bars-{{ loop.index0 }}" type="button"
+                  class="text-xs px-2.5 py-1 rounded border border-stone-200 text-stone-600 hover:bg-stone-50 font-mono">
+          </button>
+          {% endif %}{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="flex items-center gap-4 flex-wrap">
         <button id="abc-play" type="button"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed">
           &#9654; Play
@@ -62,45 +78,30 @@
           </button>
         </div>
       </div>
+
     </div>
-    <template id="abc-source">{{ set_abc }}</template>
     <div id="abc-audio" hidden></div>
   </section>
 
-  {# ── Per-member run-through controls ──────────────────────────────────────── #}
-  <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-base font-semibold text-stone-700">Run Through</h2>
-      <div class="flex gap-2">
-        <button id="set-show-all" type="button"
-                class="text-xs px-3 py-1 rounded border border-stone-300 text-stone-500 hover:bg-stone-50">
-          Show All
-        </button>
-        <button id="set-next" type="button"
-                class="text-xs px-3 py-1 rounded border border-stone-300 text-stone-600 hover:bg-stone-50 font-medium">
-          &#9654; Next
-        </button>
-      </div>
-    </div>
-
-    <div class="space-y-2" id="set-member-controls">
+  {# Member list with progress badges #}
+  {% if members_display %}
+  <div class="bg-white rounded-lg shadow-sm p-4">
+    <h2 class="text-sm font-semibold text-stone-600 mb-3">Members</h2>
+    <div class="space-y-1">
       {% for m in members_display %}
-      <div class="flex items-center gap-3 px-3 py-2 rounded-lg border border-stone-100"
-           id="member-row-{{ loop.index0 }}">
+      <div class="flex items-center gap-3 px-2 py-1.5">
         <span class="w-5 text-xs text-stone-400 text-center select-none shrink-0">{{ loop.index }}</span>
         <span class="flex-1 text-sm text-stone-800 truncate">{{ m.title }}</span>
         {% if m.progress %}
-        <span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-500">{{ m.progress | replace('_', ' ') }}</span>
+        <span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-500">
+          {{ m.progress | replace('_', ' ') }}
+        </span>
         {% endif %}
-        <button type="button"
-                id="member-bars-{{ loop.index0 }}"
-                class="shrink-0 text-xs px-2 py-1 rounded border border-stone-200 text-stone-600 hover:bg-stone-50 w-16 text-center">
-          —
-        </button>
       </div>
       {% endfor %}
     </div>
   </div>
+  {% endif %}
 
 </div>
 {% endblock %}

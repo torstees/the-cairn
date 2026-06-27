@@ -879,16 +879,40 @@
   }
 
   // Initialise the set detail page: score render, metro, play, drone, and
-  // the per-member run-through controls.
-  function initSetTools(abcString) {
-    currentAbcString = abcString || "";
-    updateDroneDisplay();
+  // per-member bars-to-show controls. Each tune in the combined score can be
+  // limited to 2 bars, 8 bars, or Full independently, so the player can
+  // avoid seeing more notation than they need ("spoiler guard").
+  function initSetTools(setAbc) {
+    var members = window.__cairnSetMembers || [];
+    // Track current bar setting per member; null means no ABC available.
+    var memberBars = members.map(function (m) { return m.has_abc ? m.default_bars : null; });
+
+    // Build a combined multi-tune ABC from individual member ABCs, each
+    // limited to its current bar setting. Returns separate X: blocks
+    // (no file-level header) so ABCJS renders all tunes correctly.
+    function buildCombinedAbc() {
+      var parts = [];
+      members.forEach(function (m, i) {
+        if (!m.has_abc) return;
+        var abc = memberBars[i] === "2" ? m.bars_2 : memberBars[i] === "8" ? m.bars_8 : m.full;
+        // Renumber X: so indices are sequential regardless of source numbering.
+        abc = abc.replace(/^X:\d+/m, "X:" + (parts.length + 1));
+        parts.push(abc.trim());
+      });
+      return parts.length ? parts.join("\n\n") : (setAbc || "");
+    }
+
+    function renderCombined() {
+      currentAbcString = buildCombinedAbc();
+      var disp = currentAbcString.replace(/^Q:[^\n]*\n?/gm, "");
+      visualObj = ABCJS.renderAbc("abc-render", disp, RENDER_OPTS);
+      updateDroneDisplay();
+    }
+
+    renderCombined();
     initDrone();
 
-    var displayAbc = currentAbcString.replace(/^Q:[^\n]*\n?/gm, "");
-    visualObj = ABCJS.renderAbc("abc-render", displayAbc, RENDER_OPTS);
-
-    var playBtn    = document.getElementById("abc-play");
+    var playBtn     = document.getElementById("abc-play");
     var tempoSlider = document.getElementById("abc-tempo");
     var tempoLabel  = document.getElementById("abc-tempo-label");
 
@@ -937,69 +961,26 @@
       });
     }
 
-    // ── Per-member run-through controls ────────────────────────────────────────
-    var members = window.__cairnSetMembers || [];
-    var activeMemberIdx = -1;
-    var memberBars = members.map(function (m) { return m.has_abc ? m.default_bars : null; });
-
+    // ── Per-member bars controls ───────────────────────────────────────────────
     function barLabel(bars) {
       return bars === "2" ? "2 bars" : bars === "8" ? "8 bars" : "Full";
     }
 
-    function memberAbc(idx) {
-      var m = members[idx];
-      if (!m || !m.has_abc) return null;
-      return memberBars[idx] === "2" ? m.bars_2 : memberBars[idx] === "8" ? m.bars_8 : m.full;
-    }
-
-    function setActiveMember(idx) {
-      activeMemberIdx = idx;
-      members.forEach(function (_, i) {
-        var row = document.getElementById("member-row-" + i);
-        if (row) row.classList.toggle("bg-stone-50", i === idx);
-      });
-      var abc = memberAbc(idx);
-      if (abc) {
-        var disp = abc.replace(/^Q:[^\n]*\n?/gm, "");
-        visualObj = ABCJS.renderAbc("abc-render", disp, RENDER_OPTS);
-        currentAbcString = abc;
-      }
-    }
-
-    function showAll() {
-      activeMemberIdx = -1;
-      members.forEach(function (_, i) {
-        var row = document.getElementById("member-row-" + i);
-        if (row) row.classList.remove("bg-stone-50");
-      });
-      var disp = (abcString || "").replace(/^Q:[^\n]*\n?/gm, "");
-      visualObj = ABCJS.renderAbc("abc-render", disp, RENDER_OPTS);
-      currentAbcString = abcString || "";
-    }
-
     members.forEach(function (m, idx) {
+      if (!m.has_abc) return;
       var btn = document.getElementById("member-bars-" + idx);
       if (!btn) return;
-      if (!m.has_abc) { btn.disabled = true; btn.textContent = "—"; return; }
-      btn.textContent = barLabel(memberBars[idx]);
+      var short = m.title.length > 20 ? m.title.slice(0, 19) + "…" : m.title;
+      function updateBtn() {
+        btn.textContent = short + " · " + barLabel(memberBars[idx]);
+      }
+      updateBtn();
       btn.addEventListener("click", function () {
-        var prev = memberBars[idx];
-        memberBars[idx] = prev === "2" ? "8" : prev === "8" ? "full" : "2";
-        btn.textContent = barLabel(memberBars[idx]);
-        setActiveMember(idx);
+        memberBars[idx] = memberBars[idx] === "2" ? "8" : memberBars[idx] === "8" ? "full" : "2";
+        updateBtn();
+        renderCombined();
       });
     });
-
-    var showAllBtn = document.getElementById("set-show-all");
-    if (showAllBtn) showAllBtn.addEventListener("click", showAll);
-
-    var nextBtn = document.getElementById("set-next");
-    if (nextBtn) {
-      nextBtn.addEventListener("click", function () {
-        var next = (activeMemberIdx + 1) % members.length;
-        setActiveMember(next);
-      });
-    }
   }
 
   // Initialise play, metronome, and drone on the warmup detail page.
