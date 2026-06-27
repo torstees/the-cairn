@@ -7,40 +7,16 @@
     ],
     "entries": [
       {
-        "tune_title": "A Fig For A Kiss",
-        "setting_label": null
-      },
-      {
-        "tune_title": "Banish Misfortune",
-        "setting_label": "Just a test"
-      },
-      {
-        "tune_title": "Comb Your Hair And Curl It",
-        "setting_label": null
-      },
-      {
-        "tune_title": "Dusty Windowsills",
-        "setting_label": null
-      },
-      {
-        "tune_title": "Gallagher's Frolics",
-        "setting_label": null
-      },
-      {
-        "tune_title": "Maud Millar",
-        "setting_label": null
-      },
-      {
-        "tune_title": "Sporting Paddy",
-        "setting_label": null
-      },
-      {
         "tune_title": "The Abbey",
         "setting_label": null
       },
       {
         "tune_title": "The Ballintore Fancy",
         "setting_label": null
+      },
+      {
+        "tune_title": "Banish Misfortune",
+        "setting_label": "Just a test"
       },
       {
         "tune_title": "The Banshee",
@@ -59,12 +35,36 @@
         "setting_label": "Flute test"
       },
       {
+        "tune_title": "Comb Your Hair And Curl It",
+        "setting_label": null
+      },
+      {
         "tune_title": "The Cook In The Kitchen",
         "setting_label": "Just another one"
       },
       {
+        "tune_title": "Dusty Windowsills",
+        "setting_label": null
+      },
+      {
+        "tune_title": "A Fig For A Kiss",
+        "setting_label": null
+      },
+      {
         "tune_title": "The Foxhunters",
         "setting_label": "bonk"
+      },
+      {
+        "tune_title": "Gallagher's Frolics",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Maud Millar",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Sporting Paddy",
+        "setting_label": null
       }
     ]
   }

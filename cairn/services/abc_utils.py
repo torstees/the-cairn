@@ -137,8 +137,8 @@ def build_set_abc(tune_set: TuneSet, box: TuneBox | None = None) -> str:
 
     file_header = "\n".join(list(auto.values()) + extra)
 
-    parts: list[str] = []
-    for i, member in enumerate(tune_set.members, start=1):
+    resolved: list[tuple[Tune, TuneSetting]] = []
+    for member in tune_set.members:
         tune = member.tune
         if member.setting is not None:
             setting = member.setting
@@ -148,12 +148,40 @@ def build_set_abc(tune_set: TuneSet, box: TuneBox | None = None) -> str:
                 setting = tune.settings[0]
         if setting is None:
             continue
-        parts.append(build_abc(tune, setting, x=i))
+        resolved.append((tune, setting))
 
-    if not parts:
+    if not resolved:
         return file_header + "\n"
 
-    return file_header + "\n\n" + "\n".join(parts)
+    first_tune, first_setting = resolved[0]
+    sections: list[str] = [build_abc(first_tune, first_setting, x=1).rstrip("\n")]
+
+    prev_key = f"{first_tune.key_root.value}{_ABC_MODE_SUFFIX[first_tune.key_mode.value]}"
+    prev_time = first_tune.time_signature
+    prev_type = first_tune.tune_type.value
+
+    for tune, setting in resolved[1:]:
+        _, music_lines = _parse_abc_notation(setting.abc_notation)
+        while music_lines and not music_lines[0].strip():
+            music_lines.pop(0)
+        while music_lines and not music_lines[-1].strip():
+            music_lines.pop()
+
+        current_key = f"{tune.key_root.value}{_ABC_MODE_SUFFIX[tune.key_mode.value]}"
+        compact: list[str] = [f"T:{tune.title}"]
+        if tune.tune_type.value != prev_type:
+            compact.append(f"R:{tune.tune_type.value}")
+            prev_type = tune.tune_type.value
+        if tune.time_signature != prev_time:
+            compact.append(f"M:{tune.time_signature}")
+            prev_time = tune.time_signature
+        if current_key != prev_key:
+            compact.append(f"K:{current_key}")
+            prev_key = current_key
+
+        sections.append("\n".join(compact + music_lines))
+
+    return file_header + "\n\n" + "\n".join(sections) + "\n"
 
 
 def truncate_to_bars(abc: str, n_bars: int) -> str:

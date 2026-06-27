@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}{% if tune_set %}Edit {{ tune_set.title }}{% else %}New Set{% endif %} — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <div class="flex items-center gap-3 mb-6">
+    <a href="/sets" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Sets</a>
+    <h1 class="text-3xl font-bold text-stone-800">
+      {% if tune_set %}Edit Set{% else %}New Set{% endif %}
+    </h1>
+  </div>
+
+  <div x-data="setForm()" class="space-y-6">
+
+    {# ── Metadata form ──────────────────────────────────────────────────────── #}
+    <form method="POST"
+          action="{% if tune_set %}/sets/{{ tune_set.id }}{% else %}/sets{% endif %}"
+          class="bg-white rounded-lg shadow-sm p-6 space-y-5">
+
+      {% if error %}
+      <p class="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{{ error }}</p>
+      {% endif %}
+
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1" for="title">Title</label>
+        <input id="title" name="title" type="text" required
+               value="{{ tune_set.title if tune_set else '' }}"
+               placeholder="e.g. Morning Reels"
+               class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1" for="description">Description</label>
+          <input id="description" name="description" type="text"
+                 value="{{ tune_set.description if tune_set and tune_set.description else '' }}"
+                 placeholder="optional"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1" for="source">Source</label>
+          <input id="source" name="source" type="text"
+                 value="{{ tune_set.source if tune_set and tune_set.source else '' }}"
+                 placeholder="e.g. Catskills 2023"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1" for="flow_difficulty">
+            Flow Difficulty (1–5)
+          </label>
+          <input id="flow_difficulty" name="flow_difficulty" type="number" min="1" max="5"
+                 value="{{ tune_set.flow_difficulty if tune_set and tune_set.flow_difficulty else '' }}"
+                 placeholder="optional"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1" for="flow_difficulty_notes">
+            Flow Difficulty Notes
+          </label>
+          <input id="flow_difficulty_notes" name="flow_difficulty_notes" type="text"
+                 value="{{ tune_set.flow_difficulty_notes if tune_set and tune_set.flow_difficulty_notes else '' }}"
+                 placeholder="optional"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+      </div>
+
+      <details {% if tune_set and tune_set.abc_header %}open{% endif %} class="border border-stone-200 rounded-lg p-3">
+        <summary class="cursor-pointer select-none text-sm font-medium text-stone-600 hover:text-stone-800">
+          ABC File Header <span class="font-normal text-stone-400">(optional overrides/additions)</span>
+        </summary>
+        <div class="mt-3">
+          <textarea id="abc_header" name="abc_header" rows="3"
+                    placeholder="P:AABB&#10;Q:1/4=120"
+                    class="w-full border border-stone-300 rounded-lg px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">{{ tune_set.abc_header if tune_set and tune_set.abc_header else '' }}</textarea>
+          <p class="text-xs text-stone-400 mt-1">
+            Lines with a matching letter (T:, S:, G:) replace auto-generated headers; others are appended.
+          </p>
+        </div>
+      </details>
+
+      {# Hidden members field — Alpine keeps this in sync #}
+      <input type="hidden" name="members" :value="membersJson">
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="bg-stone-700 hover:bg-stone-600 text-white px-5 py-2 rounded-lg font-medium">
+          {% if tune_set %}Save Changes{% else %}Create Set{% endif %}
+        </button>
+        <a href="/sets"
+           class="px-5 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 font-medium">
+          Cancel
+        </a>
+        {% if tune_set %}
+        <button type="button"
+                hx-delete="/sets/{{ tune_set.id }}"
+                hx-confirm="Delete this set and all its members?"
+                class="ml-auto px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 font-medium text-sm">
+          Delete
+        </button>
+        {% endif %}
+      </div>
+    </form>
+
+    {# ── Members ─────────────────────────────────────────────────────────────── #}
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-stone-700 mb-4">
+        Members
+        <span class="text-stone-400 font-normal text-sm" x-text="`(${members.length})`"></span>
+      </h2>
+
+      {# Drag-to-reorder member list #}
+      <div class="space-y-2 mb-5">
+        <template x-for="(member, idx) in members" :key="member.tune_id">
+          <div class="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2"
+               draggable="true"
+               @dragstart="dragStart(idx)"
+               @dragover.prevent="dragOver(idx)"
+               @dragend="dragEnd"
+               :class="dragIdx === idx ? 'opacity-50' : ''">
+            <span class="text-stone-300 select-none cursor-grab text-lg leading-none">&#9776;</span>
+            <span class="w-5 text-xs text-stone-400 text-center select-none" x-text="idx + 1"></span>
+            <span class="flex-1 text-sm font-medium text-stone-800 truncate" x-text="member.title"></span>
+            <select class="border border-stone-200 rounded px-2 py-1 text-xs text-stone-600 bg-white
+                           focus:outline-none focus:ring-1 focus:ring-stone-400 max-w-40"
+                    x-model="members[idx].setting_id">
+              <option value="">Default setting</option>
+              <template x-for="setting in member.settings" :key="setting.id">
+                <option :value="String(setting.id)"
+                        x-text="setting.label + (setting.is_core ? ' ✓' : '')"></option>
+              </template>
+            </select>
+            <button type="button" @click="removeMember(idx)"
+                    class="shrink-0 text-stone-300 hover:text-red-500 text-xl leading-none px-1">&times;</button>
+          </div>
+        </template>
+        <p x-show="members.length === 0"
+           class="text-sm text-stone-400 py-2 text-center">
+          No tunes yet — add some below.
+        </p>
+      </div>
+
+      {# Tune search / add #}
+      <div @click.outside="open=false">
+        <label class="block text-xs font-medium text-stone-500 mb-1">Add Tune</label>
+        <div class="relative">
+          <input type="text"
+                 x-model="query"
+                 @focus="open=true"
+                 @input="open=true"
+                 @keydown.enter.prevent="open && filteredTunes.length && addTune(filteredTunes[0])"
+                 @keydown.escape="open=false"
+                 autocomplete="off"
+                 placeholder="Search tunes…"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-800
+                        focus:outline-none focus:ring-2 focus:ring-stone-400">
+          <ul x-show="open && filteredTunes.length > 0"
+              x-cloak
+              class="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+            <template x-for="tune in filteredTunes" :key="tune.id">
+              <li @click="addTune(tune)"
+                  class="px-3 py-2 text-sm text-stone-800 hover:bg-stone-100 cursor-pointer"
+                  x-text="tune.label"></li>
+            </template>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    {# ── ABC Preview (edit only, reflects last save) ──────────────────────── #}
+    {% if tune_set and set_abc_json %}
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-stone-700 mb-1">
+        ABC Preview
+        <span class="text-xs font-normal text-stone-400">— reflects last save</span>
+      </h2>
+      <div id="set-abc-preview" class="overflow-x-auto mt-3"></div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.__cairnTunes      = {{ tunes_json | safe }};
+  window.__cairnSetMembers = {{ members_json | safe }};
+  {% if set_abc_json %}window.__cairnSetAbc = {{ set_abc_json | safe }};{% endif %}
+
+  function setForm() {
+    return {
+      members: (window.__cairnSetMembers || []).map(function(m) { return Object.assign({}, m); }),
+      tunes:   window.__cairnTunes || [],
+      query:   '',
+      open:    false,
+      dragIdx: null,
+
+      get membersJson() {
+        return JSON.stringify(this.members.map(function(m) {
+          var sid = m.setting_id ? parseInt(m.setting_id, 10) : null;
+          return { tune_id: m.tune_id, setting_id: (sid && !isNaN(sid)) ? sid : null };
+        }));
+      },
+
+      get filteredTunes() {
+        var q = this.query.toLowerCase();
+        var existing = new Set(this.members.map(function(m) { return m.tune_id; }));
+        var list = q
+          ? this.tunes.filter(function(t) { return t.label.toLowerCase().includes(q); })
+          : this.tunes;
+        return list.filter(function(t) { return !existing.has(t.id); }).slice(0, 50);
+      },
+
+      async addTune(tune) {
+        var resp = await fetch('/sets/tune-settings/' + tune.id);
+        var settings = await resp.json();
+        this.members.push({
+          tune_id:    tune.id,
+          title:      tune.label,
+          setting_id: '',
+          settings:   settings,
+        });
+        this.query = '';
+        this.open  = false;
+      },
+
+      removeMember(idx) {
+        this.members.splice(idx, 1);
+      },
+
+      dragStart(idx) { this.dragIdx = idx; },
+      dragOver(idx) {
+        if (this.dragIdx === null || this.dragIdx === idx) return;
+        var moved = this.members.splice(this.dragIdx, 1)[0];
+        this.members.splice(idx, 0, moved);
+        this.dragIdx = idx;
+      },
+      dragEnd() { this.dragIdx = null; },
+    };
+  }
+
+  {% if set_abc_json %}
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.__cairnSetAbc && typeof ABCJS !== 'undefined') {
+      ABCJS.renderAbc('set-abc-preview', window.__cairnSetAbc, { responsive: 'resize' });
+    }
+  });
+  {% endif %}
+</script>
+{% endblock %}
