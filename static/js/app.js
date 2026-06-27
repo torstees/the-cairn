@@ -878,6 +878,130 @@
     return { update: updatePreview };
   }
 
+  // Initialise the set detail page: score render, metro, play, drone, and
+  // the per-member run-through controls.
+  function initSetTools(abcString) {
+    currentAbcString = abcString || "";
+    updateDroneDisplay();
+    initDrone();
+
+    var displayAbc = currentAbcString.replace(/^Q:[^\n]*\n?/gm, "");
+    visualObj = ABCJS.renderAbc("abc-render", displayAbc, RENDER_OPTS);
+
+    var playBtn    = document.getElementById("abc-play");
+    var tempoSlider = document.getElementById("abc-tempo");
+    var tempoLabel  = document.getElementById("abc-tempo-label");
+
+    naturalBpm = extractBpm(currentAbcString);
+    var seedBpm = window.__cairnLastTempo || naturalBpm || 100;
+    if (tempoSlider) tempoSlider.value = seedBpm;
+    if (tempoLabel)  tempoLabel.textContent = seedBpm + " bpm";
+
+    if (tempoSlider && tempoLabel) {
+      tempoSlider.addEventListener("input", function () {
+        tempoLabel.textContent = this.value + " bpm";
+        if (activeSynth) { activeSynth.stop(); teardownAudio(); if (playBtn) playBtn.textContent = "▶ Play"; }
+      });
+    }
+
+    if (playBtn) {
+      if (!ABCJS.synth.supportsAudio()) {
+        playBtn.disabled = true;
+        playBtn.title = "Audio is not supported in this browser";
+      } else {
+        playBtn.addEventListener("click", handlePlayStop);
+      }
+    }
+
+    var metroBtn = document.getElementById("metro-play");
+    if (metroBtn) {
+      metroBtn.addEventListener("click", function () {
+        var bpm = tempoSlider ? parseInt(tempoSlider.value, 10) : 100;
+        if (metroTimer) {
+          var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
+          var minDuration = (4 * 4 / bpm) * 60;
+          var shouldRecord = elapsed >= minDuration && window.__cairnSetId && window.__cairnBoxId;
+          stopMetronome();
+          metroBtn.textContent = "♩ Metro";
+          if (shouldRecord) {
+            var params = new URLSearchParams();
+            params.append("tempo", bpm);
+            params.append("box_id", window.__cairnBoxId);
+            fetch("/sets/" + window.__cairnSetId + "/tempo", { method: "POST", body: params })
+              .catch(function () {});
+          }
+        } else {
+          startMetronome(bpm);
+          metroBtn.textContent = "■ Metro";
+        }
+      });
+    }
+
+    // ── Per-member run-through controls ────────────────────────────────────────
+    var members = window.__cairnSetMembers || [];
+    var activeMemberIdx = -1;
+    var memberBars = members.map(function (m) { return m.has_abc ? m.default_bars : null; });
+
+    function barLabel(bars) {
+      return bars === "2" ? "2 bars" : bars === "8" ? "8 bars" : "Full";
+    }
+
+    function memberAbc(idx) {
+      var m = members[idx];
+      if (!m || !m.has_abc) return null;
+      return memberBars[idx] === "2" ? m.bars_2 : memberBars[idx] === "8" ? m.bars_8 : m.full;
+    }
+
+    function setActiveMember(idx) {
+      activeMemberIdx = idx;
+      members.forEach(function (_, i) {
+        var row = document.getElementById("member-row-" + i);
+        if (row) row.classList.toggle("bg-stone-50", i === idx);
+      });
+      var abc = memberAbc(idx);
+      if (abc) {
+        var disp = abc.replace(/^Q:[^\n]*\n?/gm, "");
+        visualObj = ABCJS.renderAbc("abc-render", disp, RENDER_OPTS);
+        currentAbcString = abc;
+      }
+    }
+
+    function showAll() {
+      activeMemberIdx = -1;
+      members.forEach(function (_, i) {
+        var row = document.getElementById("member-row-" + i);
+        if (row) row.classList.remove("bg-stone-50");
+      });
+      var disp = (abcString || "").replace(/^Q:[^\n]*\n?/gm, "");
+      visualObj = ABCJS.renderAbc("abc-render", disp, RENDER_OPTS);
+      currentAbcString = abcString || "";
+    }
+
+    members.forEach(function (m, idx) {
+      var btn = document.getElementById("member-bars-" + idx);
+      if (!btn) return;
+      if (!m.has_abc) { btn.disabled = true; btn.textContent = "—"; return; }
+      btn.textContent = barLabel(memberBars[idx]);
+      btn.addEventListener("click", function () {
+        var prev = memberBars[idx];
+        memberBars[idx] = prev === "2" ? "8" : prev === "8" ? "full" : "2";
+        btn.textContent = barLabel(memberBars[idx]);
+        setActiveMember(idx);
+      });
+    });
+
+    var showAllBtn = document.getElementById("set-show-all");
+    if (showAllBtn) showAllBtn.addEventListener("click", showAll);
+
+    var nextBtn = document.getElementById("set-next");
+    if (nextBtn) {
+      nextBtn.addEventListener("click", function () {
+        var next = (activeMemberIdx + 1) % members.length;
+        setActiveMember(next);
+      });
+    }
+  }
+
   // Initialise play, metronome, and drone on the warmup detail page.
   function initWarmupTools(abcString) {
     currentAbcString = abcString || "";
@@ -1098,6 +1222,7 @@
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
   window.initWarmupPreview = initWarmupPreview;
+  window.initSetTools    = initSetTools;
   window.initWarmupTools = initWarmupTools;
   window.cairnApp = cairnApp;
   window.tunerToggle = tunerToggle;

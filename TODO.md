@@ -587,7 +587,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   - `build_set_abc` user-supplied header overrides auto-populated header of same letter
   - `add_box_set` / `remove_box_set`
 
-- [ ] **6b.3 — TuneSet CRUD routes and templates**
+- [x] **6b.3 — TuneSet CRUD routes and templates**
   Router: `cairn/routers/tune_sets.py`, prefix `/sets`.
   Mount in `cairn/main.py`. Add a "Sets" link to `base.html` nav.
 

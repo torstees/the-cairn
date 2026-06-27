@@ -1,21 +1,24 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import TuneSetting
-from cairn.services.abc_utils import build_set_abc
+from cairn.models import ProgressStatus, StudentProgress, TuneSetting
+from cairn.services.abc_utils import build_abc, build_set_abc, truncate_to_bars
+from cairn.services.boxes import get_box
 from cairn.services.tune_sets import (
     create_set,
     delete_set,
     get_set,
+    get_set_tempo,
     list_sets,
     set_members,
     update_set,
+    upsert_set_tempo,
 )
 from cairn.services.tunes import list_tunes
 from cairn.templating import templates
@@ -176,3 +179,88 @@ async def set_delete(set_id: int, db: AsyncSession = Depends(get_db)) -> Respons
     if not deleted:
         raise HTTPException(status_code=404)
     return Response(headers={"HX-Redirect": "/sets"}, status_code=200)
+
+
+def _bars_from_progress(status: ProgressStatus | None) -> str:
+    if status in (ProgressStatus.committed, ProgressStatus.performance_ready, ProgressStatus.solo_ready):
+        return "full"
+    if status in (ProgressStatus.getting_there, ProgressStatus.nearly_there, ProgressStatus.session_ready):
+        return "8"
+    return "2"
+
+
+@router.get("/{set_id}")
+async def set_detail(
+    request: Request,
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+    box_id: int | None = Query(default=None),
+) -> Response:
+    tune_set = await get_set(db, set_id)
+    if tune_set is None:
+        raise HTTPException(status_code=404)
+
+    box = await get_box(db, box_id) if box_id is not None else None
+    last_tempo = await get_set_tempo(db, _STUB_USER_ID, box_id, set_id) if box_id else None
+    set_abc = build_set_abc(tune_set, box=box)
+
+    # Progress lookup for default bar counts
+    tune_ids = [m.tune_id for m in tune_set.members]
+    progress_map: dict[int, ProgressStatus | None] = {}
+    if box_id and tune_ids:
+        rows = await db.execute(
+            select(StudentProgress.tune_id, StudentProgress.status).where(
+                StudentProgress.user_id == _STUB_USER_ID,
+                StudentProgress.box_id == box_id,
+                StudentProgress.tune_id.in_(tune_ids),
+            )
+        )
+        progress_map = {row.tune_id: row.status for row in rows}
+
+    members_display = []
+    for member in tune_set.members:
+        tune = member.tune
+        setting = member.setting
+        if setting is None:
+            setting = next((s for s in tune.settings if s.is_core), None)
+            if setting is None and tune.settings:
+                setting = tune.settings[0]
+        if setting is None:
+            members_display.append({"title": tune.title, "has_abc": False, "progress": None})
+            continue
+
+        full_abc = build_abc(tune, setting)
+        status = progress_map.get(tune.id)
+        members_display.append({
+            "title": tune.title,
+            "has_abc": True,
+            "full": full_abc,
+            "bars_8": truncate_to_bars(full_abc, 8),
+            "bars_2": truncate_to_bars(full_abc, 2),
+            "progress": status.value if status else None,
+            "default_bars": _bars_from_progress(status),
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "sets/detail.html",
+        {
+            "tune_set": tune_set,
+            "set_abc": set_abc,
+            "members_display": members_display,
+            "members_json": json.dumps(members_display),
+            "box_id": box_id,
+            "last_tempo": last_tempo,
+        },
+    )
+
+
+@router.post("/{set_id}/tempo")
+async def set_tempo_record(
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+    tempo: int = Form(...),
+    box_id: int = Form(...),
+) -> Response:
+    await upsert_set_tempo(db, _STUB_USER_ID, box_id, set_id, tempo)
+    return Response(status_code=204)

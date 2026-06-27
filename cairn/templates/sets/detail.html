@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ tune_set.title }} — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <a href="/sets" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Sets</a>
+      <h1 class="text-3xl font-bold text-stone-800 mt-1">{{ tune_set.title }}</h1>
+      <p class="text-stone-500 text-sm mt-1">
+        {{ tune_set.members | length }} tune{% if tune_set.members | length != 1 %}s{% endif %}
+        {% if tune_set.source %} &middot; {{ tune_set.source }}{% endif %}
+        {% if tune_set.flow_difficulty %} &middot; Flow {{ tune_set.flow_difficulty }}/5{% endif %}
+      </p>
+    </div>
+    <a href="/sets/{{ tune_set.id }}/edit"
+       class="shrink-0 border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
+      Edit
+    </a>
+  </div>
+
+  {% if tune_set.description %}
+  <div class="bg-white rounded-lg shadow-sm px-5 py-4 mb-6">
+    <p class="text-sm text-stone-700">{{ tune_set.description }}</p>
+  </div>
+  {% endif %}
+
+  {# ── Score ─────────────────────────────────────────────────────────────────── #}
+  <section class="mb-6">
+    <div class="bg-white rounded-lg shadow-sm p-4">
+      <div id="abc-render" class="mb-4 overflow-x-auto"></div>
+
+      <div class="flex items-center gap-4 flex-wrap border-t border-stone-100 pt-3">
+        <button id="abc-play" type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed">
+          &#9654; Play
+        </button>
+        <button id="metro-play" type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+          &#9834; Metro
+        </button>
+        <div class="flex items-center gap-2">
+          <label for="abc-tempo" class="text-sm text-stone-500 select-none">Speed</label>
+          <input id="abc-tempo" type="range" min="40" max="250" value="100" step="5"
+                 class="w-28 accent-stone-600 cursor-pointer">
+          <span id="abc-tempo-label" class="text-sm text-stone-500 w-16">100 bpm</span>
+        </div>
+        <div id="drone-controls" class="hidden flex items-center gap-1.5">
+          <button id="drone-prev" type="button"
+                  class="hidden px-2 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+            &#9664;
+          </button>
+          <span id="drone-key" class="text-sm font-medium text-stone-600 w-8 text-center select-none"></span>
+          <button id="drone-next" type="button"
+                  class="hidden px-2 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+            &#9654;
+          </button>
+          <button id="drone-play" type="button"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+            &#9834; Drone
+          </button>
+        </div>
+      </div>
+    </div>
+    <template id="abc-source">{{ set_abc }}</template>
+    <div id="abc-audio" hidden></div>
+  </section>
+
+  {# ── Per-member run-through controls ──────────────────────────────────────── #}
+  <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-base font-semibold text-stone-700">Run Through</h2>
+      <div class="flex gap-2">
+        <button id="set-show-all" type="button"
+                class="text-xs px-3 py-1 rounded border border-stone-300 text-stone-500 hover:bg-stone-50">
+          Show All
+        </button>
+        <button id="set-next" type="button"
+                class="text-xs px-3 py-1 rounded border border-stone-300 text-stone-600 hover:bg-stone-50 font-medium">
+          &#9654; Next
+        </button>
+      </div>
+    </div>
+
+    <div class="space-y-2" id="set-member-controls">
+      {% for m in members_display %}
+      <div class="flex items-center gap-3 px-3 py-2 rounded-lg border border-stone-100"
+           id="member-row-{{ loop.index0 }}">
+        <span class="w-5 text-xs text-stone-400 text-center select-none shrink-0">{{ loop.index }}</span>
+        <span class="flex-1 text-sm text-stone-800 truncate">{{ m.title }}</span>
+        {% if m.progress %}
+        <span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-500">{{ m.progress | replace('_', ' ') }}</span>
+        {% endif %}
+        <button type="button"
+                id="member-bars-{{ loop.index0 }}"
+                class="shrink-0 text-xs px-2 py-1 rounded border border-stone-200 text-stone-600 hover:bg-stone-50 w-16 text-center">
+          —
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.__cairnSetId      = {{ tune_set.id }};
+  window.__cairnSetMembers = {{ members_json | safe }};
+  {% if last_tempo %}window.__cairnLastTempo = {{ last_tempo }};{% endif %}
+  {% if box_id %}window.__cairnBoxId = {{ box_id }};{% endif %}
+  window.initSetTools({{ set_abc | tojson }});
+</script>
+{% endblock %}
