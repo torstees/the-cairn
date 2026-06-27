@@ -81,10 +81,18 @@ async def plan_form(
         lists_by_box.setdefault(pl.box_id, []).append(
             {"id": pl.id, "name": pl.name, "type_label": pl.list_type.label}
         )
+    default_box_id = (
+        active_list.box_id if active_list else (boxes[0].id if boxes else None)
+    )
     return templates.TemplateResponse(
         request,
         "practice/plan.html",
-        {"boxes": boxes, "active_list": active_list, "lists_by_box": lists_by_box},
+        {
+            "boxes": boxes,
+            "active_list": active_list,
+            "lists_by_box": lists_by_box,
+            "default_box_id": default_box_id,
+        },
     )
 
 

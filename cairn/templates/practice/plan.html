@@ -20,10 +20,10 @@
   {% else %}
   <form method="post" action="/practice/plan" class="bg-white rounded-lg shadow-sm p-6 space-y-5"
         x-data="{
-          boxId: {{ boxes[0].id }},
+          boxId: {{ default_box_id }},
           listsByBox: {{ lists_by_box | tojson }},
           listId: '{{ active_list.id if active_list else '' }}',
-          get lists() { return this.listsByBox[this.boxId] || []; }
+          get lists() { return this.listsByBox[String(this.boxId)] || []; }
         }"
         x-init="if (!lists.find(l => l.id == listId)) listId = ''">
 
@@ -33,7 +33,7 @@
               @change="if (!lists.find(l => l.id == listId)) listId = ''"
               class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
         {% for box in boxes %}
-        <option value="{{ box.id }}">{{ box.name }}</option>
+        <option value="{{ box.id }}" {% if box.id == default_box_id %}selected{% endif %}>{{ box.name }}</option>
         {% endfor %}
       </select>
     </div>
