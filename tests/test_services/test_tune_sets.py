@@ -345,7 +345,7 @@ def test_build_set_abc_member_produces_x_block() -> None:
     assert "T:The Morning Dew" in result
 
 
-def test_build_set_abc_two_members_sequential_x() -> None:
+def test_build_set_abc_two_members_compact() -> None:
     tune1 = _make_tune("Tune A")
     tune2 = _make_tune("Tune B")
     s1 = _make_setting()
@@ -366,7 +366,9 @@ def test_build_set_abc_two_members_sequential_x() -> None:
     s.members = [m1, m2]
     result = build_set_abc(s)
     assert "X:1" in result
-    assert "X:2" in result
+    assert "X:2" not in result
+    assert "T:Tune A" in result
+    assert "T:Tune B" in result
 
 
 def test_build_set_abc_member_uses_pinned_setting() -> None:
