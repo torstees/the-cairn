@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
 from cairn.models import ProgressStatus, StudentProgress, TuneSetting
-from cairn.services.abc_utils import build_abc, build_set_abc, truncate_to_bars
+from cairn.services.abc_utils import build_set_abc
 from cairn.services.boxes import get_box
 from cairn.services.tune_sets import (
     create_set,
@@ -202,7 +202,13 @@ async def set_detail(
 
     box = await get_box(db, box_id) if box_id is not None else None
     last_tempo = await get_set_tempo(db, _STUB_USER_ID, box_id, set_id) if box_id else None
-    set_abc = build_set_abc(tune_set, box=box)
+
+    # Pre-build three variants of the set ABC server-side (compact single-X:1
+    # format that ABCJS renders reliably), rather than combining per-member
+    # individual X: blocks in JS.
+    set_abc_full = build_set_abc(tune_set, box=box)
+    set_abc_8 = build_set_abc(tune_set, box=box, n_bars=8)
+    set_abc_2 = build_set_abc(tune_set, box=box, n_bars=2)
 
     # Progress lookup for default bar counts
     tune_ids = [m.tune_id for m in tune_set.members]
@@ -225,18 +231,10 @@ async def set_detail(
             setting = next((s for s in tune.settings if s.is_core), None)
             if setting is None and tune.settings:
                 setting = tune.settings[0]
-        if setting is None:
-            members_display.append({"title": tune.title, "has_abc": False, "progress": None})
-            continue
-
-        full_abc = build_abc(tune, setting)
         status = progress_map.get(tune.id)
         members_display.append({
             "title": tune.title,
-            "has_abc": True,
-            "full": full_abc,
-            "bars_8": truncate_to_bars(full_abc, 8),
-            "bars_2": truncate_to_bars(full_abc, 2),
+            "has_abc": setting is not None,
             "progress": status.value if status else None,
             "default_bars": _bars_from_progress(status),
         })
@@ -246,7 +244,9 @@ async def set_detail(
         "sets/detail.html",
         {
             "tune_set": tune_set,
-            "set_abc": set_abc,
+            "set_abc_full": set_abc_full,
+            "set_abc_8": set_abc_8,
+            "set_abc_2": set_abc_2,
             "members_display": members_display,
             "members_json": json.dumps(members_display),
             "box_id": box_id,

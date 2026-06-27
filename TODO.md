@@ -634,7 +634,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   **Index (`sets/index.html`):**
   Table or card list: title, member count, flow_difficulty badge, edit link.
 
-- [ ] **6b.4 — TuneSet detail/read page**
+- [x] **6b.4 — TuneSet detail/read page**
   Route: `GET /sets/{id}` → `sets/detail.html`.
   The route handler calls `build_set_abc(tune_set, box=active_box)` where
   `active_box` is looked up via the stub user's active TuneBox (may be None).

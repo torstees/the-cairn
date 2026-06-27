@@ -879,31 +879,27 @@
   }
 
   // Initialise the set detail page: score render, metro, play, drone, and
-  // per-member bars-to-show controls. Each tune in the combined score can be
-  // limited to 2 bars, 8 bars, or Full independently, so the player can
-  // avoid seeing more notation than they need ("spoiler guard").
-  function initSetTools(setAbc) {
+  // a global bars-to-show cycling control that limits all tunes uniformly.
+  // The three set ABC variants are pre-built server-side in compact format
+  // (single X:1 block with T: continuations) so ABCJS renders all tunes.
+  function initSetTools() {
     var members = window.__cairnSetMembers || [];
-    // Track current bar setting per member; null means no ABC available.
-    var memberBars = members.map(function (m) { return m.has_abc ? m.default_bars : null; });
 
-    // Build a combined multi-tune ABC from individual member ABCs, each
-    // limited to its current bar setting. Returns separate X: blocks
-    // (no file-level header) so ABCJS renders all tunes correctly.
-    function buildCombinedAbc() {
-      var parts = [];
-      members.forEach(function (m, i) {
-        if (!m.has_abc) return;
-        var abc = memberBars[i] === "2" ? m.bars_2 : memberBars[i] === "8" ? m.bars_8 : m.full;
-        // Renumber X: so indices are sequential regardless of source numbering.
-        abc = abc.replace(/^X:\d+/m, "X:" + (parts.length + 1));
-        parts.push(abc.trim());
-      });
-      return parts.length ? parts.join("\n\n") : (setAbc || "");
+    // Seed barsMode from the most restrictive default across members with ABC.
+    var barsOrder = { "2": 0, "8": 1, "full": 2 };
+    var barsMode = members.reduce(function (best, m) {
+      if (!m.has_abc) return best;
+      return barsOrder[m.default_bars] < barsOrder[best] ? m.default_bars : best;
+    }, "full");
+
+    function getSetAbc() {
+      if (barsMode === "2") return window.__cairnSetAbc2 || window.__cairnSetAbcFull || "";
+      if (barsMode === "8") return window.__cairnSetAbc8 || window.__cairnSetAbcFull || "";
+      return window.__cairnSetAbcFull || "";
     }
 
     function renderCombined() {
-      currentAbcString = buildCombinedAbc();
+      currentAbcString = getSetAbc();
       var disp = currentAbcString.replace(/^Q:[^\n]*\n?/gm, "");
       visualObj = ABCJS.renderAbc("abc-render", disp, RENDER_OPTS);
       updateDroneDisplay();
@@ -961,26 +957,20 @@
       });
     }
 
-    // ── Per-member bars controls ───────────────────────────────────────────────
+    // ── Global bars-to-show cycling control ───────────────────────────────────
     function barLabel(bars) {
       return bars === "2" ? "2 bars" : bars === "8" ? "8 bars" : "Full";
     }
 
-    members.forEach(function (m, idx) {
-      if (!m.has_abc) return;
-      var btn = document.getElementById("member-bars-" + idx);
-      if (!btn) return;
-      var short = m.title.length > 20 ? m.title.slice(0, 19) + "…" : m.title;
-      function updateBtn() {
-        btn.textContent = short + " · " + barLabel(memberBars[idx]);
-      }
-      updateBtn();
-      btn.addEventListener("click", function () {
-        memberBars[idx] = memberBars[idx] === "2" ? "8" : memberBars[idx] === "8" ? "full" : "2";
-        updateBtn();
+    var barsBtn = document.getElementById("set-bars-toggle");
+    if (barsBtn) {
+      barsBtn.textContent = "Bars: " + barLabel(barsMode);
+      barsBtn.addEventListener("click", function () {
+        barsMode = barsMode === "2" ? "8" : barsMode === "8" ? "full" : "2";
+        barsBtn.textContent = "Bars: " + barLabel(barsMode);
         renderCombined();
       });
-    });
+    }
   }
 
   // Initialise play, metronome, and drone on the warmup detail page.

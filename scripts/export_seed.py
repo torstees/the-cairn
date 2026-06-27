@@ -7,16 +7,16 @@ Files written:
   seeds/warmups.json  — WarmupItem + WarmupInstrument
   seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry
   seeds/lists.json    — PracticeList + TuneListEntry
+  seeds/sets.json     — TuneSet + TuneSetMember
 
-Cross-references (box entries, list entries) use stable human-readable keys
-(tune title, setting label, box name) so seeds survive a fresh database.
+Cross-references (box entries, list entries, set members) use stable
+human-readable keys (tune title, setting label, box name) so seeds survive
+a fresh database.
 
 Usage:
     uv run python scripts/export_seed.py [seeds_dir]
     Defaults to seeds/ relative to the project root.
     Also: make export-seed
-
-Note: TuneSet export will be added after task 6b.1 is implemented.
 """
 
 import asyncio
@@ -30,7 +30,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from cairn.database import AsyncSessionLocal
-from cairn.models import PracticeList, TuneBox, TuneBoxEntry, TuneListEntry, WarmupItem
+from cairn.models import PracticeList, TuneBox, TuneBoxEntry, TuneListEntry, TuneSet, TuneSetMember, WarmupItem
 from cairn.services.tunes import list_tunes
 from cairn.services.warmups import list_warmups
 
@@ -165,18 +165,52 @@ async def export_lists(db, out_dir: Path) -> int:
     return len(records)
 
 
+async def export_sets(db, out_dir: Path) -> int:
+    result = await db.execute(
+        select(TuneSet)
+        .options(
+            selectinload(TuneSet.members).selectinload(TuneSetMember.tune),
+            selectinload(TuneSet.members).selectinload(TuneSetMember.setting),
+        )
+        .order_by(TuneSet.title)
+    )
+    sets = list(result.scalars().all())
+    records = [
+        {
+            "title": s.title,
+            "description": s.description,
+            "source": s.source,
+            "abc_header": s.abc_header,
+            "flow_difficulty": s.flow_difficulty,
+            "flow_difficulty_notes": s.flow_difficulty_notes,
+            "members": [
+                {
+                    "tune_title": m.tune.title,
+                    "setting_label": m.setting.label if m.setting else None,
+                }
+                for m in s.members
+            ],
+        }
+        for s in sets
+    ]
+    _write(out_dir / "sets.json", records)
+    return len(records)
+
+
 async def main(out_dir: Path) -> None:
     async with AsyncSessionLocal() as db:
         n_tunes = await export_tunes(db, out_dir)
         n_warmups = await export_warmups(db, out_dir)
         n_boxes = await export_boxes(db, out_dir)
         n_lists = await export_lists(db, out_dir)
+        n_sets = await export_sets(db, out_dir)
 
     print(f"Exported to {out_dir}/")
     print(f"  {n_tunes:>4} tunes")
     print(f"  {n_warmups:>4} warmups")
     print(f"  {n_boxes:>4} boxes")
     print(f"  {n_lists:>4} lists")
+    print(f"  {n_sets:>4} sets")
 
 
 if __name__ == "__main__":
