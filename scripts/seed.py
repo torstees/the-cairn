@@ -7,6 +7,7 @@ Files read (if present, processed in dependency order):
   seeds/warmups.json  — WarmupItem + WarmupInstrument
   seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry
   seeds/lists.json    — PracticeList + TuneListEntry
+  seeds/sets.json     — TuneSet + TuneSetMember
 
 Missing files are skipped with a notice. Existing records are skipped by
 natural key (safe to re-run). Cross-references are resolved by title / label /
@@ -16,8 +17,6 @@ Usage:
     uv run python scripts/seed.py [seeds_dir]
     Defaults to seeds/ relative to the project root.
     Also: make seed
-
-Note: TuneSet seeding will be added after task 6b.1 is implemented.
 """
 
 import asyncio
@@ -44,6 +43,8 @@ from cairn.models import (
     TuneBoxEntry,
     TuneBoxInstrument,
     TuneListEntry,
+    TuneSet,
+    TuneSetMember,
     TuneSetting,
     TuneType,
     WarmupInstrument,
@@ -276,6 +277,45 @@ async def seed_lists(db, records: list) -> tuple[int, int, int]:
     return loaded, skipped, errors
 
 
+async def seed_sets(db, records: list) -> tuple[int, int, int]:
+    loaded = skipped = errors = 0
+    for rec in records:
+        title = rec["title"]
+        if (
+            await db.execute(select(TuneSet.id).where(TuneSet.title == title))
+        ).scalar_one_or_none() is not None:
+            skipped += 1
+            continue
+        try:
+            tune_set = TuneSet(
+                title=title,
+                description=rec.get("description"),
+                source=rec.get("source"),
+                abc_header=rec.get("abc_header"),
+                flow_difficulty=rec.get("flow_difficulty"),
+                flow_difficulty_notes=rec.get("flow_difficulty_notes"),
+            )
+            db.add(tune_set)
+            await db.flush()
+            entry_warns = 0
+            for order, member_rec in enumerate(rec.get("members", [])):
+                tune_id = await _resolve_tune_id(db, member_rec["tune_title"])
+                if tune_id is None:
+                    print(f"    WARN tune not found: {member_rec['tune_title']!r}")
+                    entry_warns += 1
+                    continue
+                setting_id = await _resolve_setting_id(db, tune_id, member_rec.get("setting_label"))
+                db.add(TuneSetMember(set_id=tune_set.id, tune_id=tune_id, setting_id=setting_id, order=order))
+            await db.commit()
+            suffix = f" ({entry_warns} member warnings)" if entry_warns else ""
+            print(f"  OK{suffix}  {title!r}")
+            loaded += 1
+        except Exception as exc:
+            print(f"  ERR {title!r} — {exc}")
+            errors += 1
+    return loaded, skipped, errors
+
+
 async def main(seeds_dir: Path) -> None:
     total_loaded = total_skipped = total_errors = 0
 
@@ -284,6 +324,7 @@ async def main(seeds_dir: Path) -> None:
         ("warmups", "warmups.json", seed_warmups),
         ("boxes", "boxes.json", seed_boxes),
         ("lists", "lists.json", seed_lists),
+        ("sets", "sets.json", seed_sets),
     ]
 
     async with AsyncSessionLocal() as db:
