@@ -109,13 +109,17 @@ def build_abc(tune: Tune, setting: TuneSetting, x: int = 1) -> str:
     return "\n".join(headers + music_lines) + "\n"
 
 
-def build_set_abc(tune_set: TuneSet, box: TuneBox | None = None) -> str:
+def build_set_abc(
+    tune_set: TuneSet, box: TuneBox | None = None, n_bars: int | None = None
+) -> str:
     """Assemble a multi-tune ABC string for a TuneSet.
 
     A file-header block (T:, S:, G: plus any user-supplied abc_header lines)
     precedes the individual X: sections produced by build_abc() for each member.
     User-supplied lines that share a letter with an auto-header replace that
     header; other user-supplied lines are appended after the auto-headers.
+
+    If n_bars is given, each member's music body is truncated to that many bars.
     """
     auto: dict[str, str] = {}
     auto["T"] = f"T:{tune_set.title}"
@@ -154,7 +158,10 @@ def build_set_abc(tune_set: TuneSet, box: TuneBox | None = None) -> str:
         return file_header + "\n"
 
     first_tune, first_setting = resolved[0]
-    sections: list[str] = [build_abc(first_tune, first_setting, x=1).rstrip("\n")]
+    first_abc = build_abc(first_tune, first_setting, x=1)
+    if n_bars is not None:
+        first_abc = truncate_to_bars(first_abc, n_bars)
+    sections: list[str] = [first_abc.rstrip("\n")]
 
     prev_key = f"{first_tune.key_root.value}{_ABC_MODE_SUFFIX[first_tune.key_mode.value]}"
     prev_time = first_tune.time_signature
@@ -168,6 +175,15 @@ def build_set_abc(tune_set: TuneSet, box: TuneBox | None = None) -> str:
             music_lines.pop()
 
         current_key = f"{tune.key_root.value}{_ABC_MODE_SUFFIX[tune.key_mode.value]}"
+
+        if n_bars is not None:
+            mini = f"K:{current_key}\n" + "\n".join(music_lines)
+            mini = truncate_to_bars(mini, n_bars)
+            k_match = re.search(r"^K:.*$", mini, re.MULTILINE)
+            if k_match:
+                body = mini[k_match.end():]
+                music_lines = [l for l in body.splitlines() if l.strip()]
+
         compact: list[str] = [f"T:{tune.title}"]
         if tune.tune_type.value != prev_type:
             compact.append(f"R:{tune.tune_type.value}")

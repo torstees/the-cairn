@@ -32,21 +32,6 @@
 
       <div id="abc-render" class="mb-4 overflow-x-auto"></div>
 
-      {# Per-member bars controls — limit how much of each tune is visible #}
-      {% set has_any_abc = members_display | selectattr('has_abc') | list | length > 0 %}
-      {% if has_any_abc %}
-      <div class="mb-3 pb-3 border-b border-stone-100">
-        <p class="text-xs text-stone-400 mb-2 select-none">Bars visible per tune &mdash; click to cycle</p>
-        <div class="flex flex-wrap gap-2">
-          {% for m in members_display %}{% if m.has_abc %}
-          <button id="member-bars-{{ loop.index0 }}" type="button"
-                  class="text-xs px-2.5 py-1 rounded border border-stone-200 text-stone-600 hover:bg-stone-50 font-mono">
-          </button>
-          {% endif %}{% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
       <div class="flex items-center gap-4 flex-wrap">
         <button id="abc-play" type="button"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed">
@@ -56,6 +41,12 @@
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
           &#9834; Metro
         </button>
+        {% if members_display | selectattr('has_abc') | list %}
+        <button id="set-bars-toggle" type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
+          Bars: —
+        </button>
+        {% endif %}
         <div class="flex items-center gap-2">
           <label for="abc-tempo" class="text-sm text-stone-500 select-none">Speed</label>
           <input id="abc-tempo" type="range" min="40" max="250" value="100" step="5"
@@ -110,8 +101,11 @@
 <script>
   window.__cairnSetId      = {{ tune_set.id }};
   window.__cairnSetMembers = {{ members_json | safe }};
+  window.__cairnSetAbcFull = {{ set_abc_full | tojson }};
+  window.__cairnSetAbc8    = {{ set_abc_8 | tojson }};
+  window.__cairnSetAbc2    = {{ set_abc_2 | tojson }};
   {% if last_tempo %}window.__cairnLastTempo = {{ last_tempo }};{% endif %}
   {% if box_id %}window.__cairnBoxId = {{ box_id }};{% endif %}
-  window.initSetTools({{ set_abc | tojson }});
+  window.initSetTools();
 </script>
 {% endblock %}
