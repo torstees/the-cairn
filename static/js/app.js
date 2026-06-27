@@ -878,6 +878,111 @@
     return { update: updatePreview };
   }
 
+  // Initialise the set detail page: score render, metro, play, drone, and
+  // per-member bars-to-show controls. Each tune in the combined score can be
+  // limited to 2 bars, 8 bars, or Full independently, so the player can
+  // avoid seeing more notation than they need ("spoiler guard").
+  function initSetTools(setAbc) {
+    var members = window.__cairnSetMembers || [];
+    // Track current bar setting per member; null means no ABC available.
+    var memberBars = members.map(function (m) { return m.has_abc ? m.default_bars : null; });
+
+    // Build a combined multi-tune ABC from individual member ABCs, each
+    // limited to its current bar setting. Returns separate X: blocks
+    // (no file-level header) so ABCJS renders all tunes correctly.
+    function buildCombinedAbc() {
+      var parts = [];
+      members.forEach(function (m, i) {
+        if (!m.has_abc) return;
+        var abc = memberBars[i] === "2" ? m.bars_2 : memberBars[i] === "8" ? m.bars_8 : m.full;
+        // Renumber X: so indices are sequential regardless of source numbering.
+        abc = abc.replace(/^X:\d+/m, "X:" + (parts.length + 1));
+        parts.push(abc.trim());
+      });
+      return parts.length ? parts.join("\n\n") : (setAbc || "");
+    }
+
+    function renderCombined() {
+      currentAbcString = buildCombinedAbc();
+      var disp = currentAbcString.replace(/^Q:[^\n]*\n?/gm, "");
+      visualObj = ABCJS.renderAbc("abc-render", disp, RENDER_OPTS);
+      updateDroneDisplay();
+    }
+
+    renderCombined();
+    initDrone();
+
+    var playBtn     = document.getElementById("abc-play");
+    var tempoSlider = document.getElementById("abc-tempo");
+    var tempoLabel  = document.getElementById("abc-tempo-label");
+
+    naturalBpm = extractBpm(currentAbcString);
+    var seedBpm = window.__cairnLastTempo || naturalBpm || 100;
+    if (tempoSlider) tempoSlider.value = seedBpm;
+    if (tempoLabel)  tempoLabel.textContent = seedBpm + " bpm";
+
+    if (tempoSlider && tempoLabel) {
+      tempoSlider.addEventListener("input", function () {
+        tempoLabel.textContent = this.value + " bpm";
+        if (activeSynth) { activeSynth.stop(); teardownAudio(); if (playBtn) playBtn.textContent = "▶ Play"; }
+      });
+    }
+
+    if (playBtn) {
+      if (!ABCJS.synth.supportsAudio()) {
+        playBtn.disabled = true;
+        playBtn.title = "Audio is not supported in this browser";
+      } else {
+        playBtn.addEventListener("click", handlePlayStop);
+      }
+    }
+
+    var metroBtn = document.getElementById("metro-play");
+    if (metroBtn) {
+      metroBtn.addEventListener("click", function () {
+        var bpm = tempoSlider ? parseInt(tempoSlider.value, 10) : 100;
+        if (metroTimer) {
+          var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
+          var minDuration = (4 * 4 / bpm) * 60;
+          var shouldRecord = elapsed >= minDuration && window.__cairnSetId && window.__cairnBoxId;
+          stopMetronome();
+          metroBtn.textContent = "♩ Metro";
+          if (shouldRecord) {
+            var params = new URLSearchParams();
+            params.append("tempo", bpm);
+            params.append("box_id", window.__cairnBoxId);
+            fetch("/sets/" + window.__cairnSetId + "/tempo", { method: "POST", body: params })
+              .catch(function () {});
+          }
+        } else {
+          startMetronome(bpm);
+          metroBtn.textContent = "■ Metro";
+        }
+      });
+    }
+
+    // ── Per-member bars controls ───────────────────────────────────────────────
+    function barLabel(bars) {
+      return bars === "2" ? "2 bars" : bars === "8" ? "8 bars" : "Full";
+    }
+
+    members.forEach(function (m, idx) {
+      if (!m.has_abc) return;
+      var btn = document.getElementById("member-bars-" + idx);
+      if (!btn) return;
+      var short = m.title.length > 20 ? m.title.slice(0, 19) + "…" : m.title;
+      function updateBtn() {
+        btn.textContent = short + " · " + barLabel(memberBars[idx]);
+      }
+      updateBtn();
+      btn.addEventListener("click", function () {
+        memberBars[idx] = memberBars[idx] === "2" ? "8" : memberBars[idx] === "8" ? "full" : "2";
+        updateBtn();
+        renderCombined();
+      });
+    });
+  }
+
   // Initialise play, metronome, and drone on the warmup detail page.
   function initWarmupTools(abcString) {
     currentAbcString = abcString || "";
@@ -1098,6 +1203,7 @@
   window.selectSetting = selectSetting;
   window.initSettingPreview = initSettingPreview;
   window.initWarmupPreview = initWarmupPreview;
+  window.initSetTools    = initSetTools;
   window.initWarmupTools = initWarmupTools;
   window.cairnApp = cairnApp;
   window.tunerToggle = tunerToggle;

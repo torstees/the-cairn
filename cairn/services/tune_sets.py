@@ -1,8 +1,9 @@
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Tune, TuneBox, TuneBoxSetEntry, TuneSet, TuneSetMember
+from cairn.models import Tune, TuneBox, TuneBoxSetEntry, TuneSet, TuneSetMember, TuneSetTempo
 
 
 def _deep_load():
@@ -107,6 +108,32 @@ async def set_members(
         )
     await db.commit()
     return await get_set(db, set_id)
+
+
+async def get_set_tempo(db: AsyncSession, user_id: int, box_id: int, set_id: int) -> int | None:
+    result = await db.execute(
+        select(TuneSetTempo.tempo).where(
+            TuneSetTempo.user_id == user_id,
+            TuneSetTempo.box_id == box_id,
+            TuneSetTempo.set_id == set_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def upsert_set_tempo(
+    db: AsyncSession, user_id: int, box_id: int, set_id: int, tempo: int
+) -> None:
+    stmt = (
+        sqlite_insert(TuneSetTempo)
+        .values(user_id=user_id, box_id=box_id, set_id=set_id, tempo=tempo)
+        .on_conflict_do_update(
+            index_elements=["user_id", "box_id", "set_id"],
+            set_={"tempo": tempo},
+        )
+    )
+    await db.execute(stmt)
+    await db.commit()
 
 
 async def add_box_set(db: AsyncSession, box_id: int, set_id: int) -> TuneBoxSetEntry:

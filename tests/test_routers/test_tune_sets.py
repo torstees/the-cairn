@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, TuneType
 from cairn.schemas import TuneCreate
-from cairn.services.tune_sets import create_set, get_set, set_members
+from cairn.services.tune_sets import create_set, get_set, get_set_tempo, set_members
 from cairn.services.tunes import create_tune
 
 
@@ -215,3 +215,61 @@ async def test_set_index_shows_flow_difficulty(client: AsyncClient, db: AsyncSes
     resp = await client.get("/sets")
     assert resp.status_code == 200
     assert "Flow 5/5" in resp.text
+
+
+# ── detail ────────────────────────────────────────────────────────────────────
+
+
+async def test_set_detail_renders(client: AsyncClient, db: AsyncSession) -> None:
+    s = await _set(db, "Evening Reels")
+    resp = await client.get(f"/sets/{s.id}")
+    assert resp.status_code == 200
+    assert "Evening Reels" in resp.text
+
+
+async def test_set_detail_404(client: AsyncClient) -> None:
+    resp = await client.get("/sets/9999")
+    assert resp.status_code == 404
+
+
+async def test_set_detail_with_members_shows_bar_controls(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    t = await _tune(db, "The Foxhunter's")
+    s = await _set(db, "Reel Set")
+    members_json = json.dumps([{"tune_id": t.id, "setting_id": None}])
+    await client.post(f"/sets/{s.id}", data={"title": "Reel Set", "members": members_json})
+    resp = await client.get(f"/sets/{s.id}")
+    assert resp.status_code == 200
+    assert "Bars visible per tune" in resp.text
+    assert "The Foxhunter's" in resp.text
+
+
+async def test_set_detail_shows_set_abc(client: AsyncClient, db: AsyncSession) -> None:
+    t = await _tune(db)
+    s = await _set(db)
+    members_json = json.dumps([{"tune_id": t.id, "setting_id": None}])
+    await client.post(f"/sets/{s.id}", data={"title": s.title, "members": members_json})
+    resp = await client.get(f"/sets/{s.id}")
+    assert resp.status_code == 200
+    assert "initSetTools" in resp.text
+    assert "X:1" in resp.text
+
+
+# ── tempo recording ────────────────────────────────────────────────────────────
+
+
+async def test_set_tempo_record(client: AsyncClient, db: AsyncSession) -> None:
+    s = await _set(db)
+    resp = await client.post(f"/sets/{s.id}/tempo", data={"tempo": "92", "box_id": "1"})
+    assert resp.status_code == 204
+    stored = await get_set_tempo(db, 1, 1, s.id)
+    assert stored == 92
+
+
+async def test_set_tempo_upsert(client: AsyncClient, db: AsyncSession) -> None:
+    s = await _set(db)
+    await client.post(f"/sets/{s.id}/tempo", data={"tempo": "80", "box_id": "1"})
+    await client.post(f"/sets/{s.id}/tempo", data={"tempo": "100", "box_id": "1"})
+    stored = await get_set_tempo(db, 1, 1, s.id)
+    assert stored == 100
