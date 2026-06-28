@@ -148,11 +148,14 @@ async def test_item_rate_404_for_wrong_session(client: AsyncClient, db: AsyncSes
 
 async def test_plan_form_shows_lists_for_box(client: AsyncClient, db: AsyncSession) -> None:
     _, box, _, _ = await _seed(db)
-    await create_list(db, _STUB_USER_ID, box.id, "Woodshed", PracticeListType.woodshed)
+    pl = await create_list(db, _STUB_USER_ID, box.id, "Woodshed", PracticeListType.woodshed)
     resp = await client.get("/practice/plan")
     assert resp.status_code == 200
-    assert "Woodshed" in resp.text
     assert "Active List" in resp.text
+    # list data must be in the global, not buried in an HTML-attribute (double-quote breakage)
+    assert "__cairnListsByBox" in resp.text
+    assert "Woodshed" in resp.text
+    assert str(pl.id) in resp.text
 
 
 async def test_plan_create_activates_list(client: AsyncClient, db: AsyncSession) -> None:
