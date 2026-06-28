@@ -21,9 +21,8 @@
   <form method="post" action="/practice/plan" class="bg-white rounded-lg shadow-sm p-6 space-y-5"
         x-data="{
           boxId: {{ default_box_id }},
-          listsByBox: {{ lists_by_box | tojson }},
           listId: '{{ active_list.id if active_list else '' }}',
-          get lists() { return this.listsByBox[String(this.boxId)] || []; }
+          get lists() { return (window.__cairnListsByBox || {})[String(this.boxId)] || []; }
         }"
         x-init="if (!lists.find(l => l.id == listId)) listId = ''">
 
@@ -63,4 +62,10 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.__cairnListsByBox = {{ lists_by_box | tojson }};
+</script>
 {% endblock %}
