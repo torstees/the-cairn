@@ -38,7 +38,16 @@
       <table class="w-full text-sm">
         <thead class="bg-stone-50 border-b border-stone-200">
           <tr>
-            <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Tune</th>
+            <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
+              <button onclick="sortListTable('title')" class="flex items-center gap-1 hover:text-stone-700">
+                Tune <span id="sort-icon-title" class="text-stone-300">↕</span>
+              </button>
+            </th>
+            <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
+              <button onclick="sortListTable('type')" class="flex items-center gap-1 hover:text-stone-700">
+                Type <span id="sort-icon-type" class="text-stone-300">↕</span>
+              </button>
+            </th>
             <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Setting</th>
             <th class="py-2 px-4"></th>
           </tr>
@@ -59,11 +68,12 @@
   {# ── Add tune ───────────────────────────────────────────────────────────── #}
   {% if addable_tunes %}
   <script>
-    window.__cairnAddableTunes = {{ addable_tunes_json | safe }};
-    window.__cairnSettings     = {{ settings_by_tune_id | safe }};
-    window.__cairnBoxSettings  = {{ box_setting_by_tune_id | safe }};
-    window.__cairnBoxTuneIds   = new Set({{ box_tune_ids_json | safe }});
-    window.__cairnBoxName      = {{ box_name | tojson }};
+    window.__cairnAddableTunes  = {{ addable_tunes_json | safe }};
+    window.__cairnSettings      = {{ settings_by_tune_id | safe }};
+    window.__cairnBoxSettings   = {{ box_setting_by_tune_id | safe }};
+    window.__cairnBoxTuneIds    = new Set({{ box_tune_ids_json | safe }});
+    window.__cairnBoxName       = {{ box_name | tojson }};
+    window.__cairnFamilyForType = {{ family_for_type | tojson }};
   </script>
   <section x-data="{
              tunes: window.__cairnAddableTunes || [],
@@ -72,14 +82,20 @@
              selectedSettingId: '',
              open: false,
              boxOnly: true,
+             activeFamily: '',
+             activeType: '',
              showModal: false,
              dontAskAgain: false,
              get pref() { return localStorage.getItem('cairn-box-add-pref') || 'ask'; },
              setPref(v) { localStorage.setItem('cairn-box-add-pref', v); },
+             setFamily(f) { this.activeFamily = this.activeFamily === f ? '' : f; this.activeType = ''; },
+             setType(t)   { this.activeType   = this.activeType   === t ? '' : t; this.activeFamily = ''; },
              get filtered() {
                const q = this.query.toLowerCase();
                let list = q ? this.tunes.filter(t => t.label.toLowerCase().includes(q)) : this.tunes;
-               if (this.boxOnly) list = list.filter(t => window.__cairnBoxTuneIds.has(t.id));
+               if (this.boxOnly)      list = list.filter(t => window.__cairnBoxTuneIds.has(t.id));
+               if (this.activeFamily) list = list.filter(t => t.family === this.activeFamily);
+               if (this.activeType)   list = list.filter(t => t.type   === this.activeType);
                return list.slice(0, 50);
              },
              get availableSettings() { return window.__cairnSettings[this.selectedId] || []; },
@@ -146,12 +162,28 @@
              cancelModal() { this.showModal = false; }
            }"
            @cairn-tune-added.window="tunes=tunes.filter(t=>t.id!==$event.detail.id); query=''; selectedId=null; selectedSettingId=''; open=false"
-           @cairn-tune-removed.window="tunes=[...tunes,{id:$event.detail.id,label:$event.detail.label}].sort((a,b)=>a.label.localeCompare(b.label))"
+           @cairn-tune-removed.window="(function(d){ const fm=window.__cairnFamilyForType||{}; tunes=[...tunes,{id:d.id,label:d.label,type:d.type,family:fm[d.type]||'other'}].sort((a,b)=>a.label.localeCompare(b.label)); })($event.detail)"
            @keydown.escape.window="if(showModal) cancelModal()">
     <h2 class="text-xl font-semibold text-stone-700 mb-3">Add a Tune</h2>
-    <div class="bg-white rounded-lg shadow-sm p-4">
+    <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+
+      {# Filter buttons #}
+      <div class="space-y-1.5">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span class="text-xs text-stone-400 w-14 shrink-0">Family</span>
+          <button type="button" @click="activeFamily = ''; activeType = ''"
+                  :class="activeFamily === '' && activeType === '' ? 'bg-stone-700 text-white border-stone-700' : 'border-stone-300 text-stone-600 hover:bg-stone-50'"
+                  class="px-2.5 py-0.5 rounded-full text-xs border transition-colors">All</button>
+          {% for key, label in family_labels.items() %}
+          <button type="button" @click="setFamily('{{ key }}')"
+                  :class="activeFamily === '{{ key }}' ? 'bg-stone-700 text-white border-stone-700' : 'border-stone-300 text-stone-600 hover:bg-stone-50'"
+                  class="px-2.5 py-0.5 rounded-full text-xs border transition-colors">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
       <form @submit.prevent="handleAdd()" class="flex gap-3 items-end flex-wrap">
-        <label class="w-full flex items-center gap-2 text-sm text-stone-600 mb-3 cursor-pointer select-none">
+        <label class="w-full flex items-center gap-2 text-sm text-stone-600 cursor-pointer select-none">
           <input type="checkbox" x-model="boxOnly" class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
           Only in {{ box_name }}?
         </label>
@@ -227,4 +259,26 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var _listSortKey = null, _listSortDir = 1;
+  function sortListTable(key) {
+    if (_listSortKey === key) { _listSortDir *= -1; } else { _listSortKey = key; _listSortDir = 1; }
+    var tbody = document.getElementById('list-entries-body');
+    if (!tbody) return;
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort(function(a, b) {
+      var av = (a.dataset[key] || '').toLowerCase();
+      var bv = (b.dataset[key] || '').toLowerCase();
+      return av < bv ? -_listSortDir : av > bv ? _listSortDir : 0;
+    });
+    rows.forEach(function(r) { tbody.appendChild(r); });
+    ['title', 'type'].forEach(function(k) {
+      var el = document.getElementById('sort-icon-' + k);
+      if (el) el.textContent = k === key ? (_listSortDir > 0 ? '↑' : '↓') : '↕';
+    });
+  }
+</script>
 {% endblock %}
