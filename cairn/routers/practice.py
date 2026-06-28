@@ -9,7 +9,7 @@ from cairn.dependencies import get_db
 from cairn.models import ProgressStatus
 from cairn.services.abc_utils import build_abc, truncate_to_bars
 from cairn.services.boxes import list_boxes
-from cairn.services.lists import get_active_list
+from cairn.services.lists import activate_list, deactivate_list, get_active_list, list_lists
 from cairn.services.session_plan import (
     _load_progress_map,
     bars_for_status,
@@ -75,10 +75,24 @@ async def plan_form(
 ) -> Response:
     boxes = await list_boxes(db, _STUB_USER_ID)
     active_list = await get_active_list(db, _STUB_USER_ID)
+    all_lists = await list_lists(db, _STUB_USER_ID)
+    lists_by_box: dict[int, list[dict]] = {}
+    for pl in all_lists:
+        lists_by_box.setdefault(pl.box_id, []).append(
+            {"id": pl.id, "name": pl.name, "type_label": pl.list_type.label}
+        )
+    default_box_id = (
+        active_list.box_id if active_list else (boxes[0].id if boxes else None)
+    )
     return templates.TemplateResponse(
         request,
         "practice/plan.html",
-        {"boxes": boxes, "active_list": active_list},
+        {
+            "boxes": boxes,
+            "active_list": active_list,
+            "lists_by_box": lists_by_box,
+            "default_box_id": default_box_id,
+        },
     )
 
 
@@ -88,7 +102,12 @@ async def plan_create(
     db: AsyncSession = Depends(get_db),
     box_id: int = Form(...),
     total_minutes: int = Form(...),
+    list_id: str = Form(""),
 ) -> Response:
+    if list_id == "":
+        await deactivate_list(db, _STUB_USER_ID)
+    else:
+        await activate_list(db, _STUB_USER_ID, int(list_id))
     session = await build_session(db, _STUB_USER_ID, box_id, total_minutes)
     logger.info("practice session created", extra={"session_id": session.id, "box_id": box_id})
     return RedirectResponse(f"/practice/session/{session.id}", status_code=303)
