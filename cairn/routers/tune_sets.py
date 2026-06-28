@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import ProgressStatus, StudentProgress, TuneSetting
+from cairn.models import ProgressStatus, StudentProgress, TuneSetting, TuneType
 from cairn.services.abc_utils import build_set_abc
 from cairn.services.boxes import get_box
 from cairn.services.tune_sets import (
@@ -29,6 +29,7 @@ router = APIRouter(prefix="/sets", tags=["sets"])
 
 _STUB_USER_ID = 1
 
+_TUNE_TYPES = list(TuneType)
 _FAMILY_FOR_TYPE: dict[str, str] = {
     t.value: family
     for family, types in TUNE_FAMILIES.items()
@@ -87,6 +88,7 @@ async def _form_context(db: AsyncSession, tune_set=None, error: str | None = Non
         "members_json": json.dumps(members_data),
         "set_abc_json": set_abc_json,
         "family_labels": FAMILY_LABELS,
+        "tune_types": _TUNE_TYPES,
         "error": error,
     }
 
