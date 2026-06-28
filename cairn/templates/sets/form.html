@@ -108,10 +108,19 @@
 
     {# ── Members ─────────────────────────────────────────────────────────────── #}
     <div class="bg-white rounded-lg shadow-sm p-6">
-      <h2 class="text-lg font-semibold text-stone-700 mb-4">
-        Members
-        <span class="text-stone-400 font-normal text-sm" x-text="`(${members.length})`"></span>
-      </h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-stone-700">
+          Members
+          <span class="text-stone-400 font-normal text-sm" x-text="`(${members.length})`"></span>
+        </h2>
+        <div class="flex items-center gap-1.5" x-show="members.length > 1">
+          <span class="text-xs text-stone-400">Sort:</span>
+          <button type="button" @click="sortMembers('title')"
+                  class="px-2 py-0.5 rounded text-xs border border-stone-300 text-stone-600 hover:bg-stone-50">Title</button>
+          <button type="button" @click="sortMembers('type_label')"
+                  class="px-2 py-0.5 rounded text-xs border border-stone-300 text-stone-600 hover:bg-stone-50">Type</button>
+        </div>
+      </div>
 
       {# Drag-to-reorder member list #}
       <div class="space-y-2 mb-5">
@@ -125,6 +134,9 @@
             <span class="text-stone-300 select-none cursor-grab text-lg leading-none">&#9776;</span>
             <span class="w-5 text-xs text-stone-400 text-center select-none" x-text="idx + 1"></span>
             <span class="flex-1 text-sm font-medium text-stone-800 truncate" x-text="member.title"></span>
+            <span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-500"
+                  x-text="member.type_label || ''"
+                  x-show="member.type_label"></span>
             <select class="border border-stone-200 rounded px-2 py-1 text-xs text-stone-600 bg-white
                            focus:outline-none focus:ring-1 focus:ring-stone-400 max-w-40"
                     x-model="members[idx].setting_id">
@@ -144,29 +156,45 @@
         </p>
       </div>
 
-      {# Tune search / add #}
-      <div @click.outside="open=false">
-        <label class="block text-xs font-medium text-stone-500 mb-1">Add Tune</label>
-        <div class="relative">
-          <input type="text"
-                 x-model="query"
-                 @focus="open=true"
-                 @input="open=true"
-                 @keydown.enter.prevent="open && filteredTunes.length && addTune(filteredTunes[0])"
-                 @keydown.escape="open=false"
-                 autocomplete="off"
-                 placeholder="Search tunes…"
-                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-800
-                        focus:outline-none focus:ring-2 focus:ring-stone-400">
-          <ul x-show="open && filteredTunes.length > 0"
-              x-cloak
-              class="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
-            <template x-for="tune in filteredTunes" :key="tune.id">
-              <li @click="addTune(tune)"
-                  class="px-3 py-2 text-sm text-stone-800 hover:bg-stone-100 cursor-pointer"
-                  x-text="tune.label"></li>
-            </template>
-          </ul>
+      {# Add Tune — filter buttons + search #}
+      <div class="space-y-2">
+        <div class="space-y-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-xs text-stone-400 w-14 shrink-0">Family</span>
+            <button type="button" @click="activeFamily = ''; activeType = ''"
+                    :class="activeFamily === '' && activeType === '' ? 'bg-stone-700 text-white border-stone-700' : 'border-stone-300 text-stone-600 hover:bg-stone-50'"
+                    class="px-2.5 py-0.5 rounded-full text-xs border transition-colors">All</button>
+            {% for key, label in family_labels.items() %}
+            <button type="button" @click="setFamily('{{ key }}')"
+                    :class="activeFamily === '{{ key }}' ? 'bg-stone-700 text-white border-stone-700' : 'border-stone-300 text-stone-600 hover:bg-stone-50'"
+                    class="px-2.5 py-0.5 rounded-full text-xs border transition-colors">{{ label }}</button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div @click.outside="open=false">
+          <label class="block text-xs font-medium text-stone-500 mb-1">Add Tune</label>
+          <div class="relative">
+            <input type="text"
+                   x-model="query"
+                   @focus="open=true"
+                   @input="open=true"
+                   @keydown.enter.prevent="open && filteredTunes.length && addTune(filteredTunes[0])"
+                   @keydown.escape="open=false"
+                   autocomplete="off"
+                   placeholder="Search tunes…"
+                   class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-800
+                          focus:outline-none focus:ring-2 focus:ring-stone-400">
+            <ul x-show="open && filteredTunes.length > 0"
+                x-cloak
+                class="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+              <template x-for="tune in filteredTunes" :key="tune.id">
+                <li @click="addTune(tune)"
+                    class="px-3 py-2 text-sm text-stone-800 hover:bg-stone-100 cursor-pointer"
+                    x-text="tune.label"></li>
+              </template>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -194,11 +222,13 @@
 
   function setForm() {
     return {
-      members: (window.__cairnSetMembers || []).map(function(m) { return Object.assign({}, m); }),
-      tunes:   window.__cairnTunes || [],
-      query:   '',
-      open:    false,
-      dragIdx: null,
+      members:      (window.__cairnSetMembers || []).map(function(m) { return Object.assign({}, m); }),
+      tunes:        window.__cairnTunes || [],
+      query:        '',
+      open:         false,
+      dragIdx:      null,
+      activeFamily: '',
+      activeType:   '',
 
       get membersJson() {
         return JSON.stringify(this.members.map(function(m) {
@@ -213,15 +243,28 @@
         var list = q
           ? this.tunes.filter(function(t) { return t.label.toLowerCase().includes(q); })
           : this.tunes;
+        if (this.activeFamily) { var af = this.activeFamily; list = list.filter(function(t) { return t.family === af; }); }
+        if (this.activeType)   { var at = this.activeType;   list = list.filter(function(t) { return t.type   === at; }); }
         return list.filter(function(t) { return !existing.has(t.id); }).slice(0, 50);
+      },
+
+      setFamily(f) { this.activeFamily = this.activeFamily === f ? '' : f; this.activeType = ''; },
+
+      sortMembers(key) {
+        this.members.sort(function(a, b) {
+          var av = (a[key] || '').toLowerCase(), bv = (b[key] || '').toLowerCase();
+          return av < bv ? -1 : av > bv ? 1 : 0;
+        });
       },
 
       async addTune(tune) {
         var resp = await fetch('/sets/tune-settings/' + tune.id);
         var settings = await resp.json();
+        var title = tune.label.split(' — ')[0];
         this.members.push({
           tune_id:    tune.id,
-          title:      tune.label,
+          title:      title,
+          type_label: tune.label.split(' — ')[1] ? tune.label.split(' — ')[1].split(' · ')[0] : '',
           setting_id: '',
           settings:   settings,
         });

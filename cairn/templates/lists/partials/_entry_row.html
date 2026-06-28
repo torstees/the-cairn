@@ -1,18 +1,26 @@
 <tr id="entry-row-{{ entry.tune_id }}"
-    data-tune-label="{{ entry.tune.title }} — {{ entry.tune.tune_type.label }}"
+    data-title="{{ entry.tune.title | lower }}"
+    data-type="{{ entry.tune.tune_type.label | lower }}"
+    data-tune-label="{{ entry.tune.title }} — {{ entry.tune.tune_type.label }} · {{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}"
+    data-tune-type="{{ entry.tune.tune_type.value }}"
     x-data="{
       remove() {
         const title = $el.querySelector('a').textContent;
         if (!confirm('Remove ' + title + ' from this list?')) return;
-        window.dispatchEvent(new CustomEvent('cairn-tune-removed', {detail: {id: {{ entry.tune_id }}, label: $el.dataset.tuneLabel}}));
+        window.dispatchEvent(new CustomEvent('cairn-tune-removed', {detail: {
+          id: {{ entry.tune_id }},
+          label: $el.dataset.tuneLabel,
+          type: $el.dataset.tuneType,
+        }}));
         htmx.ajax('DELETE', '/lists/{{ list_id }}/tunes/{{ entry.tune_id }}', {target: $el, swap: 'delete'});
       }
     }"
     class="border-b border-stone-100 hover:bg-stone-50">
   <td class="py-3 px-4 text-stone-800">
     <a href="/tunes/{{ entry.tune.id }}" class="font-medium hover:underline">{{ entry.tune.title }}</a>
-    <p class="text-xs text-stone-400 mt-0.5">{{ entry.tune.tune_type.label }}</p>
+    <p class="text-xs text-stone-400 mt-0.5">{{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}</p>
   </td>
+  <td class="py-3 px-4 text-sm text-stone-500 whitespace-nowrap">{{ entry.tune.tune_type.label }}</td>
   <td class="py-3 px-4">
     {% set non_core = entry.tune.settings | selectattr('is_core', 'false') | list %}
     {% if non_core %}

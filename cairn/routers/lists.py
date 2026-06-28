@@ -21,7 +21,7 @@ from cairn.services.lists import (
     update_list,
     update_list_entry_setting,
 )
-from cairn.services.tunes import list_tunes
+from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes
 from cairn.templating import templates
 
 router = APIRouter(prefix="/lists", tags=["lists"])
@@ -29,6 +29,11 @@ router = APIRouter(prefix="/lists", tags=["lists"])
 _STUB_USER_ID = 1
 _LIST_TYPES = list(PracticeListType)
 _PROGRESS_STATUSES = [s for s in ProgressStatus if s != ProgressStatus.just_learning]
+_FAMILY_FOR_TYPE: dict[str, str] = {
+    t.value: family
+    for family, types in TUNE_FAMILIES.items()
+    for t in types
+}
 
 
 @router.get("/")
@@ -141,7 +146,12 @@ async def list_detail(
     entry_tune_ids = {e.tune_id for e in practice_list.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
-    addable_tunes_json = json.dumps([{"id": t.id, "label": f"{t.title} — {t.tune_type.label}"} for t in addable_tunes])
+    addable_tunes_json = json.dumps([{
+        "id": t.id,
+        "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
+        "type": t.tune_type.value,
+        "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
+    } for t in addable_tunes])
     settings_by_tune_id = json.dumps(
         {
             t.id: [
@@ -167,6 +177,8 @@ async def list_detail(
             "box_setting_by_tune_id": box_setting_by_tune_id,
             "box_tune_ids_json": box_tune_ids_json,
             "box_name": box.name if box else "",
+            "family_labels": FAMILY_LABELS,
+            "family_for_type": _FAMILY_FOR_TYPE,
         },
     )
 
