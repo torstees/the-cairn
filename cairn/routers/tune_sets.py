@@ -20,7 +20,7 @@ from cairn.services.tune_sets import (
     update_set,
     upsert_set_tempo,
 )
-from cairn.services.tunes import list_tunes
+from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes
 from cairn.templating import templates
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sets", tags=["sets"])
 
 _STUB_USER_ID = 1
+
+_FAMILY_FOR_TYPE: dict[str, str] = {
+    t.value: family
+    for family, types in TUNE_FAMILIES.items()
+    for t in types
+}
 
 
 def _parse_members(members_raw: str) -> list[dict]:
@@ -50,7 +56,12 @@ def _parse_members(members_raw: str) -> list[dict]:
 
 async def _form_context(db: AsyncSession, tune_set=None, error: str | None = None) -> dict:
     tunes = await list_tunes(db)
-    tunes_json = json.dumps([{"id": t.id, "label": t.title} for t in tunes])
+    tunes_json = json.dumps([{
+        "id": t.id,
+        "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
+        "type": t.tune_type.value,
+        "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
+    } for t in tunes])
 
     members_data: list[dict] = []
     set_abc_json: str | None = None
@@ -64,6 +75,7 @@ async def _form_context(db: AsyncSession, tune_set=None, error: str | None = Non
             members_data.append({
                 "tune_id": member.tune_id,
                 "title": member.tune.title,
+                "type_label": member.tune.tune_type.label,
                 "setting_id": str(member.setting_id) if member.setting_id else "",
                 "settings": settings,
             })
@@ -74,6 +86,7 @@ async def _form_context(db: AsyncSession, tune_set=None, error: str | None = Non
         "tunes_json": tunes_json,
         "members_json": json.dumps(members_data),
         "set_abc_json": set_abc_json,
+        "family_labels": FAMILY_LABELS,
         "error": error,
     }
 

@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import Instrument
+from cairn.models import Instrument, TuneType
 from cairn.services.boxes import (
     add_tune,
     create_box,
@@ -19,7 +19,7 @@ from cairn.services.boxes import (
     set_preferred_setting,
 )
 from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting
-from cairn.services.tunes import list_tunes
+from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes
 from cairn.templating import templates
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,12 @@ router = APIRouter(prefix="/boxes", tags=["boxes"])
 
 _STUB_USER_ID = 1
 _INSTRUMENTS = list(Instrument)
+_TUNE_TYPES = list(TuneType)
+_FAMILY_FOR_TYPE: dict[str, str] = {
+    t.value: family
+    for family, types in TUNE_FAMILIES.items()
+    for t in types
+}
 
 
 @router.get("/")
@@ -84,11 +90,22 @@ async def box_detail(
     entry_tune_ids = {e.tune_id for e in box.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
-    addable_tunes_json = json.dumps([{"id": t.id, "label": f"{t.title} — {t.tune_type.label}"} for t in addable_tunes])
+    addable_tunes_json = json.dumps([{
+        "id": t.id,
+        "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
+        "type": t.tune_type.value,
+        "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
+    } for t in addable_tunes])
     return templates.TemplateResponse(
         request,
         "boxes/detail.html",
-        {"box": box, "addable_tunes": addable_tunes, "addable_tunes_json": addable_tunes_json},
+        {
+            "box": box,
+            "addable_tunes": addable_tunes,
+            "addable_tunes_json": addable_tunes_json,
+            "family_labels": FAMILY_LABELS,
+            "tune_types": _TUNE_TYPES,
+        },
     )
 
 

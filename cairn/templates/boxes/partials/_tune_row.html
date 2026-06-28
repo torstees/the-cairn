@@ -1,14 +1,13 @@
-<tr id="box-tune-{{ entry.tune_id }}" class="border-b border-stone-100 hover:bg-stone-50">
+<tr id="box-tune-{{ entry.tune_id }}" class="border-b border-stone-100 hover:bg-stone-50"
+    data-title="{{ entry.tune.title | lower }}" data-type="{{ entry.tune.tune_type.label | lower }}">
   <td class="py-3 px-4">
     <a href="/tunes/{{ entry.tune.id }}?box_id={{ box_id }}"
        class="font-medium text-stone-800 hover:text-stone-600">
       {{ entry.tune.title }}
     </a>
-    <p class="text-xs text-stone-400 mt-0.5">
-      {{ entry.tune.tune_type.label }}
-      &middot; {{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}
-    </p>
+    <p class="text-xs text-stone-400 mt-0.5">{{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}</p>
   </td>
+  <td class="py-3 px-4 text-sm text-stone-500 whitespace-nowrap">{{ entry.tune.tune_type.label }}</td>
   <td class="py-3 px-4">
     {% set non_core = entry.tune.settings | selectattr('is_core', 'false') | list %}
     {% if non_core %}
