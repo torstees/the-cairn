@@ -329,6 +329,26 @@ def test_build_set_abc_user_header_overrides_auto() -> None:
     assert t_headers[0] == "T:Custom Title"
 
 
+def test_build_set_abc_set_title_leads_x1_block() -> None:
+    tune = _make_tune("The Morning Dew")
+    setting = _make_setting()
+    setting.is_core = True
+    tune.settings = [setting]
+    member = TuneSetMember(set_id=1, tune_id=1, order=0)
+    member.tune = tune
+    member.setting = None
+
+    s = _make_set(title="Morning Set")
+    s.members = [member]
+    result = build_set_abc(s)
+
+    # Inside X:1, the set title must appear before the tune title.
+    x1_pos = result.index("X:1")
+    set_t_pos = result.index("T:Morning Set", x1_pos)
+    tune_t_pos = result.index("T:The Morning Dew", x1_pos)
+    assert set_t_pos < tune_t_pos
+
+
 def test_build_set_abc_member_produces_x_block() -> None:
     tune = _make_tune("The Morning Dew")
     setting = _make_setting()
