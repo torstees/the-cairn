@@ -159,6 +159,9 @@ def build_set_abc(
 
     first_tune, first_setting = resolved[0]
     first_abc = build_abc(first_tune, first_setting, x=1)
+    # Insert set title as the first T: inside X:1 so ABCJS renders it as the
+    # primary title; the tune's own T: (from build_abc) becomes the subtitle.
+    first_abc = first_abc.replace("X:1\n", f"X:1\nT:{tune_set.title}\n", 1)
     if n_bars is not None:
         first_abc = truncate_to_bars(first_abc, n_bars)
     sections: list[str] = [first_abc.rstrip("\n")]
