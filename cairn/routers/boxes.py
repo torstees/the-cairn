@@ -105,6 +105,7 @@ async def box_detail(
             "addable_tunes_json": addable_tunes_json,
             "family_labels": FAMILY_LABELS,
             "tune_types": _TUNE_TYPES,
+            "family_for_type": _FAMILY_FOR_TYPE,
         },
     )
 
