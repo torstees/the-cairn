@@ -1179,6 +1179,115 @@
     if (tunerActive) stopTuner(); else startTuner();
   }
 
+  // ── practice session (one-at-a-time view) ─────────────────────────────────
+
+  // Wire up persistent listeners for the session tool panel. Called once at
+  // DOMContentLoaded on the session page. Listeners read module-level state
+  // (currentAbcString, window.__cairnTuneId, etc.) at click time so they
+  // stay current as initSessionTools() updates those values between items.
+  function initSessionPage() {
+    var playBtn     = document.getElementById("abc-play");
+    var tempoSlider = document.getElementById("abc-tempo");
+    var tempoLabel  = document.getElementById("abc-tempo-label");
+    var metroBtn    = document.getElementById("metro-play");
+
+    if (playBtn) {
+      if (ABCJS.synth.supportsAudio()) {
+        playBtn.addEventListener("click", handlePlayStop);
+      } else {
+        playBtn.disabled = true;
+        playBtn.title = "Audio not supported in this browser";
+      }
+    }
+
+    if (tempoSlider && tempoLabel) {
+      tempoSlider.addEventListener("input", function () {
+        tempoLabel.textContent = this.value + " bpm";
+        if (activeSynth) { activeSynth.stop(); teardownAudio(); if (playBtn) playBtn.textContent = "▶ Play"; }
+      });
+    }
+
+    if (metroBtn) {
+      metroBtn.addEventListener("click", function () {
+        var slider = document.getElementById("abc-tempo");
+        var bpm = slider ? parseInt(slider.value, 10) : 100;
+        if (metroTimer) {
+          var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
+          var beatsPerBar = window.__cairnBeatsPerBar || 4;
+          var minDuration = (beatsPerBar * 4 / bpm) * 60;
+          var shouldRecord = elapsed >= minDuration && window.__cairnTuneId;
+          stopMetronome();
+          metroBtn.textContent = "♩ Metro";
+          if (shouldRecord) {
+            var params = new URLSearchParams();
+            params.append("tempo", bpm);
+            if (window.__cairnBoxId) params.append("box_id", window.__cairnBoxId);
+            fetch("/tunes/" + window.__cairnTuneId + "/tempo", { method: "POST", body: params })
+              .then(function (r) { return r.ok ? r.text() : null; })
+              .then(function (html) {
+                if (!html) return;
+                var el = document.getElementById("tempo-history");
+                if (el) el.outerHTML = html;
+              })
+              .catch(function () {});
+          }
+        } else {
+          startMetronome(bpm);
+          metroBtn.textContent = "■ Metro";
+        }
+      });
+    }
+
+    initDrone();
+  }
+
+  // Update module-level state for the next session item and re-render the score.
+  // Stops any active audio first. Called by Alpine when navigating between items.
+  function initSessionTools(opts) {
+    if (activeSynth) { activeSynth.stop(); teardownAudio(); }
+    stopMetronome();
+    stopDrone();
+
+    var playBtn  = document.getElementById("abc-play");
+    var metroBtn = document.getElementById("metro-play");
+    var droneBtn = document.getElementById("drone-play");
+    if (playBtn)  playBtn.textContent  = "▶ Play";
+    if (metroBtn) metroBtn.textContent = "♩ Metro";
+    if (droneBtn) droneBtn.textContent = "♪ Drone";
+
+    window.__cairnTuneId      = opts.tuneId;
+    window.__cairnTuneType    = opts.tuneType;
+    window.__cairnBeatsPerBar = opts.beatsPerBar;
+    window.__cairnLastTempo   = opts.lastTempo || null;
+    window.__cairnBoxId       = opts.boxId || null;
+
+    metroPattern = METRO_PATTERNS[opts.tuneType] || METRO_PATTERNS.reel;
+
+    var slider = document.getElementById("abc-tempo");
+    var label  = document.getElementById("abc-tempo-label");
+    var bpm = opts.lastTempo || extractBpm(opts.abc) || 100;
+    if (slider) slider.value = bpm;
+    if (label)  label.textContent = bpm + " bpm";
+
+    render(opts.abc);
+  }
+
+  function stopSessionAudio() {
+    if (activeSynth) { activeSynth.stop(); teardownAudio(); }
+    stopMetronome();
+    stopDrone();
+    var playBtn  = document.getElementById("abc-play");
+    var metroBtn = document.getElementById("metro-play");
+    var droneBtn = document.getElementById("drone-play");
+    if (playBtn)  playBtn.textContent  = "▶ Play";
+    if (metroBtn) metroBtn.textContent = "♩ Metro";
+    if (droneBtn) droneBtn.textContent = "♪ Drone";
+  }
+
+  function rerenderSessionAbc(abc) {
+    render(abc);
+  }
+
   function cairnApp() {
     return {
       tunerOpen: false,
@@ -1189,16 +1298,20 @@
   }
 
   // Expose to Alpine and templates
-  window.clearCairnModal = clearCairnModal;
-  window.selectSetting = selectSetting;
+  window.clearCairnModal    = clearCairnModal;
+  window.selectSetting      = selectSetting;
   window.initSettingPreview = initSettingPreview;
-  window.initWarmupPreview = initWarmupPreview;
-  window.initSetTools    = initSetTools;
-  window.initWarmupTools = initWarmupTools;
-  window.cairnApp = cairnApp;
+  window.initWarmupPreview  = initWarmupPreview;
+  window.initSetTools       = initSetTools;
+  window.initWarmupTools    = initWarmupTools;
+  window.initSessionPage    = initSessionPage;
+  window.initSessionTools   = initSessionTools;
+  window.stopSessionAudio   = stopSessionAudio;
+  window.rerenderSessionAbc = rerenderSessionAbc;
+  window.cairnApp    = cairnApp;
   window.tunerToggle = tunerToggle;
-  window.startTuner = startTuner;
-  window.stopTuner = stopTuner;
+  window.startTuner  = startTuner;
+  window.stopTuner   = stopTuner;
 
   // ── init ───────────────────────────────────────────────────────────────────
 
