@@ -151,6 +151,20 @@ async def tempo_record_create(
     )
 
 
+@router.get("/{tune_id}/tempo-history")
+async def tempo_history_partial(
+    request: Request,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
+    return templates.TemplateResponse(
+        request,
+        "tunes/partials/_tempo_history.html",
+        {"min_tempo": min_tempo, "tempo_records": tempo_records},
+    )
+
+
 @router.get("/{tune_id}/edit")
 async def tune_edit(request: Request, tune_id: int, db: AsyncSession = Depends(get_db)) -> Response:
     tune = await get_tune(db, tune_id)

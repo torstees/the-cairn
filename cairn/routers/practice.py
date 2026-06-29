@@ -3,10 +3,11 @@ import logging
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import ProgressStatus
+from cairn.models import ProgressStatus, TempoRecord
 from cairn.services.abc_utils import build_abc, truncate_to_bars
 from cairn.services.boxes import list_boxes
 from cairn.services.lists import activate_list, deactivate_list, get_active_list, list_lists
@@ -58,7 +59,7 @@ def _build_item_display(items, progress_map: dict[int, ProgressStatus]) -> dict[
 
         key_label = f"{tune.key_root.value} {tune.key_mode.label}"
         display[item.id] = {
-            "levels": json.dumps(levels),
+            "levels": levels,  # Python list (not JSON string)
             "abc_full": abc_full,
             "abc_4": abc_4 or "",
             "abc_8": abc_8 or "",
@@ -129,11 +130,81 @@ async def session_detail(
         progress_map = await _load_progress_map(db, _STUB_USER_ID, session.box_id, tune_ids)
 
     item_display = _build_item_display(session.items, progress_map)
+
+    # Batch-fetch last recorded tempo for each tune in this session.
+    last_tempo_map: dict[int, int] = {}
+    if tune_ids:
+        rows = await db.execute(
+            select(TempoRecord)
+            .where(TempoRecord.user_id == _STUB_USER_ID, TempoRecord.tune_id.in_(tune_ids))
+            .order_by(TempoRecord.created_at.desc())
+        )
+        for r in rows.scalars().all():
+            if r.tune_id not in last_tempo_map:
+                last_tempo_map[r.tune_id] = r.tempo
+
+    # Build the per-item data structure consumed by the one-at-a-time session view.
+    session_items: list[dict] = []
+    for item in session.items:
+        if item.tune:
+            disp = item_display.get(item.id)
+            tune = item.tune
+            try:
+                beats = int(tune.time_signature.split("/")[0])
+            except (ValueError, IndexError):
+                beats = 4
+            session_items.append({
+                "id": item.id,
+                "type": "tune",
+                "itemType": item.item_type.value,
+                "itemTypeLabel": item.item_type.label,
+                "title": tune.title,
+                "minutesAllocated": item.minutes_allocated,
+                "completed": item.completed,
+                "tuneId": tune.id,
+                "tuneType": tune.tune_type.value,
+                "beatsPerBar": beats,
+                "lastTempo": last_tempo_map.get(tune.id),
+                "boxId": session.box_id,
+                "levels": disp["levels"] if disp else [-1],
+                "abcFull": disp["abc_full"] if disp else "",
+                "abc4": disp["abc_4"] if disp else "",
+                "abc8": disp["abc_8"] if disp else "",
+                "keyLabel": disp["key_label"] if disp else "",
+                "hasAbc": bool(disp and disp["abc_full"]),
+            })
+        elif item.warmup:
+            session_items.append({
+                "id": item.id,
+                "type": "warmup",
+                "itemType": "warmup",
+                "itemTypeLabel": "Warmup",
+                "title": item.warmup.title,
+                "minutesAllocated": item.minutes_allocated,
+                "completed": item.completed,
+                "hasAbc": False,
+            })
+        else:
+            session_items.append({
+                "id": item.id,
+                "type": "other",
+                "itemType": "other",
+                "itemTypeLabel": "Item",
+                "title": "Practice Item",
+                "minutesAllocated": item.minutes_allocated,
+                "completed": item.completed,
+                "hasAbc": False,
+            })
+
     active_list = await get_active_list(db, _STUB_USER_ID)
     return templates.TemplateResponse(
         request,
         "practice/session.html",
-        {"session": session, "active_list": active_list, "item_display": item_display},
+        {
+            "session": session,
+            "active_list": active_list,
+            "session_items_json": json.dumps(session_items),
+        },
     )
 
 
