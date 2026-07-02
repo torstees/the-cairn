@@ -2,7 +2,7 @@
 {% block title %}Tunes — The Cairn{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
+<div class="flex items-center justify-between mb-4">
   <h1 class="text-3xl font-bold text-stone-800">Tunes</h1>
   <a href="/tunes/new"
      class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
@@ -10,7 +10,51 @@
   </a>
 </div>
 
+<div class="relative mb-4">
+  <input id="tune-search" type="text" placeholder="Search by title or alias…"
+         oninput="filterTuneSearch(this.value)"
+         autocomplete="off"
+         class="w-full border border-stone-300 rounded-lg px-4 py-2 pr-9 text-sm bg-white text-stone-800
+                focus:outline-none focus:ring-2 focus:ring-stone-400 placeholder:text-stone-400">
+  <button id="tune-search-clear" onclick="clearTuneSearch()" title="Clear search"
+          class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 hidden text-lg leading-none">
+    &times;
+  </button>
+</div>
+
 <div id="tune-content">
   {% include "tunes/partials/_tune_list.html" %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function filterTuneSearch(q) {
+    var lower = q.toLowerCase();
+    var total = 0, visible = 0;
+    document.querySelectorAll('#tune-list-ul li[data-search]').forEach(function(li) {
+      total++;
+      var match = !lower || li.dataset.search.toLowerCase().includes(lower);
+      li.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    var emptyEl  = document.getElementById('tune-search-empty');
+    var clearBtn = document.getElementById('tune-search-clear');
+    if (emptyEl)  emptyEl.style.display  = (lower && total > 0 && visible === 0) ? '' : 'none';
+    if (clearBtn) clearBtn.classList.toggle('hidden', !lower);
+  }
+
+  function clearTuneSearch() {
+    var input = document.getElementById('tune-search');
+    if (input) { input.value = ''; filterTuneSearch(''); input.focus(); }
+  }
+
+  // Re-apply any active search after HTMX swaps the tune list.
+  document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target && evt.detail.target.id === 'tune-content') {
+      var input = document.getElementById('tune-search');
+      if (input && input.value) filterTuneSearch(input.value);
+    }
+  });
+</script>
 {% endblock %}
