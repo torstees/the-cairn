@@ -123,7 +123,11 @@ async def list_tunes(
     tune_type: TuneType | None = None,
     family: str | None = None,
 ) -> list[Tune]:
-    stmt = select(Tune).options(selectinload(Tune.settings), selectinload(Tune.difficulties)).order_by(Tune.sort_title)
+    stmt = (
+        select(Tune)
+        .options(selectinload(Tune.settings), selectinload(Tune.difficulties), selectinload(Tune.aliases))
+        .order_by(Tune.sort_title)
+    )
     if tune_type is not None:
         stmt = stmt.where(Tune.tune_type == tune_type)
     elif family is not None:
