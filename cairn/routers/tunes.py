@@ -60,7 +60,7 @@ async def tune_list(
     for tune in tunes:
         core = _core_setting(tune)
         if core is not None:
-            tune_previews[tune.id] = truncate_to_bars(build_abc(tune, core), 2)
+            tune_previews[tune.id] = truncate_to_bars(build_abc(tune, core), 4)
     ctx = {
         "tunes": tunes,
         "tune_types": _TUNE_TYPES,
