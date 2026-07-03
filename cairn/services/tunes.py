@@ -1,4 +1,5 @@
 import re
+from collections.abc import Iterable
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ from cairn.models import (
     TuneType,
 )
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
+from cairn.services.abc_utils import build_abc, truncate_to_bars
 
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
 
@@ -55,6 +57,21 @@ def get_setting_for_instrument(tune: Tune, instrument: Instrument | None) -> Tun
             return specific
     core = next(s for s in tune.settings if s.is_core and s.instrument is None)
     return core
+
+
+def core_setting(tune: Tune) -> TuneSetting | None:
+    """Return the tune's instrument-agnostic core setting, if any."""
+    return next((s for s in tune.settings if s.is_core and s.instrument is None), None)
+
+
+def build_tune_previews(tunes: Iterable[Tune], n_bars: int = 4) -> dict[int, str]:
+    """Map tune id -> ABC preview (opening bars of the core setting) for tunes that have one."""
+    previews: dict[int, str] = {}
+    for tune in tunes:
+        core = core_setting(tune)
+        if core is not None:
+            previews[tune.id] = truncate_to_bars(build_abc(tune, core), n_bars)
+    return previews
 
 
 async def create_tune(
