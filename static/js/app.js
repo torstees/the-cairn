@@ -1313,11 +1313,93 @@
   window.startTuner  = startTuner;
   window.stopTuner   = stopTuner;
 
+  // ── tune list hover preview ──────────────────────────────────────────────
+  // Shows a small popover with an ABCJS rendering of a tune's opening bars
+  // when hovering its title in the tune index. Delegated at the document
+  // level (rather than bound per-element) so it keeps working after HTMX
+  // swaps the list for a new filter.
+
+  function initTuneHoverPreview() {
+    var popover = null;
+    var canvas = null;
+    var renderCache = {};
+    var activeTrigger = null;
+
+    function ensurePopover() {
+      if (popover) return popover;
+      popover = document.createElement("div");
+      popover.id = "tune-hover-popover";
+      popover.style.cssText =
+        "position:fixed; z-index:60; width:220px; max-height:70vh; overflow-y:auto; display:none; pointer-events:none;";
+      popover.className = "bg-white border border-stone-200 rounded-lg shadow-lg p-2";
+      canvas = document.createElement("div");
+      canvas.id = "tune-hover-abc-canvas";
+      popover.appendChild(canvas);
+      document.body.appendChild(popover);
+      return popover;
+    }
+
+    function position(trigger) {
+      var rect = trigger.getBoundingClientRect();
+      var width = popover.offsetWidth;
+      var height = popover.offsetHeight;
+      var left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+      var top = rect.bottom + 6;
+      if (top + height > window.innerHeight - 8) {
+        top = Math.max(rect.top - height - 6, 8);
+      }
+      popover.style.left = left + "px";
+      popover.style.top = top + "px";
+    }
+
+    function show(trigger) {
+      var previewId = trigger.dataset.abcPreviewId;
+      if (!previewId) return;
+      var tmpl = document.getElementById("tune-abc-preview-" + previewId);
+      if (!tmpl) return;
+      var abc = tmpl.content.textContent;
+      activeTrigger = trigger;
+      ensurePopover();
+      popover.style.visibility = "hidden";
+      popover.style.display = "block";
+      if (Object.prototype.hasOwnProperty.call(renderCache, abc)) {
+        canvas.innerHTML = renderCache[abc];
+      } else {
+        ABCJS.renderAbc(canvas.id, abc, PREVIEW_OPTS);
+        renderCache[abc] = canvas.innerHTML;
+      }
+      position(trigger);
+      popover.style.visibility = "visible";
+    }
+
+    function hide() {
+      activeTrigger = null;
+      if (popover) popover.style.display = "none";
+    }
+
+    document.addEventListener("mouseover", function (e) {
+      var trigger = e.target.closest("[data-abc-preview-id]");
+      if (!trigger || trigger === activeTrigger) return;
+      show(trigger);
+    });
+
+    document.addEventListener("mouseout", function (e) {
+      var trigger = e.target.closest("[data-abc-preview-id]");
+      if (!trigger || (e.relatedTarget && trigger.contains(e.relatedTarget))) return;
+      hide();
+    });
+
+    // A swap can remove the currently-hovered trigger without ever firing
+    // mouseout on it, leaving a stale popover stuck on screen.
+    document.addEventListener("htmx:afterSwap", hide);
+  }
+
   // ── init ───────────────────────────────────────────────────────────────────
 
   document.addEventListener("DOMContentLoaded", function () {
     renderScore();
     initFormPreview();
+    initTuneHoverPreview();
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { clearCairnModal(); }
