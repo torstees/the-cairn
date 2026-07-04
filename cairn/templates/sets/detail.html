@@ -51,7 +51,7 @@
           <label for="abc-tempo" class="text-sm text-stone-500 select-none">Speed</label>
           <input id="abc-tempo" type="range" min="40" max="250" value="100" step="5"
                  class="w-28 accent-stone-600 cursor-pointer">
-          <span id="abc-tempo-label" class="text-sm text-stone-500 w-16">100 bpm</span>
+          {% include "components/_tempo_label.html" %}
         </div>
         <div id="drone-controls" class="hidden flex items-center gap-1.5">
           <button id="drone-prev" type="button"
