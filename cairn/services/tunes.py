@@ -64,13 +64,21 @@ def core_setting(tune: Tune) -> TuneSetting | None:
     return next((s for s in tune.settings if s.is_core and s.instrument is None), None)
 
 
+def preview_abc(tune: Tune, setting: TuneSetting | None = None, n_bars: int = 4) -> str | None:
+    """Return an ABC preview (opening bars) for tune, preferring `setting` over the core setting."""
+    setting = setting or core_setting(tune)
+    if setting is None:
+        return None
+    return truncate_to_bars(build_abc(tune, setting), n_bars)
+
+
 def build_tune_previews(tunes: Iterable[Tune], n_bars: int = 4) -> dict[int, str]:
     """Map tune id -> ABC preview (opening bars of the core setting) for tunes that have one."""
     previews: dict[int, str] = {}
     for tune in tunes:
-        core = core_setting(tune)
-        if core is not None:
-            previews[tune.id] = truncate_to_bars(build_abc(tune, core), n_bars)
+        abc = preview_abc(tune, n_bars=n_bars)
+        if abc is not None:
+            previews[tune.id] = abc
     return previews
 
 
