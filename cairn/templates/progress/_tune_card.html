@@ -1,6 +1,6 @@
 {#
   Standalone HTMX partial for a single tune's progress card.
-  Required context: tune, progress (or None), statuses, now
+  Required context: tune, progress (or None), statuses, now, tune_previews
 #}
 {% set is_due = progress and progress.next_suggested and progress.next_suggested <= now %}
 <div id="progress-card-{{ tune.id }}" class="bg-white rounded-lg shadow-sm px-5 py-4">
@@ -10,9 +10,13 @@
     <div class="min-w-0">
       <div class="flex items-center gap-2">
         <a href="/tunes/{{ tune.id }}"
-           class="font-medium text-stone-800 hover:text-stone-600 hover:underline">
+           class="font-medium text-stone-800 hover:text-stone-600 hover:underline"
+           {% if tune.id in tune_previews %}data-abc-preview-id="{{ tune.id }}"{% endif %}>
           {{ tune.title }}
         </a>
+        {% if tune.id in tune_previews %}
+        <template id="tune-abc-preview-{{ tune.id }}">{{ tune_previews[tune.id] }}</template>
+        {% endif %}
         {% if is_due %}
         <span class="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">Due</span>
         {% endif %}
