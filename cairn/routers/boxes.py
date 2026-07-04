@@ -19,7 +19,7 @@ from cairn.services.boxes import (
     set_preferred_setting,
 )
 from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting
-from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes
+from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes, preview_abc
 from cairn.templating import templates
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,16 @@ _FAMILY_FOR_TYPE: dict[str, str] = {
     for family, types in TUNE_FAMILIES.items()
     for t in types
 }
+
+
+def _entry_previews(entries) -> dict[int, str]:
+    """Map tune id -> ABC preview for box entries, preferring each entry's chosen setting."""
+    previews: dict[int, str] = {}
+    for entry in entries:
+        abc = preview_abc(entry.tune, entry.setting)
+        if abc is not None:
+            previews[entry.tune_id] = abc
+    return previews
 
 
 @router.get("/")
@@ -96,6 +106,7 @@ async def box_detail(
         "type": t.tune_type.value,
         "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
     } for t in addable_tunes])
+    tune_previews = _entry_previews(box.entries)
     return templates.TemplateResponse(
         request,
         "boxes/detail.html",
@@ -106,6 +117,7 @@ async def box_detail(
             "family_labels": FAMILY_LABELS,
             "tune_types": _TUNE_TYPES,
             "family_for_type": _FAMILY_FOR_TYPE,
+            "tune_previews": tune_previews,
         },
     )
 
@@ -128,7 +140,7 @@ async def box_add_tune(
     return templates.TemplateResponse(
         request,
         "boxes/partials/_tune_row.html",
-        {"entry": entry, "box_id": box_id},
+        {"entry": entry, "box_id": box_id, "tune_previews": _entry_previews([entry])},
     )
 
 
@@ -163,15 +175,19 @@ async def box_set_setting(
     if old_setting_id != sid:
         affected = await find_list_entries_by_setting(db, tune_id, box_id, old_setting_id)
 
+    tune_previews = _entry_previews([entry])
+
     if not affected:
         return templates.TemplateResponse(
             request,
             "boxes/partials/_tune_row.html",
-            {"entry": entry, "box_id": box_id},
+            {"entry": entry, "box_id": box_id, "tune_previews": tune_previews},
         )
 
     box = await get_box(db, box_id)
-    row_html = templates.env.get_template("boxes/partials/_tune_row.html").render({"entry": entry, "box_id": box_id})
+    row_html = templates.env.get_template("boxes/partials/_tune_row.html").render(
+        {"entry": entry, "box_id": box_id, "tune_previews": tune_previews}
+    )
     modal_html = templates.env.get_template("boxes/partials/_setting_change_modal.html").render(
         {
             "affected_entries": affected,

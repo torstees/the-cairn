@@ -3,13 +3,15 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneSetting, TuneType
+from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
-from cairn.services.abc_utils import build_abc, truncate_to_bars
+from cairn.services.abc_utils import build_abc
 from cairn.services.boxes import get_box, get_box_entry
 from cairn.services.tunes import (
     FAMILY_LABELS,
     add_alias,
+    build_tune_previews,
+    core_setting,
     create_tune,
     delete_tune,
     get_tempo_history,
@@ -34,11 +36,6 @@ _SETTINGS_CTX = {"instruments": _INSTRUMENTS, "orn_levels": _ORN_LEVELS}
 _STUB_USER_ID = 1
 
 
-def _core_setting(tune: Tune) -> TuneSetting | None:
-    """Return the tune's instrument-agnostic core setting, if any."""
-    return next((s for s in tune.settings if s.is_core and s.instrument is None), None)
-
-
 @router.get("/new")
 async def tune_new(request: Request) -> Response:
     return templates.TemplateResponse(
@@ -56,11 +53,7 @@ async def tune_list(
     family: str | None = None,
 ) -> Response:
     tunes = await list_tunes(db, tune_type=tune_type, family=family)
-    tune_previews: dict[int, str] = {}
-    for tune in tunes:
-        core = _core_setting(tune)
-        if core is not None:
-            tune_previews[tune.id] = truncate_to_bars(build_abc(tune, core), 4)
+    tune_previews = build_tune_previews(tunes)
     ctx = {
         "tunes": tunes,
         "tune_types": _TUNE_TYPES,
@@ -120,7 +113,7 @@ async def tune_detail(
             active_setting = entry.setting
 
     if active_setting is None:
-        active_setting = _core_setting(tune)
+        active_setting = core_setting(tune)
 
     built_abc = build_abc(tune, active_setting) if active_setting else ""
     settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
@@ -181,7 +174,7 @@ async def tune_edit(request: Request, tune_id: int, db: AsyncSession = Depends(g
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    core = _core_setting(tune)
+    core = core_setting(tune)
     core_abc = core.abc_notation if core else ""
     return templates.TemplateResponse(
         request,

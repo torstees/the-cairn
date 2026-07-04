@@ -1,5 +1,5 @@
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneSetting, TuneType
-from cairn.services.abc_utils import build_abc
+from cairn.services.abc_utils import build_abc, truncate_to_bars
 
 MUSIC = "|:DEFG ABcd|efge dcAG:|\n"
 
@@ -255,3 +255,35 @@ def test_user_q_takes_precedence_over_default() -> None:
     result = build_abc(_tune(tune_type=TuneType.reel), setting)
     assert "Q:1/4=200" in result
     assert "Q:1/4=100" not in result
+
+
+# ── truncate_to_bars ───────────────────────────────────────────────────────────
+
+
+def test_truncate_keeps_n_bars_with_leading_barline() -> None:
+    abc = "K:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|\n"
+    result = truncate_to_bars(abc, 4)
+    assert result.count("|") == 5  # leading "|:" + 4 bar-closing pipes
+    assert "DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|" in result
+    assert result.count("DEFA BAFA") == 4
+
+
+def test_truncate_keeps_n_bars_without_leading_barline() -> None:
+    # Regression test: a tune whose body opens directly with notes (no
+    # leading "|") previously got one extra bar, since the leading pipe of
+    # a barred tune was implicitly relied on to absorb an off-by-one.
+    abc = "K:Ador\n~A3B A2GE|A2GA BGDB|~A3B AGEF|G2GA BGDB|\n~A3B A2GE|A2GA BGDB|A2dB AGEF|G2GA Bdd2||\n"
+    result = truncate_to_bars(abc, 4)
+    assert result == "K:Ador\n~A3B A2GE|A2GA BGDB|~A3B AGEF|G2GA BGDB|\n"
+    assert result.count("|") == 4
+
+
+def test_truncate_returns_unchanged_when_fewer_bars_than_requested() -> None:
+    abc = "K:D\n|:DEFA BAFA:|\n"
+    result = truncate_to_bars(abc, 4)
+    assert result == abc
+
+
+def test_truncate_no_k_header_returns_unchanged() -> None:
+    abc = "T:x\nDEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA\n"
+    assert truncate_to_bars(abc, 4) == abc

@@ -5,7 +5,7 @@ from cairn.models import KeyMode, KeyRoot, TuneType
 from cairn.schemas import TuneCreate
 from cairn.services.tunes import create_tune
 
-_ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
+_ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
 
 
 async def _seed_tune(db: AsyncSession):
@@ -37,5 +37,6 @@ async def test_tune_list_includes_abc_hover_preview(client: AsyncClient, db: Asy
     marker = f'<template id="tune-abc-preview-{tune.id}">'
     assert marker in resp.text
     preview = resp.text.split(marker, 1)[1].split("</template>", 1)[0]
-    # Only the first two bars should be present, not the closing repeat.
+    # Only the first four bars should be present, not the closing repeat.
+    assert preview.count("|") == 5
     assert "DEFA BAFA:|" not in preview
