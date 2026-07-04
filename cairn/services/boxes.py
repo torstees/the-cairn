@@ -95,7 +95,7 @@ async def list_boxes(
         .order_by(TuneBox.name)
         .options(
             selectinload(TuneBox.instruments),
-            selectinload(TuneBox.entries),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.setting),
         )
     )
     return list(result.scalars().all())
