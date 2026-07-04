@@ -206,21 +206,25 @@ def build_set_abc(
 def truncate_to_bars(abc: str, n_bars: int) -> str:
     """Return abc truncated to approximately the first n_bars measures.
 
-    Counts `|` characters in the music body (after K:) and stops after the
-    (n_bars+1)th one — the extra `|` closes the last retained bar.  The count
-    is intentionally simple: each `|` in the music body is treated as one bar
-    boundary, so repeat markers (`|:`, `:|`) count too, which is close enough
-    for the practice-session display purpose.
+    Counts `|` characters in the music body (after K:) as bar boundaries and
+    stops after the n_bars-th one. A leading barline before any notes (e.g.
+    the opening `|` of `|:DEFG...` or a plain `|DEFG...`) is a delimiter, not
+    a bar boundary, and is skipped so tunes that don't open with one aren't
+    off by one bar. The count is intentionally simple: every other `|` is
+    treated as one bar boundary, so repeat markers (`|:`, `:|`) count too,
+    which is close enough for the practice-session display purpose.
     """
     k_match = re.search(r"^K:.*$", abc, re.MULTILINE)
     if not k_match:
         return abc
     header = abc[: k_match.end()]
     body = abc[k_match.end() :]
+    lead_match = re.match(r"\s*\|+:?", body)
+    start = lead_match.end() if lead_match else 0
     pipe_count = 0
-    for i, ch in enumerate(body):
-        if ch == "|":
+    for i in range(start, len(body)):
+        if body[i] == "|":
             pipe_count += 1
-            if pipe_count > n_bars:
+            if pipe_count >= n_bars:
                 return header + body[: i + 1].rstrip() + "\n"
     return abc
