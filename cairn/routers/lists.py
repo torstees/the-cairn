@@ -21,7 +21,7 @@ from cairn.services.lists import (
     update_list,
     update_list_entry_setting,
 )
-from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes
+from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes, preview_abc
 from cairn.templating import templates
 
 router = APIRouter(prefix="/lists", tags=["lists"])
@@ -34,6 +34,16 @@ _FAMILY_FOR_TYPE: dict[str, str] = {
     for family, types in TUNE_FAMILIES.items()
     for t in types
 }
+
+
+def _entry_previews(entries) -> dict[int, str]:
+    """Map tune id -> ABC preview for list entries, preferring each entry's chosen setting."""
+    previews: dict[int, str] = {}
+    for entry in entries:
+        abc = preview_abc(entry.tune, entry.setting)
+        if abc is not None:
+            previews[entry.tune_id] = abc
+    return previews
 
 
 @router.get("/")
@@ -166,6 +176,7 @@ async def list_detail(
     box_entries = box.entries if box else []
     box_setting_by_tune_id = json.dumps({e.tune_id: e.setting_id for e in box_entries if e.setting_id is not None})
     box_tune_ids_json = json.dumps([e.tune_id for e in box_entries])
+    tune_previews = _entry_previews(practice_list.entries)
     return templates.TemplateResponse(
         request,
         "lists/detail.html",
@@ -179,6 +190,7 @@ async def list_detail(
             "box_name": box.name if box else "",
             "family_labels": FAMILY_LABELS,
             "family_for_type": _FAMILY_FOR_TYPE,
+            "tune_previews": tune_previews,
         },
     )
 
@@ -237,7 +249,7 @@ async def list_add_tune(
     return templates.TemplateResponse(
         request,
         "lists/partials/_entry_row.html",
-        {"entry": entry, "list_id": list_id},
+        {"entry": entry, "list_id": list_id, "tune_previews": _entry_previews([entry])},
     )
 
 
@@ -256,7 +268,7 @@ async def list_set_entry_setting(
     return templates.TemplateResponse(
         request,
         "lists/partials/_entry_row.html",
-        {"entry": entry, "list_id": list_id},
+        {"entry": entry, "list_id": list_id, "tune_previews": _entry_previews([entry])},
     )
 
 
