@@ -1,0 +1,9 @@
+{#
+  Editable BPM label paired with the #abc-tempo range slider. Typing a value
+  and pressing Enter (or blurring) applies it via wireTempoLabelEditing() in
+  static/js/app.js, which clamps to this input's own min/max.
+#}
+<input id="abc-tempo-label" type="number" min="40" max="250" step="1" value="100"
+       class="w-14 text-sm text-stone-500 bg-transparent border-0 border-b border-transparent
+              focus:border-stone-400 focus:outline-none text-center cursor-default focus:cursor-text">
+<span class="text-sm text-stone-500">bpm</span>

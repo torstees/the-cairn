@@ -204,8 +204,11 @@
     naturalBpm = extractBpm(abc);
     var tempoSlider = document.getElementById("abc-tempo");
     var tempoLabel = document.getElementById("abc-tempo-label");
-    if (tempoSlider && naturalBpm) tempoSlider.value = naturalBpm;
-    if (tempoLabel && naturalBpm) tempoLabel.textContent = naturalBpm + " bpm";
+    if (naturalBpm) {
+      var seededBpm = clampTempo(naturalBpm, tempoSlider);
+      if (tempoSlider) tempoSlider.value = seededBpm;
+      if (tempoLabel) tempoLabel.value = seededBpm;
+    }
   }
 
   function render(abcString) {
@@ -253,18 +256,22 @@
     var tempoLabel = document.getElementById("abc-tempo-label");
 
     naturalBpm = extractBpm(abcString);
-    if (tempoSlider && naturalBpm) tempoSlider.value = naturalBpm;
-    if (tempoLabel && naturalBpm) tempoLabel.textContent = naturalBpm + " bpm";
+    if (naturalBpm) {
+      var seededBpm = clampTempo(naturalBpm, tempoSlider);
+      if (tempoSlider) tempoSlider.value = seededBpm;
+      if (tempoLabel) tempoLabel.value = seededBpm;
+    }
 
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
-        tempoLabel.textContent = this.value + " bpm";
+        tempoLabel.value = this.value;
         if (activeSynth) {
           activeSynth.stop();
           teardownAudio();
           if (btn) btn.textContent = "▶ Play";
         }
       });
+      wireTempoLabelEditing(tempoSlider, tempoLabel);
     }
 
     if (btn && visualObj && visualObj[0]) {
@@ -552,6 +559,42 @@
     metroGains = [];
   }
 
+  // Clamp a bpm value to the tempo slider's own min/max, falling back to
+  // 40-250 if the slider isn't on the page yet.
+  function clampTempo(value, slider) {
+    var min = slider ? parseInt(slider.min, 10) : NaN;
+    var max = slider ? parseInt(slider.max, 10) : NaN;
+    if (isNaN(min)) min = 40;
+    if (isNaN(max)) max = 250;
+    return Math.min(max, Math.max(min, value));
+  }
+
+  // Makes the #abc-tempo-label <input type="number"> editable in place: typing
+  // a value and pressing Enter (or blurring) clamps it to the slider's range
+  // and syncs both controls. Non-numeric input is ignored, restoring the
+  // previous value. Restarts the metronome at the new tempo if it's running.
+  function wireTempoLabelEditing(tempoSlider, tempoLabel) {
+    if (!tempoSlider || !tempoLabel) return;
+
+    tempoLabel.addEventListener("change", function () {
+      // valueAsNumber (rather than parseInt on the string) correctly handles
+      // whatever a number input actually accepts, e.g. "1e2" for 100.
+      var parsed = tempoLabel.valueAsNumber;
+      if (isNaN(parsed)) {
+        tempoLabel.value = tempoSlider.value;
+        return;
+      }
+      var clamped = clampTempo(Math.round(parsed), tempoSlider);
+      tempoSlider.value = clamped;
+      tempoLabel.value = clamped;
+      if (metroTimer) { stopMetronome(); startMetronome(clamped); }
+    });
+
+    tempoLabel.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); tempoLabel.blur(); }
+    });
+  }
+
   function initMetronome() {
     var btn = document.getElementById("metro-play");
     if (!btn) return;
@@ -561,8 +604,9 @@
     if (window.__cairnLastTempo) {
       var slider = document.getElementById("abc-tempo");
       var label  = document.getElementById("abc-tempo-label");
-      if (slider) slider.value = window.__cairnLastTempo;
-      if (label)  label.textContent = window.__cairnLastTempo + " bpm";
+      var seeded = clampTempo(window.__cairnLastTempo, slider);
+      if (slider) slider.value = seeded;
+      if (label)  label.value = seeded;
     }
 
     btn.addEventListener("click", function () {
@@ -913,15 +957,16 @@
     var tempoLabel  = document.getElementById("abc-tempo-label");
 
     naturalBpm = extractBpm(currentAbcString);
-    var seedBpm = window.__cairnLastTempo || naturalBpm || 100;
+    var seedBpm = clampTempo(window.__cairnLastTempo || naturalBpm || 100, tempoSlider);
     if (tempoSlider) tempoSlider.value = seedBpm;
-    if (tempoLabel)  tempoLabel.textContent = seedBpm + " bpm";
+    if (tempoLabel)  tempoLabel.value = seedBpm;
 
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
-        tempoLabel.textContent = this.value + " bpm";
+        tempoLabel.value = this.value;
         if (activeSynth) { activeSynth.stop(); teardownAudio(); if (playBtn) playBtn.textContent = "▶ Play"; }
       });
+      wireTempoLabelEditing(tempoSlider, tempoLabel);
     }
 
     if (playBtn) {
@@ -986,19 +1031,20 @@
 
     naturalBpm = extractBpm(currentAbcString);
     // Priority: user's last tempo → author default → ABC Q: field → 100
-    var seedBpm = window.__cairnLastTempo || window.__cairnDefaultTempo || naturalBpm || 100;
+    var seedBpm = clampTempo(window.__cairnLastTempo || window.__cairnDefaultTempo || naturalBpm || 100, tempoSlider);
     if (tempoSlider) tempoSlider.value = seedBpm;
-    if (tempoLabel) tempoLabel.textContent = seedBpm + " bpm";
+    if (tempoLabel) tempoLabel.value = seedBpm;
 
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
-        tempoLabel.textContent = this.value + " bpm";
+        tempoLabel.value = this.value;
         if (activeSynth) {
           activeSynth.stop();
           teardownAudio();
           if (playBtn) playBtn.textContent = "▶ Play";
         }
       });
+      wireTempoLabelEditing(tempoSlider, tempoLabel);
     }
 
     if (playBtn) {
@@ -1202,9 +1248,10 @@
 
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
-        tempoLabel.textContent = this.value + " bpm";
+        tempoLabel.value = this.value;
         if (activeSynth) { activeSynth.stop(); teardownAudio(); if (playBtn) playBtn.textContent = "▶ Play"; }
       });
+      wireTempoLabelEditing(tempoSlider, tempoLabel);
     }
 
     if (metroBtn) {
@@ -1265,9 +1312,9 @@
 
     var slider = document.getElementById("abc-tempo");
     var label  = document.getElementById("abc-tempo-label");
-    var bpm = opts.lastTempo || extractBpm(opts.abc) || 100;
+    var bpm = clampTempo(opts.lastTempo || extractBpm(opts.abc) || 100, slider);
     if (slider) slider.value = bpm;
-    if (label)  label.textContent = bpm + " bpm";
+    if (label)  label.value = bpm;
 
     render(opts.abc);
   }
