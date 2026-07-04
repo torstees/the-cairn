@@ -3,12 +3,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import Instrument, KeyMode, KeyRoot, Role, TuneType, User
 from cairn.routers.progress import _STUB_BOX_ID, _STUB_USER_ID
-from cairn.schemas import TuneCreate
-from cairn.services.boxes import create_box
+from cairn.schemas import TuneCreate, TuneSettingCreate
+from cairn.services.boxes import add_tune, create_box, set_preferred_setting
 from cairn.services.spaced_rep import record_practice
-from cairn.services.tunes import create_tune
+from cairn.services.tunes import create_setting, create_tune
 
-_ABC = "|:DEFA BAFA|DEFA BAFA:|"
+_ABC = "|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
+_ALT_ABC = "|:GABc defg|GABc defg|GABc defg|GABc defg|GABc defg|GABc defg:|"
 
 
 async def _seed(db: AsyncSession):
@@ -95,3 +96,45 @@ async def test_progress_index_shows_due_badge(client: AsyncClient, db: AsyncSess
     resp = await client.get("/progress/")
     assert resp.status_code == 200
     assert "Morning Dew" in resp.text
+
+
+async def test_progress_index_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:
+    _, t = await _seed(db)
+    resp = await client.get("/progress/")
+    assert resp.status_code == 200
+    assert f'data-abc-preview-id="{t.id}"' in resp.text
+    assert f'<template id="tune-abc-preview-{t.id}">' in resp.text
+
+
+async def test_progress_record_response_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:
+    _, t = await _seed(db)
+    resp = await client.post(f"/progress/{t.id}", data={"confidence": "4"})
+    assert resp.status_code == 200
+    assert f'data-abc-preview-id="{t.id}"' in resp.text
+    assert f'<template id="tune-abc-preview-{t.id}">' in resp.text
+
+
+async def test_progress_set_status_response_has_no_preview_markup(client: AsyncClient, db: AsyncSession) -> None:
+    # _progress_badge.html is just the status badge, not the title link — no preview needed.
+    _, t = await _seed(db)
+    resp = await client.post(f"/progress/{t.id}/status", data={"status": "session_ready"})
+    assert resp.status_code == 200
+    assert "data-abc-preview-id" not in resp.text
+
+
+async def test_progress_preview_uses_box_preferred_setting_not_core(client: AsyncClient, db: AsyncSession) -> None:
+    _, t = await _seed(db)
+    await add_tune(db, _STUB_BOX_ID, t.id)
+    alt = await create_setting(
+        db,
+        t.id,
+        TuneSettingCreate(tune_id=t.id, label="Alt", abc_notation=_ALT_ABC, instrument=Instrument.fiddle),
+    )
+    await set_preferred_setting(db, _STUB_BOX_ID, t.id, alt.id)
+
+    resp = await client.get("/progress/")
+    assert resp.status_code == 200
+    marker = f'<template id="tune-abc-preview-{t.id}">'
+    preview = resp.text.split(marker, 1)[1].split("</template>", 1)[0]
+    assert "GABc defg" in preview
+    assert "DEFA BAFA" not in preview

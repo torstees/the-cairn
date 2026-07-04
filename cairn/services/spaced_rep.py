@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from cairn.models import (
     PracticeListType,
@@ -263,7 +264,9 @@ async def get_user_progress(
 
     Ordered alphabetically by sort_title.
     """
-    tunes_result = await db.execute(select(Tune).order_by(Tune.sort_title))
+    tunes_result = await db.execute(
+        select(Tune).order_by(Tune.sort_title).options(selectinload(Tune.settings))
+    )
     tunes = list(tunes_result.scalars().all())
     if not tunes:
         return []
