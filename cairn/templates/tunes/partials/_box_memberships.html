@@ -1,0 +1,22 @@
+{#
+  Required context: tune, boxes, box_entries (dict[box_id, TuneBoxEntry|None]),
+  non_core_settings, lists_by_box_id (dict[box_id, list[PracticeList]]),
+  active_list_id
+#}
+<section id="box-memberships-section" class="mb-8">
+  <h2 class="text-xl font-semibold text-stone-700 mb-3">Boxes</h2>
+
+  {% if boxes %}
+  <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100">
+    {% for box in boxes %}
+    {% set entry = box_entries.get(box.id) %}
+    {% set lists_for_box = lists_by_box_id.get(box.id, []) %}
+    {% include "tunes/partials/_box_membership_row.html" %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-stone-500 text-sm">
+    You don't have any tune boxes yet. <a href="/boxes/new" class="underline hover:text-stone-700">Create one</a>.
+  </p>
+  {% endif %}
+</section>

@@ -1,0 +1,76 @@
+{#
+  One box's membership state for this tune, rendered both inline (looped from
+  _box_memberships.html) and as the HTMX response of the add/change-setting
+  endpoints in cairn/routers/tunes.py.
+  Required context: tune, box, entry (TuneBoxEntry or None), non_core_settings,
+  lists_for_box, active_list_id
+#}
+<div id="box-membership-{{ box.id }}" class="px-5 py-3">
+  {% if entry %}
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <span class="font-medium text-stone-800">{{ box.name }}</span>
+      <span class="text-xs text-stone-400 ml-2">
+        {% if entry.setting %}{{ entry.setting.label }}{% if entry.setting.instrument %} ({{ entry.setting.instrument.label }}){% endif %}{% else %}Core setting{% endif %}
+      </span>
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+      {% if non_core_settings %}
+      <select name="setting_id"
+              hx-post="/tunes/{{ tune.id }}/boxes/{{ box.id }}/setting"
+              hx-target="#box-membership-{{ box.id }}"
+              hx-swap="outerHTML"
+              hx-trigger="change"
+              class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        <option value="">Core setting</option>
+        {% for s in non_core_settings %}
+        <option value="{{ s.id }}" {% if entry.setting_id == s.id %}selected{% endif %}>
+          {{ s.label }}{% if s.instrument %} ({{ s.instrument.label }}){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <a href="/boxes/{{ box.id }}" class="text-xs text-stone-500 hover:text-stone-700 hover:underline">View box &rarr;</a>
+    </div>
+  </div>
+  {% else %}
+  <div x-data="{ open: false }">
+    <div class="flex items-center justify-between gap-4">
+      <span class="font-medium text-stone-800">{{ box.name }}</span>
+      <button x-show="!open" @click="open = true"
+              class="text-sm border border-stone-300 text-stone-600 hover:bg-stone-50 px-3 py-1.5 rounded-lg">
+        + Add
+      </button>
+    </div>
+    <form x-show="open" x-cloak
+          hx-post="/tunes/{{ tune.id }}/boxes"
+          hx-target="#box-membership-{{ box.id }}"
+          hx-swap="outerHTML"
+          class="mt-2 flex items-center gap-2 flex-wrap">
+      <input type="hidden" name="box_id" value="{{ box.id }}">
+      {% if non_core_settings %}
+      <select name="setting_id"
+              class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        <option value="">Core setting</option>
+        {% for s in non_core_settings %}
+        <option value="{{ s.id }}">{{ s.label }}{% if s.instrument %} ({{ s.instrument.label }}){% endif %}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      {% if lists_for_box %}
+      <select name="list_id"
+              class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        <option value="">Don't add to a list</option>
+        {% for pl in lists_for_box %}
+        <option value="{{ pl.id }}" {% if pl.id == active_list_id %}selected{% endif %}>Also add to &ldquo;{{ pl.name }}&rdquo;</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <button type="submit"
+              class="text-sm bg-stone-700 hover:bg-stone-600 text-white px-3 py-1.5 rounded-lg font-medium">
+        Add
+      </button>
+    </form>
+  </div>
+  {% endif %}
+</div>

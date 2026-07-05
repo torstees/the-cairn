@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneType
+from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
-from cairn.services.boxes import get_box, get_box_entry
+from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_preferred_setting
+from cairn.services.lists import add_tune_to_list, get_active_list, list_lists
 from cairn.services.tunes import (
     FAMILY_LABELS,
     add_alias,
@@ -119,6 +121,14 @@ async def tune_detail(
     settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
     min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
     beats_per_bar = int(tune.time_signature.split("/")[0])
+
+    boxes = await list_boxes(db, _STUB_USER_ID)
+    box_entries = {b.id: next((e for e in b.entries if e.tune_id == tune_id), None) for b in boxes}
+    lists_by_box_id: dict[int, list] = {}
+    for practice_list in await list_lists(db, _STUB_USER_ID):
+        lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
+    active_list = await get_active_list(db, _STUB_USER_ID)
+
     return templates.TemplateResponse(
         request,
         "tunes/detail.html",
@@ -133,9 +143,86 @@ async def tune_detail(
             "tempo_records": tempo_records,
             "last_tempo": tempo_records[-1].tempo if tempo_records else None,
             "beats_per_bar": beats_per_bar,
+            "boxes": boxes,
+            "box_entries": box_entries,
+            "non_core_settings": [s for s in tune.settings if not s.is_core],
+            "lists_by_box_id": lists_by_box_id,
+            "active_list_id": active_list.id if active_list else None,
             **_SETTINGS_CTX,
         },
     )
+
+
+async def _box_membership_context(db: AsyncSession, tune: Tune, box_id: int) -> dict:
+    box = await get_box(db, box_id)
+    if box is None:
+        raise HTTPException(status_code=404, detail="Box not found")
+    entry = await get_box_entry(db, box_id, tune.id)
+    lists_for_box = [pl for pl in await list_lists(db, _STUB_USER_ID) if pl.box_id == box_id]
+    active_list = await get_active_list(db, _STUB_USER_ID)
+    return {
+        "tune": tune,
+        "box": box,
+        "entry": entry,
+        "non_core_settings": [s for s in tune.settings if not s.is_core],
+        "lists_for_box": lists_for_box,
+        "active_list_id": active_list.id if active_list else None,
+    }
+
+
+@router.post("/{tune_id}/boxes")
+async def tune_add_to_box(
+    request: Request,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    box_id: int = Form(...),
+    setting_id: str = Form(default=""),
+    list_id: str = Form(default=""),
+) -> Response:
+    tune = await get_tune(db, tune_id)
+    if tune is None:
+        raise HTTPException(status_code=404, detail="Tune not found")
+
+    sid = int(setting_id) if setting_id else None
+    try:
+        await add_tune(db, box_id, tune_id)
+    except IntegrityError as exc:
+        raise HTTPException(status_code=409, detail="Tune already in box") from exc
+    # add_tune() may have auto-picked a setting via its own instrument-matching
+    # heuristic; the user's explicit choice (including "Core setting") always
+    # takes precedence, so this runs unconditionally rather than only when sid
+    # is not None.
+    await set_preferred_setting(db, box_id, tune_id, sid)
+
+    if list_id:
+        try:
+            await add_tune_to_list(db, int(list_id), tune_id, setting_id=sid)
+        except IntegrityError:
+            pass  # already in that list — the box add still succeeded
+
+    ctx = await _box_membership_context(db, tune, box_id)
+    return templates.TemplateResponse(request, "tunes/partials/_box_membership_row.html", ctx)
+
+
+@router.post("/{tune_id}/boxes/{box_id}/setting")
+async def tune_update_box_setting(
+    request: Request,
+    tune_id: int,
+    box_id: int,
+    db: AsyncSession = Depends(get_db),
+    setting_id: str = Form(default=""),
+) -> Response:
+    tune = await get_tune(db, tune_id)
+    if tune is None:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    if await get_box_entry(db, box_id, tune_id) is None:
+        raise HTTPException(status_code=404, detail="Tune not in box")
+
+    sid = int(setting_id) if setting_id else None
+    await set_preferred_setting(db, box_id, tune_id, sid)
+
+    ctx = await _box_membership_context(db, tune, box_id)
+    return templates.TemplateResponse(request, "tunes/partials/_box_membership_row.html", ctx)
 
 
 @router.post("/{tune_id}/tempo")
