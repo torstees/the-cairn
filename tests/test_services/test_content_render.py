@@ -32,3 +32,14 @@ def test_render_markdown_attr_list_extension() -> None:
 def test_render_markdown_link_gets_default_class() -> None:
     html = render_markdown("[The Cairn](https://example.com)")
     assert '<a class="text-stone-700 underline hover:text-stone-900" href="https://example.com">' in html
+
+
+def test_render_markdown_abc_fenced_block_becomes_language_abc_code_element() -> None:
+    # The client-side ABCJS post-processor (static/js/app.js) selects
+    # "pre code.language-abc" — confirm the fenced block produces that shape
+    # (default classes may also be appended, which is fine for a class selector).
+    body = "```abc\nX:1\nK:D\nDEFG ABAG|\n```"
+    html = render_markdown(body)
+    assert "<pre" in html
+    assert 'class="language-abc' in html
+    assert "DEFG ABAG" in html

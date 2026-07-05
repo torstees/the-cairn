@@ -1441,12 +1441,38 @@
     document.addEventListener("htmx:afterSwap", hide);
   }
 
+  // ── ABC notation inside rendered markdown (issue #68) ───────────────────────
+  // render_markdown() passes ```abc fenced blocks through as
+  // <pre><code class="language-abc">; replace each with an ABCJS rendering.
+  // Scoped to `root` (default document) so it can be re-run on just the
+  // swapped-in subtree after an HTMX swap, e.g. the warmup markdown preview pane.
+
+  var markdownAbcBlockCounter = 0;
+
+  function renderMarkdownAbcBlocks(root) {
+    (root || document).querySelectorAll("pre code.language-abc").forEach(function (block) {
+      var div = document.createElement("div");
+      div.id = "markdown-abc-" + markdownAbcBlockCounter++;
+      block.parentElement.replaceWith(div);
+      try {
+        ABCJS.renderAbc(div.id, block.textContent, { responsive: "resize" });
+      } catch (e) {
+        // Malformed ABC — leave the empty div rather than crashing the page.
+      }
+    });
+  }
+
   // ── init ───────────────────────────────────────────────────────────────────
 
   document.addEventListener("DOMContentLoaded", function () {
     renderScore();
     initFormPreview();
     initTuneHoverPreview();
+    renderMarkdownAbcBlocks();
+
+    document.addEventListener("htmx:afterSwap", function (e) {
+      renderMarkdownAbcBlocks(e.detail.target);
+    });
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { clearCairnModal(); }
