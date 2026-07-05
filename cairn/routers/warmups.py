@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
 from cairn.models import Instrument, WarmupInstrument, WarmupType
+from cairn.services.content import render_markdown
 from cairn.services.warmups import (
     create_warmup,
     delete_warmup,
@@ -80,6 +81,18 @@ async def warmup_create(
     return RedirectResponse(f"/warmups/{warmup.id}", status_code=303)
 
 
+@router.post("/preview-markdown")
+async def warmup_preview_markdown(
+    request: Request,
+    content: str = Form(default=""),
+) -> Response:
+    return templates.TemplateResponse(
+        request,
+        "warmups/partials/_markdown_preview.html",
+        {"rendered_body": render_markdown(content)},
+    )
+
+
 @router.get("/{warmup_id}")
 async def warmup_detail(
     request: Request,
@@ -90,13 +103,15 @@ async def warmup_detail(
     if warmup is None:
         raise HTTPException(status_code=404, detail="Warmup not found")
     last_tempo = await get_warmup_tempo(db, _STUB_USER_ID, warmup_id)
+    is_abc = warmup.warmup_type in _ABC_TYPES
     return templates.TemplateResponse(
         request,
         "warmups/detail.html",
         {
             "warmup": warmup,
-            "is_abc": warmup.warmup_type in _ABC_TYPES,
+            "is_abc": is_abc,
             "last_tempo": last_tempo,
+            "rendered_body": None if is_abc else render_markdown(warmup.content),
         },
     )
 

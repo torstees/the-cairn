@@ -74,13 +74,31 @@
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-stone-700 mb-1" for="content">
-        Content
-        <span class="font-normal text-stone-400">(ABC notation for Scale/Snippet; plain text for Text Blurb)</span>
-      </label>
+      <div class="flex items-center justify-between mb-1">
+        <label class="block text-sm font-medium text-stone-700" for="content">
+          Content
+          <span class="font-normal text-stone-400">(ABC notation for Scale/Snippet; Markdown for Text Blurb)</span>
+        </label>
+        <div id="markdown-tabs" class="hidden gap-1 text-xs">
+          <button type="button" id="write-tab-btn"
+                  class="px-2 py-1 rounded-t border-b-2 border-stone-600 text-stone-800 font-medium">
+            Write
+          </button>
+          <button type="button" id="preview-tab-btn"
+                  hx-post="/warmups/preview-markdown"
+                  hx-include="#content"
+                  hx-target="#markdown-preview-pane"
+                  hx-swap="innerHTML"
+                  class="px-2 py-1 rounded-t border-b-2 border-transparent text-stone-400">
+            Preview
+          </button>
+        </div>
+      </div>
       <textarea id="content" name="content" rows="6" required
-                placeholder="ABC notation (Scale/Snippet) or plain text (Text Blurb)"
+                placeholder="ABC notation (Scale/Snippet) or Markdown (Text Blurb)"
                 class="w-full border border-stone-300 rounded-lg px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">{{ warmup.content if warmup else '' }}</textarea>
+      <div id="markdown-preview-pane"
+           class="hidden border border-stone-300 rounded-lg px-4 py-3 min-h-[150px]"></div>
       <div id="abc-preview-container" class="hidden mt-3 border border-stone-200 rounded-lg bg-stone-50 px-4 py-3">
         <p class="text-xs font-medium text-stone-400 mb-2 uppercase tracking-wide">Preview</p>
         <div id="abc-preview"></div>
@@ -121,9 +139,36 @@ DEFG ABAG|FEDC DEFD|</pre>
   const defaultTempoField = document.getElementById('default-tempo-field');
   const warmupPreview = window.initWarmupPreview('content', 'abc-preview');
 
+  const markdownTabs = document.getElementById('markdown-tabs');
+  const writeTabBtn = document.getElementById('write-tab-btn');
+  const previewTabBtn = document.getElementById('preview-tab-btn');
+  const contentTextarea = document.getElementById('content');
+  const markdownPreviewPane = document.getElementById('markdown-preview-pane');
+
   function isAbcType() {
     return typeSelect.value === 'scale' || typeSelect.value === 'snippet';
   }
+
+  function showWriteTab() {
+    contentTextarea.classList.remove('hidden');
+    markdownPreviewPane.classList.add('hidden');
+    writeTabBtn.classList.add('border-stone-600', 'text-stone-800', 'font-medium');
+    writeTabBtn.classList.remove('border-transparent', 'text-stone-400');
+    previewTabBtn.classList.remove('border-stone-600', 'text-stone-800', 'font-medium');
+    previewTabBtn.classList.add('border-transparent', 'text-stone-400');
+  }
+
+  function showPreviewTab() {
+    contentTextarea.classList.add('hidden');
+    markdownPreviewPane.classList.remove('hidden');
+    previewTabBtn.classList.add('border-stone-600', 'text-stone-800', 'font-medium');
+    previewTabBtn.classList.remove('border-transparent', 'text-stone-400');
+    writeTabBtn.classList.remove('border-stone-600', 'text-stone-800', 'font-medium');
+    writeTabBtn.classList.add('border-transparent', 'text-stone-400');
+  }
+
+  writeTabBtn.addEventListener('click', showWriteTab);
+  previewTabBtn.addEventListener('click', showPreviewTab);
 
   function syncPreview() {
     if (isAbcType()) {
@@ -133,6 +178,12 @@ DEFG ABAG|FEDC DEFD|</pre>
     } else {
       previewContainer.classList.add('hidden');
       defaultTempoField.classList.add('hidden');
+    }
+    if (typeSelect.value === 'text_blurb') {
+      markdownTabs.classList.remove('hidden');
+    } else {
+      markdownTabs.classList.add('hidden');
+      showWriteTab(); // ensure the textarea is visible when switching away from Text Blurb
     }
   }
 

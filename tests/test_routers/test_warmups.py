@@ -240,3 +240,36 @@ async def test_text_blurb_does_not_render_abc(client: AsyncClient, db: AsyncSess
     assert resp.status_code == 200
     assert "ABCJS.renderAbc" not in resp.text
     assert "Take a deep breath" in resp.text
+
+
+async def test_text_blurb_renders_markdown(client: AsyncClient, db: AsyncSession) -> None:
+    w = await create_warmup(
+        db,
+        title="Bow Control Notes",
+        warmup_type=WarmupType.text_blurb,
+        content="## Keep the Elbow Loose\n\nA **relaxed** bow arm produces a cleaner tone.",
+        difficulty=1,
+        instruments=[],
+    )
+    resp = await client.get(f"/warmups/{w.id}")
+    assert resp.status_code == 200
+    assert "<h2" in resp.text
+    assert "Keep the Elbow Loose" in resp.text
+    assert "<strong>relaxed</strong>" in resp.text
+
+
+async def test_warmup_preview_markdown_returns_rendered_html(client: AsyncClient) -> None:
+    resp = await client.post("/warmups/preview-markdown", data={"content": "## Heading\n\nSome **bold** text."})
+    assert resp.status_code == 200
+    assert "<h2" in resp.text
+    assert "Heading" in resp.text
+    assert "<strong>bold</strong>" in resp.text
+
+
+async def test_warmup_preview_markdown_abc_fenced_block(client: AsyncClient) -> None:
+    body = "Practice this:\n\n```abc\nX:1\nK:D\nDEFG ABAG|\n```"
+    resp = await client.post("/warmups/preview-markdown", data={"content": body})
+    assert resp.status_code == 200
+    assert "<pre" in resp.text
+    assert 'class="language-abc' in resp.text
+    assert "DEFG ABAG" in resp.text

@@ -45,8 +45,10 @@
       ABCJS.renderAbc("warmup-abc", {{ warmup.content | tojson }}, { responsive: "resize", add_classes: true });
     </script>
     {% else %}
-    {# ── Plain text blurb ───────────────────────────────────────────────── #}
-    <div class="px-4 py-4 text-stone-700 whitespace-pre-wrap text-sm leading-relaxed">{{ warmup.content }}</div>
+    {# ── Markdown text blurb ────────────────────────────────────────────── #}
+    <div class="px-4 py-4">
+      {% include "warmups/partials/_markdown_preview.html" %}
+    </div>
     {% endif %}
   </div>
 

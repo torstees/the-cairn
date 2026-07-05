@@ -818,7 +818,7 @@ without redesign.
   seed a `Content` record, `GET /pages/{slug}`, assert 200 and title
   appears in the response.
 
-- [ ] **7.3 — Warmup text blurb: markdown with embedded ABC notation**
+- [x] **7.3 — Warmup text blurb: markdown with embedded ABC notation**
 
   Change warmup `text_blurb` content from plain text to markdown, rendered
   via `render_markdown()` (from 7.2) and with ABC fenced block support

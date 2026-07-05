@@ -202,10 +202,13 @@ class ProgressStatus(LabelledEnum):
 - Alpine.js is for UI state only (open/closed, active tab, toggle)
 - Never fetch data from JavaScript — that is HTMX's responsibility
 - Every HTMX partial must function as a standalone renderable fragment
-- Inline ABC notation in text content is delimited with [abc]...[/abc] markers.
-The `render_inline_abc()` helper in `abc_utils.py` converts these to
-elements for ABCJS rendering. Use this pattern for warmup descriptions
-and pedagogy content. Never store rendered HTML in the database.
+- Markdown content (Content pages, `text_blurb` warmups) supports embedded
+ABC notation via fenced ` ```abc ` code blocks. `render_markdown()` in
+`cairn/services/content.py` renders the markdown server-side (the fenced
+block passes through as `<pre><code class="language-abc">`);
+`renderMarkdownAbcBlocks()` in `static/js/app.js` finds those blocks
+client-side and replaces each with an `ABCJS.renderAbc()` rendering.
+Never store rendered HTML in the database — only raw markdown.
 
 ---
 
