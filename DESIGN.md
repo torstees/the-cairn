@@ -115,6 +115,7 @@ tests/
 | `WarmupType` | scale, snippet, text_blurb |
 | `Role` | guest\*, student, teacher, admin |
 | `ContentVisibility` | public, enrolled, private |
+| `ContentType` | page, lesson, tutorial, technique_guide |
 | `SessionItemType` | warmup, learning, retention, technique |
 | `KeyRoot` | full chromatic set including enharmonics (C, C#, Db, D, Eb, E, F, F#, Gb, G, Ab, A, Bb, B) |
 | `KeyMode` | major, minor, dorian, mixolydian, lydian |
@@ -146,6 +147,10 @@ Tune
 
 TuneSet
  └─< TuneSetMember
+
+Content                    standalone; created_by FK → users.id is nullable
+                            (null = system/built-in, e.g. imported via
+                            scripts/import_content.py)
 ```
 
 ### Key Constraints and Invariants
@@ -279,6 +284,18 @@ stmt = (
 ```
 
 Accessing an unloaded relationship in an async context raises `MissingGreenlet`.
+
+### `metadata` Column Naming
+
+`Base.metadata` is reserved by SQLAlchemy's declarative base for the table's
+`MetaData` registry, so a model attribute literally named `metadata` raises
+`InvalidRequestError` at class-definition time. Where a column is
+conceptually "metadata" (e.g. `Content.metadata`), name the mapped attribute
+`metadata_` and pass the real column name explicitly:
+
+```python
+metadata_: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+```
 
 ### Static File Cache Busting
 
