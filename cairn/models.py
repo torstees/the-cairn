@@ -238,7 +238,7 @@ class WarmupItem(TimestampMixin, Base):
 class WarmupInstrument(TimestampMixin, Base):
     __tablename__ = "warmup_instruments"
 
-    warmup_id: Mapped[int] = mapped_column(ForeignKey("warmup_items.id"), primary_key=True)
+    warmup_id: Mapped[int] = mapped_column(ForeignKey("warmup_items.id", ondelete="CASCADE"), primary_key=True)
     instrument: Mapped[Instrument] = mapped_column(Enum(Instrument), primary_key=True)
 
     warmup: Mapped["WarmupItem"] = relationship(back_populates="instruments")
