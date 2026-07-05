@@ -680,7 +680,7 @@ Mark tasks: `[ ]` not started · `[~]` in progress · `[x]` done
   Shows tune titles in order with their current bars-to-show state and a
   progress badge (status from `StudentProgress` for the stub user).
 
-- [ ] **6b.5 — Extend seed scripts to cover all content types**
+- [x] **6b.5 — Extend seed scripts to cover all content types**
   Update `scripts/export_seed.py` and `scripts/seed.py` to handle warmups,
   boxes, and lists in addition to the existing tunes support. TuneSet export
   and import will be added here once 6b.1 is implemented.
