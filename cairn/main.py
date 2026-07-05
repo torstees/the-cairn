@@ -11,6 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from cairn.dependencies import get_db
 from cairn.logging_config import setup_logging
 from cairn.routers import boxes as boxes_router
+from cairn.routers import content as content_router
 from cairn.routers import difficulty as difficulty_router
 from cairn.routers import lists as lists_router
 from cairn.routers import practice as practice_router
@@ -61,6 +62,7 @@ app.include_router(lists_router.router)
 app.include_router(practice_router.router)
 app.include_router(warmups_router.router)
 app.include_router(tune_sets_router.router)
+app.include_router(content_router.router)
 
 
 _STUB_USER_ID = 1

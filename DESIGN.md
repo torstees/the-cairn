@@ -297,6 +297,18 @@ conceptually "metadata" (e.g. `Content.metadata`), name the mapped attribute
 metadata_: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
 ```
 
+### Markdown Rendering Without the Tailwind Typography Plugin
+
+The Tailwind CDN build has no Typography (`prose`) plugin, so raw HTML from
+`markdown.markdown()` renders with no visual distinction between headings,
+body text, links, etc. `render_markdown()` in `cairn/services/content.py`
+post-processes the rendered HTML with a regex substitution that injects a
+default Tailwind utility class onto each bare `h1`–`h6`, `a`, `table`, `th`,
+`td`, `img`, `ul`, `ol`, `blockquote`, `code`, and `pre` tag. Authors can
+override any single element with the `attr_list` extension's `{.class}`
+syntax; the author's class is merged with (not replaced by) the default so
+both apply.
+
 ### Static File Cache Busting
 
 `app.js` is served by FastAPI `StaticFiles`, which browsers aggressively cache.
