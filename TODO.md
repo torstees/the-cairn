@@ -779,7 +779,7 @@ without redesign.
   upsert creates, upsert updates by slug, get_content hit and miss,
   list_content with and without type filter.
 
-- [ ] **7.2 — Content rendering and routes**
+- [x] **7.2 — Content rendering and routes**
   **Renderer** — add `render_markdown(body: str) -> str` to
   `cairn/services/content.py`.
   Uses `markdown.markdown()` with extensions:

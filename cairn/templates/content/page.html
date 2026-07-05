@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ content.title }} — The Cairn{% endblock %}
+
+{% block content %}
+<article class="max-w-3xl mx-auto space-y-4 text-stone-700 leading-relaxed">
+  <h1 class="text-3xl font-bold text-stone-800">{{ content.title }}</h1>
+  {{ rendered_body | safe }}
+</article>
+{% endblock %}
