@@ -730,7 +730,7 @@ without redesign.
 - `markdown` — rendering library
 - `python-frontmatter` — YAML front matter parsing
 
-- [ ] **7.1 — Content model, import pipeline, and service**
+- [x] **7.1 — Content model, import pipeline, and service**
   **New enum** in `cairn/models.py`:
   `ContentType`: `page | lesson | tutorial | technique_guide`
   (extend as Phase 4 content types become clear; start with `page` only).

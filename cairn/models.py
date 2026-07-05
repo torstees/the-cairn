@@ -2,6 +2,7 @@ import enum
 from datetime import date, datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     CheckConstraint,
     Date,
@@ -93,6 +94,13 @@ class ContentVisibility(LabelledEnum):
     public = "public"
     enrolled = "enrolled"
     private = "private"
+
+
+class ContentType(LabelledEnum):
+    page = "page"
+    lesson = "lesson"
+    tutorial = "tutorial"
+    technique_guide = "technique_guide"
 
 
 class SessionItemType(LabelledEnum):
@@ -478,3 +486,21 @@ class PracticeSessionItem(TimestampMixin, Base):
     session: Mapped["PracticeSession"] = relationship(back_populates="items")
     tune: Mapped["Tune | None"] = relationship(back_populates="session_items")
     warmup: Mapped["WarmupItem | None"] = relationship(back_populates="session_items")
+
+
+class Content(TimestampMixin, Base):
+    __tablename__ = "content"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    slug: Mapped[str] = mapped_column(String(200), unique=True, index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    content_type: Mapped[ContentType] = mapped_column(Enum(ContentType), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    visibility: Mapped[ContentVisibility] = mapped_column(
+        Enum(ContentVisibility), default=ContentVisibility.public, nullable=False
+    )
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    # Mapped attribute is named metadata_ (not metadata) since `metadata` is
+    # reserved on declarative Base for the table's MetaData registry; the
+    # column itself is still named "metadata" in the database.
+    metadata_: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
