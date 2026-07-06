@@ -158,6 +158,13 @@ async def get_thesession_settings(
     return list(result.scalars().all())
 
 
+def _thesession_setting_label(setting: TheSessionSetting) -> str:
+    """Match the label shown next to each setting's checkbox in the wizard
+    (see _thesession_wizard_settings.html) so the saved TuneSetting.label
+    isn't a different, less informative string than what the user picked."""
+    return f"#{setting.setting_id} by {setting.username or 'unknown'} @ TheSession.org"
+
+
 async def apply_thesession_link(
     db: AsyncSession,
     tune_id: int,
@@ -210,7 +217,7 @@ async def apply_thesession_link(
         db.add(
             TuneSetting(
                 tune_id=tune.id,
-                label="TheSession.org (core)",
+                label=_thesession_setting_label(default_ext_setting),
                 abc_notation=default_ext_setting.abc,
                 is_core=True,
                 thesession_setting_id=default_ext_setting.setting_id,
@@ -233,7 +240,7 @@ async def apply_thesession_link(
         db.add(
             TuneSetting(
                 tune_id=tune.id,
-                label=f"TheSession.org #{ext_setting.setting_id}",
+                label=_thesession_setting_label(ext_setting),
                 abc_notation=ext_setting.abc,
                 is_core=False,
                 thesession_setting_id=ext_setting.setting_id,
