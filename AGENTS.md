@@ -621,6 +621,7 @@ make shell      # Open Python REPL with app context
 make lint       # ruff check + ruff format --check
 make fmt        # ruff format (auto-fix)
 make content    # Import markdown content pages from content/ (scripts/import_content.py)
+make thesession-import  # Refresh TheSession.org tune reference side tables (scripts/import_thesession.py)
 ```
 
 ---
