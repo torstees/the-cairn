@@ -904,7 +904,7 @@ sibling file (e.g. `cairn/models_thesession_tunes.py` and
 `cairn/models_thesession_community.py`) from the start — no need to convert
 `models.py` into a `models/` package for either.
 
-- [ ] **8.1 — Side-table models + import script (tune reference data)**
+- [x] **8.1 — Side-table models + import script (tune reference data)**
 
   **New models**, one per CSV, in a new `cairn/models_thesession_tunes.py`.
   Each is a faithful 1:1 mirror of its CSV: don't pre-aggregate or
@@ -914,10 +914,14 @@ sibling file (e.g. `cairn/models_thesession_tunes.py` and
   having data available for whatever query comes up later, without baking
   in assumptions about which row "wins" per tune.
 
-  - `TheSessionSetting` (from `tunes.csv`) — `setting_id` (PK), `tune_id`
-    (indexed), `name`, `tune_type_raw`, `meter`, `mode_raw`, `abc` (Text —
-    music body only, no headers, same convention as our own
-    `TuneSetting.abc_notation`), `submitted_date`, `username`, `composer`
+  - `TheSessionSetting` (from `tunes.csv`) — surrogate `id` (PK, **not**
+    `setting_id`: confirmed against the real dataset that `setting_id` isn't
+    actually unique — e.g. setting_id 1892 appears twice with different
+    `composer` credits — so treating it as a PK would silently drop rows),
+    `setting_id` (indexed, not unique), `tune_id` (indexed), `name`,
+    `tune_type_raw`, `meter`, `mode_raw`, `abc` (Text — music body only, no
+    headers, same convention as our own `TuneSetting.abc_notation`),
+    `submitted_date`, `username`, `composer`
   - `TheSessionAlias` (from `aliases.csv`) — surrogate `id` (PK), `tune_id`
     (indexed), `alias`, `canonical_name`
   - `TheSessionTunePopularity` (from `tune_popularity.csv`) — `tune_id` (PK),

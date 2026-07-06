@@ -1,4 +1,4 @@
-.PHONY: dev test migrate migration shell lint fmt import-abc export-seed seed content
+.PHONY: dev test migrate migration shell lint fmt import-abc export-seed seed content thesession-import
 
 dev:
 	uv run uvicorn cairn.main:app --reload --host 0.0.0.0 --port 8000
@@ -34,3 +34,6 @@ seed:
 
 content:
 	uv run python scripts/import_content.py
+
+thesession-import:
+	uv run python scripts/import_thesession.py
