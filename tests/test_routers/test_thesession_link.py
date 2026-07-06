@@ -115,6 +115,53 @@ async def test_pick_aliases_renders_settings_with_abc(client: AsyncClient, db: A
     assert "language-abc" in resp.text
 
 
+async def test_pick_aliases_splits_settings_by_key_match(client: AsyncClient, db: AsyncSession) -> None:
+    # The seeded tune is D major; give it one matching and one non-matching setting.
+    tune = await _seed_tune(db)
+    matching = TheSessionSetting(
+        setting_id=1,
+        tune_id=100,
+        name="The Morning Dew",
+        tune_type_raw="reel",
+        meter="4/4",
+        mode_raw="Dmajor",
+        abc="|:DEFG ABcd:|",
+        username="alice",
+    )
+    other = TheSessionSetting(
+        setting_id=2,
+        tune_id=100,
+        name="The Morning Dew",
+        tune_type_raw="reel",
+        meter="4/4",
+        mode_raw="Ador",
+        abc="|:A2BA GABc:|",
+        username="bob",
+    )
+    db.add_all([matching, other])
+    await db.commit()
+
+    resp = await client.post(f"/tunes/{tune.id}/thesession-tune/100/settings", data={"alias_ids": []})
+    assert resp.status_code == 200
+    # Only the matching setting is shown by default (outside the showAll-gated div).
+    assert "showAll: false" in resp.text
+    assert "Show all 2 settings" in resp.text
+    assert "1 in a different key" in resp.text
+
+
+async def test_pick_aliases_shows_everything_with_no_toggle_when_nothing_matches(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    tune = await _seed_tune(db)
+    ext = await _seed_external_tune(db)  # mode_raw="Ador", tune is D major — no match
+    resp = await client.post(f"/tunes/{tune.id}/thesession-tune/100/settings", data={"alias_ids": []})
+    assert resp.status_code == 200
+    # No matches means nothing to narrow to — show the setting directly, no toggle.
+    assert f"#{ext.setting_id}" in resp.text
+    assert "showAll" not in resp.text
+    assert "Show all" not in resp.text
+
+
 async def test_confirm_shows_only_checked_settings(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     ext = await _seed_external_tune(db)

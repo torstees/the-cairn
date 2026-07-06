@@ -3,7 +3,7 @@
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Tune, TuneAlias, TuneSetting, TuneType
+from cairn.models import KeyMode, KeyRoot, Tune, TuneAlias, TuneSetting, TuneType
 from cairn.models_thesession_tunes import TheSessionAlias, TheSessionSetting, TheSessionTunePopularity
 from cairn.services.abc_utils import ABC_MODE_SUFFIX, parse_key
 from cairn.services.tunes import TUNE_FAMILIES, core_setting, existing_alias_names, get_tune, sort_key
@@ -44,6 +44,23 @@ def build_thesession_preview_abc(setting: TheSessionSetting, x: int = 1) -> str:
     parsed = parse_key(setting.mode_raw)
     key_line = f"K:{parsed[0].value}{ABC_MODE_SUFFIX[parsed[1].value]}" if parsed else "K:C"
     return f"X:{x}\nT:{setting.name}\nM:{setting.meter}\n{key_line}\n{setting.abc}"
+
+
+def split_settings_by_key_match(
+    settings: list[TheSessionSetting], key_root: KeyRoot, key_mode: KeyMode
+) -> tuple[list[TheSessionSetting], list[TheSessionSetting]]:
+    """Split settings into (same key/mode as the tune, everything else).
+
+    A setting whose mode_raw doesn't parse is treated as non-matching rather
+    than raising, since Step 3 of the wizard must still be able to show it
+    under "show all".
+    """
+    matching: list[TheSessionSetting] = []
+    other: list[TheSessionSetting] = []
+    for setting in settings:
+        parsed = parse_key(setting.mode_raw)
+        (matching if parsed == (key_root, key_mode) else other).append(setting)
+    return matching, other
 
 
 def _escape_like(value: str) -> str:

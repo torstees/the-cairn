@@ -10,6 +10,7 @@ from cairn.services.thesession_link import (
     get_thesession_aliases,
     get_thesession_settings,
     search_thesession_tunes,
+    split_settings_by_key_match,
 )
 from cairn.services.tunes import FAMILY_LABELS, existing_alias_names, get_tune
 from cairn.templating import templates
@@ -113,7 +114,11 @@ async def thesession_pick_aliases(
     db: AsyncSession = Depends(get_db),
     alias_ids: list[int] = Form(default=[]),
 ) -> Response:
+    tune = await get_tune(db, tune_id)
+    if tune is None:
+        raise HTTPException(status_code=404, detail="Tune not found")
     settings = await get_thesession_settings(db, external_tune_id)
+    matching_settings, other_settings = split_settings_by_key_match(settings, tune.key_root, tune.key_mode)
     previews = {s.id: build_thesession_preview_abc(s) for s in settings}
     return templates.TemplateResponse(
         request,
@@ -121,7 +126,9 @@ async def thesession_pick_aliases(
         {
             "tune_id": tune_id,
             "external_tune_id": external_tune_id,
-            "settings": settings,
+            "tune": tune,
+            "matching_settings": matching_settings,
+            "other_settings": other_settings,
             "previews": previews,
             "alias_ids": alias_ids,
         },
