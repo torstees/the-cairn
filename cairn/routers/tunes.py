@@ -114,8 +114,9 @@ async def tune_detail(
         if entry and entry.setting_id is not None:
             active_setting = entry.setting
 
+    core = core_setting(tune)
     if active_setting is None:
-        active_setting = core_setting(tune)
+        active_setting = core
 
     built_abc = build_abc(tune, active_setting) if active_setting else ""
     settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
@@ -137,6 +138,7 @@ async def tune_detail(
             "built_abc": built_abc,
             "settings_abc": settings_abc,
             "active_setting_id": active_setting.id if active_setting else None,
+            "thesession_setting_anchor_id": core.thesession_setting_id if core else None,
             "box": box,
             "box_id": box_id,
             "min_tempo": min_tempo,

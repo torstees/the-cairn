@@ -16,10 +16,11 @@ from cairn.routers import difficulty as difficulty_router
 from cairn.routers import lists as lists_router
 from cairn.routers import practice as practice_router
 from cairn.routers import progress as progress_router
-from cairn.routers import warmups as warmups_router
 from cairn.routers import settings as settings_router
+from cairn.routers import thesession_link as thesession_link_router
 from cairn.routers import tune_sets as tune_sets_router
 from cairn.routers import tunes as tunes_router
+from cairn.routers import warmups as warmups_router
 from cairn.services.dashboard import get_dashboard_data
 from cairn.templating import templates
 
@@ -54,6 +55,7 @@ app.add_middleware(RequestLoggingMiddleware)
 app.mount("/static", StaticFiles(directory=BASE_DIR.parent / "static"), name="static")
 
 app.include_router(tunes_router.router)
+app.include_router(thesession_link_router.router)
 app.include_router(settings_router.router)
 app.include_router(difficulty_router.router)
 app.include_router(progress_router.router)

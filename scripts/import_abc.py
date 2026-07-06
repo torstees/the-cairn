@@ -25,55 +25,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from sqlalchemy import select
 
 from cairn.database import AsyncSessionLocal
-from cairn.models import KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneSetting, TuneType
+from cairn.models import OrnamentationLevel, Tune, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneSettingCreate
+from cairn.services.abc_utils import parse_key as _parse_key
 from cairn.services.tunes import create_setting, create_tune
 
 _MAPPED = frozenset("XTCOARMSZNK")
-
-_KEY_ROOT_MAP: dict[str, KeyRoot] = {
-    "c": KeyRoot.C,
-    "c#": KeyRoot.C_sharp,
-    "db": KeyRoot.D_flat,
-    "d": KeyRoot.D,
-    "eb": KeyRoot.E_flat,
-    "e": KeyRoot.E,
-    "f": KeyRoot.F,
-    "f#": KeyRoot.F_sharp,
-    "gb": KeyRoot.G_flat,
-    "g": KeyRoot.G,
-    "ab": KeyRoot.A_flat,
-    "a": KeyRoot.A,
-    "bb": KeyRoot.B_flat,
-    "b": KeyRoot.B,
-}
-
-_KEY_MODE_MAP: dict[str, KeyMode] = {
-    "": KeyMode.major,
-    "maj": KeyMode.major,
-    "major": KeyMode.major,
-    "m": KeyMode.minor,
-    "min": KeyMode.minor,
-    "minor": KeyMode.minor,
-    "dor": KeyMode.dorian,
-    "dorian": KeyMode.dorian,
-    "mix": KeyMode.mixolydian,
-    "mixolydian": KeyMode.mixolydian,
-    "lyd": KeyMode.lydian,
-    "lydian": KeyMode.lydian,
-}
-
-
-def _parse_key(raw: str) -> tuple[KeyRoot, KeyMode] | None:
-    """Parse K: values: 'Dmaj', 'Ador', 'Bbdor', 'A mixolydian', 'G', 'Bm', etc."""
-    m = re.match(r"^([A-Ga-g][b#]?)\s*(.*)", raw.strip())
-    if not m:
-        return None
-    root = _KEY_ROOT_MAP.get(m.group(1).lower())
-    mode = _KEY_MODE_MAP.get(m.group(2).strip().lower())
-    if root is None or mode is None:
-        return None
-    return root, mode
 
 
 def _parse_time_sig(raw: str) -> str:

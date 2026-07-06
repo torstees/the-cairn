@@ -38,6 +38,8 @@ class TuneType(LabelledEnum):
     air = "air"
     march = "march"
     barndance = "barndance"
+    mazurka = "mazurka"
+    three_two = "three_two"
 
 
 class Instrument(LabelledEnum):
@@ -150,6 +152,11 @@ class Tune(TimestampMixin, Base):
     region: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    # Plain reference ids, not FKs into the thesession_* side tables (TODO 8.1) —
+    # those are a refreshable cache; these are a permanent attribution link
+    # that must survive a cache refresh/rebuild. See TODO 8.2.
+    thesession_tune_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    thesession_username: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     settings: Mapped[list["TuneSetting"]] = relationship(back_populates="tune", cascade="all, delete-orphan")
     aliases: Mapped[list["TuneAlias"]] = relationship(
@@ -183,6 +190,9 @@ class TuneSetting(TimestampMixin, Base):
         # Format TBD — see Phase 3 mutation notation design notes
         # Do not implement rendering until format is decided
     )
+    # Plain reference id, not a FK — see the matching note on Tune above.
+    thesession_setting_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    thesession_username: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     tune: Mapped["Tune"] = relationship(back_populates="settings")
 

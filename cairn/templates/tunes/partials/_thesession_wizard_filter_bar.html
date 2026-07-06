@@ -1,0 +1,39 @@
+{# Rendered both inline on initial page-1 load and as an hx-swap-oob update
+   from the results-only endpoint, so filter pills reflect the active choice.
+   The hidden type/family fields let the search box's own hx-include pick up
+   whichever filter is currently active, since they're refreshed by the same
+   OOB swap that updates the pills — otherwise typing in the search box would
+   silently reset the active filter back to "All". #}
+<input type="hidden" name="type" value="{{ active_type.value if active_type else '' }}">
+<input type="hidden" name="family" value="{{ active_family or '' }}">
+<div class="flex flex-wrap items-center gap-2">
+  <span class="text-xs text-stone-400 w-14 shrink-0">Family</span>
+  <button type="button"
+          hx-get="/tunes/{{ tune_id }}/thesession-search-results" hx-include="[name='q']"
+          hx-target="#thesession-results-wrap" hx-swap="innerHTML"
+          class="px-3 py-1 rounded-full text-sm border transition-colors
+                 {% if not active_type and not active_family %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
+    All
+  </button>
+  {% for key, label in family_labels.items() %}
+  <button type="button"
+          hx-get="/tunes/{{ tune_id }}/thesession-search-results?family={{ key }}" hx-include="[name='q']"
+          hx-target="#thesession-results-wrap" hx-swap="innerHTML"
+          class="px-3 py-1 rounded-full text-sm border transition-colors
+                 {% if active_family == key %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
+    {{ label }}
+  </button>
+  {% endfor %}
+</div>
+<div class="flex flex-wrap items-center gap-2">
+  <span class="text-xs text-stone-400 w-14 shrink-0">Type</span>
+  {% for tt in tune_types %}
+  <button type="button"
+          hx-get="/tunes/{{ tune_id }}/thesession-search-results?type={{ tt.value }}" hx-include="[name='q']"
+          hx-target="#thesession-results-wrap" hx-swap="innerHTML"
+          class="px-3 py-1 rounded-full text-sm border transition-colors
+                 {% if active_type == tt %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
+    {{ tt.label }}
+  </button>
+  {% endfor %}
+</div>

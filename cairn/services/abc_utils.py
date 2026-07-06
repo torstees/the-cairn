@@ -3,20 +3,65 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from cairn.models import Tune, TuneSetting
+from cairn.models import KeyMode, KeyRoot, Tune, TuneSetting
 
 if TYPE_CHECKING:
     from cairn.models import TuneBox, TuneSet
 
 _MAPPED_HEADERS = frozenset("XTCOARMSZNK")
 
-_ABC_MODE_SUFFIX: dict[str, str] = {
+ABC_MODE_SUFFIX: dict[str, str] = {
     "major": "",
     "minor": "m",
     "dorian": "dor",
     "mixolydian": "mix",
     "lydian": "lyd",
 }
+
+KEY_ROOT_MAP: dict[str, KeyRoot] = {
+    "c": KeyRoot.C,
+    "c#": KeyRoot.C_sharp,
+    "db": KeyRoot.D_flat,
+    "d": KeyRoot.D,
+    "eb": KeyRoot.E_flat,
+    "e": KeyRoot.E,
+    "f": KeyRoot.F,
+    "f#": KeyRoot.F_sharp,
+    "gb": KeyRoot.G_flat,
+    "g": KeyRoot.G,
+    "ab": KeyRoot.A_flat,
+    "a": KeyRoot.A,
+    "bb": KeyRoot.B_flat,
+    "b": KeyRoot.B,
+}
+
+KEY_MODE_MAP: dict[str, KeyMode] = {
+    "": KeyMode.major,
+    "maj": KeyMode.major,
+    "major": KeyMode.major,
+    "m": KeyMode.minor,
+    "min": KeyMode.minor,
+    "minor": KeyMode.minor,
+    "dor": KeyMode.dorian,
+    "dorian": KeyMode.dorian,
+    "mix": KeyMode.mixolydian,
+    "mixolydian": KeyMode.mixolydian,
+    "lyd": KeyMode.lydian,
+    "lydian": KeyMode.lydian,
+}
+
+
+def parse_key(raw: str) -> tuple[KeyRoot, KeyMode] | None:
+    """Parse an ABC/TheSession-style key string: 'Dmaj', 'Ador', 'Bbdor',
+    'A mixolydian', 'G', 'Bm', 'Gmajor', 'Edorian', etc."""
+    m = re.match(r"^([A-Ga-g][b#]?)\s*(.*)", raw.strip())
+    if not m:
+        return None
+    root = KEY_ROOT_MAP.get(m.group(1).lower())
+    mode = KEY_MODE_MAP.get(m.group(2).strip().lower())
+    if root is None or mode is None:
+        return None
+    return root, mode
 
 # Q:1/4=N anchors tempo to quarter notes regardless of L:, avoiding ambiguity.
 _DEFAULT_TEMPO: dict[str, str] = {
@@ -98,7 +143,7 @@ def build_abc(tune: Tune, setting: TuneSetting, x: int = 1) -> str:
 
     headers.extend(user_headers)
 
-    key_suffix = _ABC_MODE_SUFFIX[tune.key_mode.value]
+    key_suffix = ABC_MODE_SUFFIX[tune.key_mode.value]
     headers.append(f"K:{tune.key_root.value}{key_suffix}")
 
     while music_lines and not music_lines[0].strip():
@@ -166,7 +211,7 @@ def build_set_abc(
         first_abc = truncate_to_bars(first_abc, n_bars)
     sections: list[str] = [first_abc.rstrip("\n")]
 
-    prev_key = f"{first_tune.key_root.value}{_ABC_MODE_SUFFIX[first_tune.key_mode.value]}"
+    prev_key = f"{first_tune.key_root.value}{ABC_MODE_SUFFIX[first_tune.key_mode.value]}"
     prev_time = first_tune.time_signature
     prev_type = first_tune.tune_type.value
 
@@ -177,7 +222,7 @@ def build_set_abc(
         while music_lines and not music_lines[-1].strip():
             music_lines.pop()
 
-        current_key = f"{tune.key_root.value}{_ABC_MODE_SUFFIX[tune.key_mode.value]}"
+        current_key = f"{tune.key_root.value}{ABC_MODE_SUFFIX[tune.key_mode.value]}"
 
         if n_bars is not None:
             mini = f"K:{current_key}\n" + "\n".join(music_lines)
