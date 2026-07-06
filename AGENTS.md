@@ -450,6 +450,12 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
     Implement retention builders as separate strategies, not one function with
     conditional overrides.
 
+18. **Any tune/setting carrying a `thesession_tune_id` / `thesession_setting_id`
+    must show an attribution link back to `https://thesession.org/tunes/{id}`
+    wherever that data is displayed.** Required by TheSession-data's ODbL
+    license — this must hold for any future page/view/export that surfaces
+    the data, not just the ones built in TODO 8.3.
+
 ---
 
 ## Progress Status: Display Logic

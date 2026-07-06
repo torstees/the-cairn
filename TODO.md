@@ -862,6 +862,214 @@ without redesign.
 
 ---
 
+### 8. TheSession.org Data Integration
+
+Pulls reference data from [TheSession-data](https://github.com/adactio/TheSession-data)
+(released under ODbL) into local side tables, so users can populate their own
+tunes/settings/aliases from a well-known community dataset instead of typing
+everything from scratch. No page in the app browses these side tables
+directly — they exist purely to back the linking wizard in 8.2. ODbL requires
+attribution for reused facts; see 8.3.
+
+**Source data**: 7 CSVs under `csv/` in that repo — `tunes.csv` (one row per
+*setting*, not per tune: `tune_id, setting_id, name, type, meter, mode, abc,
+date, username, composer`), `aliases.csv` (`tune_id, alias, name` — `name` is
+the tune's current canonical name, repeated per alias row), `tune_popularity.csv`
+(`name, tune_id, tunebooks`), `sets.csv` (user-submitted tune sequences —
+`tuneset, date, member_id, username, settingorder, name, tune_id, setting_id,
+type, meter, mode, abc`), `recordings.csv` (`id, artist, recording, track,
+number, tune, tune_id` — note `id` here is the *recording's* id and repeats
+across its tracks, not a per-row id), `sessions.csv` (real-world session
+*venues* — `id, name, address, town, area, country, latitude, longitude,
+date`), `events.csv` (`id, event, dtstart, dtend, venue, address, town, area,
+country, latitude, longitude`). The repo also ships a pre-built `thesession.db`,
+but it's Git LFS-tracked (~136MB) — fetching the CSVs directly from
+`raw.githubusercontent.com` is simpler and avoids an LFS dependency.
+
+**No new pyproject dependency needed** — the import script can use stdlib
+`csv` + `urllib.request`.
+
+**Two model groups, split across 8.1 and 8.4** — `TheSessionSetting` /
+`TheSessionAlias` / `TheSessionTunePopularity` (3 models, all keyed on
+`tune_id`) are the tune-reference data the wizard in 8.2 actually needs.
+`TheSessionSet` / `TheSessionSetMember` / `TheSessionRecording` /
+`TheSessionVenue` / `TheSessionEvent` (5 models — real-world session/
+recording/event metadata, not tune data) are unrelated to the wizard and
+nothing in 8.2/8.3 depends on them. Splitting the work this way means 8.1
+unblocks the wizard on its own, and 8.4 is fully deferrable — it can happen
+whenever, or not at all, without affecting anything else. It also means
+neither group *exceeds* the 5-model threshold in `AGENTS.md`'s model file
+split rule (3 and 5 respectively), so each can live in its own scoped
+sibling file (e.g. `cairn/models_thesession_tunes.py` and
+`cairn/models_thesession_community.py`) from the start — no need to convert
+`models.py` into a `models/` package for either.
+
+- [ ] **8.1 — Side-table models + import script (tune reference data)**
+
+  **New models**, one per CSV, in a new `cairn/models_thesession_tunes.py`.
+  Each is a faithful 1:1 mirror of its CSV: don't pre-aggregate or
+  deduplicate at import time (e.g. no separate "tune-level" table for
+  `tunes.csv` — query `DISTINCT tune_id` from `TheSessionSetting` at read
+  time instead). This keeps the mirror lossless and matches the goal of
+  having data available for whatever query comes up later, without baking
+  in assumptions about which row "wins" per tune.
+
+  - `TheSessionSetting` (from `tunes.csv`) — `setting_id` (PK), `tune_id`
+    (indexed), `name`, `tune_type_raw`, `meter`, `mode_raw`, `abc` (Text —
+    music body only, no headers, same convention as our own
+    `TuneSetting.abc_notation`), `submitted_date`, `username`, `composer`
+  - `TheSessionAlias` (from `aliases.csv`) — surrogate `id` (PK), `tune_id`
+    (indexed), `alias`, `canonical_name`
+  - `TheSessionTunePopularity` (from `tune_popularity.csv`) — `tune_id` (PK),
+    `name`, `tunebooks`
+
+  **Import script** `scripts/import_thesession.py` (structured so 8.4 can
+  extend it with more CSVs later rather than replacing it):
+  - Downloads each CSV fresh from
+    `https://raw.githubusercontent.com/adactio/TheSession-data/main/csv/{name}.csv`
+    on every run — nothing vendored into this repo.
+  - `tunes.csv` alone is tens of thousands of rows — use a bulk
+    insert per file (e.g. `session.execute(insert(Model), rows)` in
+    batches inside one transaction), not the one-row-at-a-time ORM
+    `db.add()` + `commit()` style `import_abc.py`/`import_content.py` use.
+  - These are pure read-only mirror tables with no user-authored data mixed
+    in, so the simplest correct refresh is delete-all-then-bulk-reinsert per
+    table per run, rather than tracking per-row upserts.
+  - `make thesession-import` target (mirroring `make content`).
+
+  **Mapping notes**:
+  - `mode_raw` → `KeyRoot`/`KeyMode`: reuse `_parse_key()` from
+    `scripts/import_abc.py` as-is — it already handles concatenated
+    `"Gmajor"`/`"Edorian"`-style strings via its mode-suffix capture group
+    and `_KEY_MODE_MAP` lookup, confirmed against real sample rows.
+  - `tune_type_raw` → `TuneType`: compared the distinct `type` values in
+    `tunes.csv` against our `TuneType` enum directly. 10 of TheSession's 12
+    values already match ours 1:1 (`barndance`, `hornpipe`, `polka`, `reel`,
+    `jig`, `march`, `slide`, `strathspey`, `waltz`, plus `"slip jig"` which
+    just needs the space normalized to `slip_jig`). Two have no equivalent
+    yet: `mazurka` and `three-two` (→ `three_two`) — add these as new
+    `TuneType` values, and assign them a bucket in `TUNE_FAMILIES`
+    (`cairn/services/tunes.py`) so Family filtering keeps working — `mazurka`
+    is triple-time like `waltz` (probably `"other"`); `three_two` is closer
+    to `strathspey`'s march-family feel but could go either way, worth a
+    second opinion when it comes up. One direction only: our own `air` type
+    has no equivalent in TheSession's vocabulary, so no incoming tune will
+    ever map to it — not a problem, just means airs aren't part of this
+    import.
+
+  Write tests in `tests/test_scripts/test_import_thesession.py` (mirroring
+  `tests/test_scripts/test_seed.py`): CSV-row-to-model parsing per table,
+  the reused key/mode mapping, and that re-running the import doesn't
+  duplicate or leak stale rows.
+
+- [ ] **8.2 — Tune-linking wizard**
+
+  **`Tune` model** gets two new nullable fields: `thesession_tune_id: int`
+  and `thesession_username: str` (the username tied to whichever setting
+  populated the tune). **`TuneSetting`** gets `thesession_setting_id: int`
+  and `thesession_username: str` (who submitted that specific setting).
+  These are plain reference ids, **not** FKs into the 8.1 side tables — the
+  side tables are a refreshable cache; these fields are a permanent
+  attribution link that must survive a cache refresh/rebuild. Generate an
+  Alembic migration.
+
+  **`GET /tunes/{id}`**: if `tune.thesession_tune_id` is set, show it as a
+  link to `https://thesession.org/tunes/{thesession_tune_id}` (add
+  `#setting{thesession_setting_id}` when a setting id is also known)
+  instead of the "Link Tune" button described below.
+  Otherwise, show a "Link Tune" button (tooltip: "Link to Tune @
+  TheSession.org") that opens the wizard.
+
+  **Wizard** — a modal/multi-step flow (Alpine for step state + HTMX
+  partials per step, similar in spirit to the existing setting-change
+  confirmation modal in `boxes/partials/_setting_change_modal.html`):
+
+  - **Page 1 — pick a tune**: search/filter over `TheSessionSetting`
+    grouped by distinct `tune_id`. Same Tune Type / Family filters as the
+    regular tune index (reuse `TUNE_FAMILIES`/`FAMILY_LABELS` from
+    `cairn/services/tunes.py` against the mapped `TuneType`). Search matches
+    against `TheSessionAlias.alias` as well as the tune name. Each row shows
+    title, key, and tune type, with the same hover-preview mechanism used
+    elsewhere in the app (`data-abc-preview-id` + `<template>` +
+    `initTuneHoverPreview()` from #102), built from that tune's first
+    setting's `abc`.
+  - **Page 2 — aliases**: every `TheSessionAlias` for the chosen `tune_id`,
+    checkbox per alias (all checked by default), Check All / Uncheck All.
+    Pre-uncheck (or hide) any alias whose name already exists on the tune
+    (case-insensitive match against `TuneAlias.name`) so re-linking a tune
+    never creates duplicates.
+  - **Page 3 — settings**: every `TheSessionSetting` for that `tune_id`,
+    fully rendered via ABCJS, checkbox per setting, 0 or more selectable.
+  - **Page 4 — confirm + choose default**: only the checked settings are
+    shown, with a radio choice for which one becomes the "default" — i.e.
+    the source for `Tune.thesession_tune_id`/`thesession_username`. If the
+    tune has no existing core setting (a brand-new tune), the default
+    setting *also* becomes the actual `is_core=True` `TuneSetting`, and the
+    tune's own `title`, `tune_type`, `time_signature` (from `meter`), and
+    `key_root`/`key_mode` (from `mode_raw`) are populated from it. If a core
+    setting already exists, the default only sets the `Tune`-level
+    attribution fields — the existing core setting is never overwritten.
+  - **Save**: creates a new non-core `TuneSetting` (with
+    `thesession_setting_id`/`thesession_username` set) for every checked
+    setting other than one chosen as core; creates the checked, non-
+    duplicate aliases; sets `Tune.thesession_tune_id`/`thesession_username`.
+
+  New endpoints, exact shape TBD at implementation time — something like
+  `GET /tunes/{id}/thesession-search`, `GET
+  /tunes/{id}/thesession-tune/{external_tune_id}` (aliases + settings for
+  steps 2–3), `POST /tunes/{id}/thesession-link` (final save). Consider a
+  dedicated `cairn/routers/thesession_link.py` given the number of steps.
+
+  Write tests covering: search/filter results, alias dedup on import,
+  imported settings carry the right `thesession_setting_id`/`username`,
+  core setting is never overwritten when one already exists, and a
+  brand-new tune is correctly populated from the chosen default.
+
+- [ ] **8.3 — Attribution links**
+
+  Anywhere a tune or setting page shows data carrying a
+  `thesession_tune_id`/`thesession_setting_id`, show a small attribution
+  link back to `https://thesession.org/tunes/{id}` (setting-anchored where
+  applicable), per ODbL's attribution requirement. At minimum:
+  `tunes/detail.html`, and each setting in `tunes/partials/_settings.html`
+  that carries a `thesession_setting_id`.
+
+- [ ] **8.4 — Side-table models + import for community data (deferred, optional)**
+
+  Not needed by 8.2/8.3 or anything else in the app yet — do this whenever
+  it's actually useful, or skip it entirely. Exists to have the rest of
+  TheSession-data available to query without a later re-import project.
+
+  **New models**, one per CSV, in a new `cairn/models_thesession_community.py`:
+
+  - `TheSessionSet` (from `sets.csv`, header fields) — `tuneset_id` (PK),
+    `submitted_date`, `member_id`, `username`, `name`
+  - `TheSessionSetMember` (from `sets.csv`, one row per member) — surrogate
+    `id` (PK), `tuneset_id` (FK → `TheSessionSet`), `position`
+    (`settingorder`), `tune_id`, `setting_id` — don't duplicate
+    name/type/meter/mode/abc here, join to `TheSessionSetting` (8.1) via
+    `setting_id` when needed
+  - `TheSessionRecording` (from `recordings.csv`) — surrogate `id` (PK),
+    `recording_id` (the CSV's own `id`, not unique per row), `artist_id`,
+    `recording_name`, `track_number`, `position`, `tune_name`, `tune_id`
+    (nullable — blank in some source rows)
+  - `TheSessionVenue` (from `sessions.csv`, named to avoid confusion with our
+    own `PracticeSession`) — `id` (PK), `name`, `address`, `town`, `area`,
+    `country`, `latitude`, `longitude`, `submitted_date`
+  - `TheSessionEvent` (from `events.csv`) — `id` (PK), `name` (`event`
+    column), `starts_at` (`dtstart`), `ends_at` (`dtend`), `venue_name`,
+    `address`, `town`, `area`, `country`, `latitude`, `longitude`
+
+  Extend `scripts/import_thesession.py` (from 8.1) with these four CSVs
+  rather than writing a second script — same bulk-insert,
+  delete-then-reinsert approach.
+
+  Write tests in `tests/test_scripts/test_import_thesession.py` alongside
+  the 8.1 tests, covering the same concerns (parsing per table, re-running
+  doesn't duplicate rows) for these four CSVs.
+
+---
+
 ### Phase 1 Complete Checklist
 
 Before closing Phase 1:
