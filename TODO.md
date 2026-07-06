@@ -1070,6 +1070,74 @@ sibling file (e.g. `cairn/models_thesession_tunes.py` and
 
 ---
 
+### 9. Recording References
+
+Lets a user tag a `TuneSetting` or `TuneSet` with a specific physical/digital
+recording ("I learned this off Kevin Burke's Sweeney's Dream") plus optional
+streaming links (YouTube, Amazon Music, Spotify, etc.).
+
+**Design choice — two tables, not full Artist/Album/Track normalization, not
+a bare link.** A fully normalized Artist/Album/Track schema buys dedup and
+"browse by artist" queries, but that's only worth the find-or-create-matching
+complexity at TheSession's crowd-sourced scale — not for one user's own
+annotations. A bare link field loses the ability to show artist/track
+without following the link, and forces retyping everything if the same
+recording is tagged against multiple tunes. The middle ground: a `Recording`
+holds the artist/title/links once; a join table links it to as many
+tunes/settings as apply, each with its own track position. Call it
+"Recording," not "Album" — matches TheSession's own terminology and covers
+compilations, singles, and session-video-only references, not just albums.
+
+- [ ] **9.1 — Recording model + tune/set linking**
+
+  **New models** in `cairn/models.py`:
+  ```
+  Recording: id, artist (String, plain text — no dedup/FK, same reasoning
+             as TheSession's own flat model), title (String),
+             links (JSON, nullable — e.g. {"youtube": "...", "amazon": "..."};
+             same pattern as Content.metadata_ in cairn/services/content.py)
+  RecordingReference: id, recording_id (FK -> Recording),
+             setting_id (FK -> TuneSetting, nullable),
+             set_id (FK -> TuneSet, nullable),
+             track_number (Integer, nullable), position (Integer, nullable —
+             which tune within that track, for medleys)
+  ```
+  `RecordingReference` follows the same "exactly one of two nullable FKs is
+  set" pattern already used by `PracticeSessionItem.tune_id`/`warmup_id` —
+  enforce exactly one of `setting_id`/`set_id` at the service layer.
+  Include `TimestampMixin`. Generate an Alembic migration.
+
+  **Service** `cairn/services/recordings.py`: `create_recording`,
+  `add_reference` (setting or set + recording + track/position),
+  `list_recordings_for_setting`, `list_recordings_for_set`,
+  `remove_reference`.
+
+  **UI**: an "add a recording" affordance on the tune detail page (per
+  setting) and the set detail page — artist/title/links fields plus a
+  searchable "or pick an existing Recording" step so the same album isn't
+  re-created every time a new tune from it is tagged.
+
+  Write tests in `tests/test_services/test_recordings.py`.
+
+- [ ] **9.2 — Optional: suggest recordings from TheSession data**
+
+  Depends on TODO 8.4 (`TheSessionRecording`) having been done — this piece
+  doesn't apply otherwise.
+
+  When adding a recording for a tune that has `thesession_tune_id` set,
+  additionally query `TheSessionRecording` for
+  `tune_id == tune.thesession_tune_id` and offer each match as a
+  pre-fillable suggestion (recording title, track number, position). **This
+  is a pre-fill, not a full auto-import**: `recordings.csv`'s `artist`
+  column is a bare numeric id with no accompanying name data anywhere in
+  TheSession-data's CSV export (no `artists.csv` exists in the dataset), so
+  the artist field is left blank for the user to fill in — same for
+  streaming links, which aren't part of TheSession's data at all. Confirmed
+  against real sample rows (`id,artist,recording,track,number,tune,tune_id`
+  → `3720,1651,"Cast A Bell",1,1,Kettledrum,14408` — `1651` is opaque).
+
+---
+
 ### Phase 1 Complete Checklist
 
 Before closing Phase 1:
