@@ -11,6 +11,7 @@ from cairn.services.thesession_link import (
     get_thesession_settings,
     raw_to_tune_type,
     search_thesession_tunes,
+    split_settings_by_key_match,
     tune_type_to_raw,
 )
 from cairn.services.tunes import create_tune
@@ -193,6 +194,28 @@ async def test_get_thesession_settings_scoped_to_tune(db: AsyncSession) -> None:
     await db.commit()
     settings = await get_thesession_settings(db, 100)
     assert {s.setting_id for s in settings} == {1, 2}
+
+
+# ── split_settings_by_key_match ──────────────────────────────────────────────
+
+
+def test_split_settings_by_key_match_separates_matching_and_other() -> None:
+    matching = _ext_setting(setting_id=1, mode_raw="Edorian")
+    other = _ext_setting(setting_id=2, mode_raw="Gmajor")
+    matched, others = split_settings_by_key_match([matching, other], KeyRoot.E, KeyMode.dorian)
+    assert matched == [matching]
+    assert others == [other]
+
+
+def test_split_settings_by_key_match_treats_unparseable_mode_as_other() -> None:
+    setting = _ext_setting(setting_id=1, mode_raw="nonsense")
+    matched, others = split_settings_by_key_match([setting], KeyRoot.E, KeyMode.dorian)
+    assert matched == []
+    assert others == [setting]
+
+
+def test_split_settings_by_key_match_empty_input() -> None:
+    assert split_settings_by_key_match([], KeyRoot.D, KeyMode.major) == ([], [])
 
 
 # ── apply_thesession_link ────────────────────────────────────────────────────

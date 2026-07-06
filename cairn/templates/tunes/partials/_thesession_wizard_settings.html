@@ -1,3 +1,16 @@
+{% macro setting_row(setting, previews) %}
+<label class="block border border-stone-200 rounded-lg px-3 py-2 cursor-pointer select-none">
+  <div class="flex items-center gap-2 mb-1">
+    <input type="checkbox" name="setting_ids" value="{{ setting.id }}"
+           class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+    <span class="text-sm font-medium text-stone-700">
+      #{{ setting.setting_id }} by {{ setting.username or "unknown" }} @ TheSession.org
+    </span>
+  </div>
+  <pre class="ml-6"><code class="language-abc">{{ previews[setting.id] }}</code></pre>
+</label>
+{% endmacro %}
+
 <div class="cairn-modal-backdrop fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
      onclick="if(event.target===this)closeTheSessionWizard()">
   <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg mx-4 w-full max-h-[85vh] flex flex-col">
@@ -12,19 +25,41 @@
 
       <p class="text-sm text-stone-600 mb-2 shrink-0">Choose which settings (notations) to import.</p>
 
-      {% if settings %}
-      <div class="overflow-y-auto flex-1 -mx-1 px-1 space-y-3">
-        {% for setting in settings %}
-        <label class="block border border-stone-200 rounded-lg px-3 py-2 cursor-pointer select-none">
-          <div class="flex items-center gap-2 mb-1">
-            <input type="checkbox" name="setting_ids" value="{{ setting.id }}"
-                   class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
-            <span class="text-sm font-medium text-stone-700">
-              #{{ setting.setting_id }} by {{ setting.username or "unknown" }} @ TheSession.org
-            </span>
+      {% if matching_settings %}
+      {# There's at least one same-key match, so it's meaningful to gate the
+         rest behind a toggle — otherwise ("show only") would render blank. #}
+      <div x-data="{ showAll: false }" class="flex flex-col min-h-0 flex-1">
+        <div class="overflow-y-auto flex-1 -mx-1 px-1 space-y-3">
+          {% for setting in matching_settings %}
+          {{ setting_row(setting, previews) }}
+          {% endfor %}
+          {% if other_settings %}
+          <div x-show="showAll" x-cloak class="space-y-3">
+            {% for setting in other_settings %}
+            {{ setting_row(setting, previews) }}
+            {% endfor %}
           </div>
-          <pre class="ml-6"><code class="language-abc">{{ previews[setting.id] }}</code></pre>
-        </label>
+          {% endif %}
+        </div>
+        {% if other_settings %}
+        <button type="button" @click="showAll = !showAll"
+                class="text-xs text-stone-500 hover:text-stone-700 underline mt-2 shrink-0 text-left">
+          <span x-show="!showAll">
+            Show all {{ matching_settings | length + other_settings | length }} settings
+            ({{ other_settings | length }} in a different key)
+          </span>
+          <span x-show="showAll" x-cloak>
+            Show only {{ tune.key_root.label }} {{ tune.key_mode.label }} settings
+          </span>
+        </button>
+        {% endif %}
+      </div>
+      {% elif other_settings %}
+      {# No settings share the tune's key/mode — nothing to narrow to, so show
+         everything with no toggle rather than defaulting to an empty list. #}
+      <div class="overflow-y-auto flex-1 -mx-1 px-1 space-y-3">
+        {% for setting in other_settings %}
+        {{ setting_row(setting, previews) }}
         {% endfor %}
       </div>
       {% else %}
