@@ -61,7 +61,10 @@ async def thesession_search_open(
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    ctx = await _results_context(db, tune_id, q, _parse_tune_type(type), family or None)
+    # Prefill the search with the tune's own title (articles stripped, same as
+    # sort_title) so the common case — this tune already exists on
+    # TheSession.org — doesn't require retyping its name.
+    ctx = await _results_context(db, tune_id, q or tune.sort_title, _parse_tune_type(type), family or None)
     return templates.TemplateResponse(request, "tunes/partials/_thesession_wizard_search.html", ctx)
 
 

@@ -56,6 +56,38 @@ async def test_search_open_unknown_tune_404s(client: AsyncClient) -> None:
     assert resp.status_code == 404
 
 
+async def test_search_open_prefills_with_tune_title(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}/thesession-search")
+    assert resp.status_code == 200
+    assert 'value="Morning Dew"' in resp.text
+
+
+async def test_search_open_prefill_strips_leading_article(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await create_tune(
+        db,
+        TuneCreate(
+            title="The Kesh",
+            tune_type=TuneType.jig,
+            key_root=KeyRoot.G,
+            key_mode=KeyMode.major,
+            time_signature="6/8",
+        ),
+        abc_notation=_ABC,
+    )
+    resp = await client.get(f"/tunes/{tune.id}/thesession-search")
+    assert resp.status_code == 200
+    assert 'value="Kesh"' in resp.text
+
+
+async def test_search_open_explicit_q_overrides_prefill(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await _seed_external_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}/thesession-search", params={"q": "abbey"})
+    assert 'value="abbey"' in resp.text
+    assert 'value="Morning Dew"' not in resp.text
+
+
 async def test_search_results_filters_by_query(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     await _seed_external_tune(db)
