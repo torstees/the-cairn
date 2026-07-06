@@ -243,6 +243,21 @@ async def test_apply_link_imported_setting_carries_thesession_ids(db: AsyncSessi
     assert imported[0].thesession_setting_id == 477
     assert imported[0].thesession_username == "Josh Kane"
     assert imported[0].abc_notation == ext.abc
+    assert imported[0].label == "#477 by Josh Kane @ TheSession.org"
+
+
+async def test_apply_link_imported_setting_label_falls_back_to_unknown(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(), abc_notation=ABC)
+    ext = _ext_setting(setting_id=477, tune_id=100, username=None)
+    db.add(ext)
+    await db.commit()
+    await db.refresh(ext)
+
+    await apply_thesession_link(db, tune.id, 100, [], [ext.id], None)
+
+    result = await db.execute(select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(False)))
+    imported = result.scalar_one()
+    assert imported.label == "#477 by unknown @ TheSession.org"
 
 
 async def test_apply_link_deduplicates_aliases_case_insensitive(db: AsyncSession) -> None:
@@ -308,6 +323,7 @@ async def test_apply_link_populates_brand_new_tune_from_default(db: AsyncSession
     assert new_core.is_core is True
     assert new_core.thesession_setting_id == 477
     assert new_core.abc_notation == "|:GAB c2A|"
+    assert new_core.label == "#477 by Josh Kane @ TheSession.org"
     assert updated.tune_type == TuneType.jig
     assert updated.time_signature == "6/8"
     assert updated.key_root == KeyRoot.G

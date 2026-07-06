@@ -20,7 +20,7 @@
             <input type="checkbox" name="setting_ids" value="{{ setting.id }}"
                    class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
             <span class="text-sm font-medium text-stone-700">
-              #{{ setting.setting_id }} by {{ setting.username or "unknown" }}
+              #{{ setting.setting_id }} by {{ setting.username or "unknown" }} @ TheSession.org
             </span>
           </div>
           <pre class="ml-6"><code class="language-abc">{{ previews[setting.id] }}</code></pre>
