@@ -1029,7 +1029,7 @@ sibling file (e.g. `cairn/models_thesession_tunes.py` and
   core setting is never overwritten when one already exists, and a
   brand-new tune is correctly populated from the chosen default.
 
-- [ ] **8.3 — Attribution links**
+- [x] **8.3 — Attribution links**
 
   Anywhere a tune or setting page shows data carrying a
   `thesession_tune_id`/`thesession_setting_id`, show a small attribution
@@ -1037,6 +1037,10 @@ sibling file (e.g. `cairn/models_thesession_tunes.py` and
   applicable), per ODbL's attribution requirement. At minimum:
   `tunes/detail.html`, and each setting in `tunes/partials/_settings.html`
   that carries a `thesession_setting_id`.
+
+  Already delivered as part of 8.2's code review (a code-review finding
+  flagged this as a required-by-AGENTS.md Domain Rule #18 gap in the 8.2
+  diff itself, so it was fixed there rather than left for a separate PR).
 
 - [ ] **8.4 — Side-table models + import for community data (deferred, optional)**
 
