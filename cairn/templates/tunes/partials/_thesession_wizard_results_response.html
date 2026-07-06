@@ -1,0 +1,7 @@
+{# Response for the results-only endpoint: updates the filter pills (out of
+   band, since the primary hx-target is just the results list) alongside the
+   results themselves. #}
+<div id="thesession-filter-bar" hx-swap-oob="true">
+  {% include "tunes/partials/_thesession_wizard_filter_bar.html" %}
+</div>
+{% include "tunes/partials/_thesession_wizard_results.html" %}

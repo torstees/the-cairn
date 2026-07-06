@@ -1,5 +1,5 @@
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneSetting, TuneType
-from cairn.services.abc_utils import build_abc, truncate_to_bars
+from cairn.services.abc_utils import build_abc, parse_key, truncate_to_bars
 
 MUSIC = "|:DEFG ABcd|efge dcAG:|\n"
 
@@ -287,3 +287,40 @@ def test_truncate_returns_unchanged_when_fewer_bars_than_requested() -> None:
 def test_truncate_no_k_header_returns_unchanged() -> None:
     abc = "T:x\nDEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA\n"
     assert truncate_to_bars(abc, 4) == abc
+
+
+# ── parse_key ────────────────────────────────────────────────────────────────
+
+
+def test_parse_key_bare_major() -> None:
+    assert parse_key("D") == (KeyRoot.D, KeyMode.major)
+
+
+def test_parse_key_minor_shorthand() -> None:
+    assert parse_key("Bm") == (KeyRoot.B, KeyMode.minor)
+
+
+def test_parse_key_dorian_abbreviation() -> None:
+    assert parse_key("Ador") == (KeyRoot.A, KeyMode.dorian)
+
+
+def test_parse_key_thesession_style_full_word() -> None:
+    # TheSession's mode_raw values spell modes out in full with no separator, e.g. "Gmajor"/"Edorian".
+    assert parse_key("Gmajor") == (KeyRoot.G, KeyMode.major)
+    assert parse_key("Edorian") == (KeyRoot.E, KeyMode.dorian)
+
+
+def test_parse_key_flat_root() -> None:
+    assert parse_key("Bbdor") == (KeyRoot.B_flat, KeyMode.dorian)
+
+
+def test_parse_key_sharp_root() -> None:
+    assert parse_key("F#") == (KeyRoot.F_sharp, KeyMode.major)
+
+
+def test_parse_key_unrecognized_mode_returns_none() -> None:
+    assert parse_key("Dlocrian") is None
+
+
+def test_parse_key_unparseable_returns_none() -> None:
+    assert parse_key("nonsense") is None

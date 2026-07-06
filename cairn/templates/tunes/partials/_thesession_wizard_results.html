@@ -1,0 +1,20 @@
+{% if results %}
+<ul class="space-y-2">
+  {% for r in results %}
+  <li class="border border-stone-200 rounded-lg px-3 py-2 hover:bg-stone-50 cursor-pointer"
+      hx-get="/tunes/{{ tune_id }}/thesession-tune/{{ r.tune_id }}"
+      hx-target="#thesession-wizard" hx-swap="innerHTML">
+    <span class="font-medium text-stone-800"
+          {% if r.tune_id in previews %}data-abc-preview-id="ext-{{ r.tune_id }}"{% endif %}>
+      {{ r.name }}
+    </span>
+    {% if r.tune_id in previews %}
+    <template id="tune-abc-preview-ext-{{ r.tune_id }}">{{ previews[r.tune_id] }}</template>
+    {% endif %}
+    <span class="ml-2 text-sm text-stone-500">{{ r.tune_type_raw }} &middot; {{ r.mode_raw }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-stone-500 text-sm py-8 text-center">No matches on TheSession.org.</p>
+{% endif %}

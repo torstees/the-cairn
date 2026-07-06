@@ -19,11 +19,29 @@
         {% if tune.region %}&middot; {{ tune.region }}{% endif %}
       </p>
     </div>
-    <a href="/tunes/{{ tune.id }}/edit"
-       class="shrink-0 border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
-      Edit
-    </a>
+    <div class="shrink-0 flex items-center gap-2">
+      {% if tune.thesession_tune_id %}
+      <a href="https://thesession.org/tunes/{{ tune.thesession_tune_id }}{% if thesession_setting_anchor_id %}#setting{{ thesession_setting_anchor_id }}{% endif %}"
+         target="_blank" rel="noopener noreferrer"
+         class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
+        TheSession.org &#8599;
+      </a>
+      {% else %}
+      <button type="button" title="Link to Tune @ TheSession.org"
+              hx-get="/tunes/{{ tune.id }}/thesession-search"
+              hx-target="#thesession-wizard" hx-swap="innerHTML"
+              class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
+        Link Tune
+      </button>
+      {% endif %}
+      <a href="/tunes/{{ tune.id }}/edit"
+         class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
+        Edit
+      </a>
+    </div>
   </div>
+
+  <div id="thesession-wizard"></div>
 
   {% if tune.origin or tune.notes or tune.composer %}
   <div class="bg-white rounded-lg shadow-sm px-5 py-4 mb-6 space-y-2">

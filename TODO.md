@@ -966,7 +966,7 @@ sibling file (e.g. `cairn/models_thesession_tunes.py` and
   the reused key/mode mapping, and that re-running the import doesn't
   duplicate or leak stale rows.
 
-- [ ] **8.2 — Tune-linking wizard**
+- [x] **8.2 — Tune-linking wizard**
 
   **`Tune` model** gets two new nullable fields: `thesession_tune_id: int`
   and `thesession_username: str` (the username tied to whichever setting

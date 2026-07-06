@@ -852,6 +852,11 @@
     document.querySelectorAll(".cairn-modal-backdrop").forEach(function (el) { el.remove(); });
   }
 
+  function closeTheSessionWizard() {
+    var m = document.getElementById("thesession-wizard");
+    if (m) m.innerHTML = "";
+  }
+
   // Wire up the warmup form textarea to render a live ABCJS preview and sync
   // the cursor to the nearest note. Simpler than initSettingPreview because
   // warmup content is complete ABC — no header prepend or offset translation.
@@ -1346,6 +1351,7 @@
 
   // Expose to Alpine and templates
   window.clearCairnModal    = clearCairnModal;
+  window.closeTheSessionWizard = closeTheSessionWizard;
   window.selectSetting      = selectSetting;
   window.initSettingPreview = initSettingPreview;
   window.initWarmupPreview  = initWarmupPreview;
@@ -1475,7 +1481,7 @@
     });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") { clearCairnModal(); }
+      if (e.key === "Escape") { clearCairnModal(); closeTheSessionWizard(); }
     });
 
     document.addEventListener("click", function (e) {

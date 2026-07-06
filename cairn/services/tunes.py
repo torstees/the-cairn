@@ -31,7 +31,7 @@ TUNE_FAMILIES: dict[str, list[TuneType]] = {
     "jig_family": [TuneType.jig, TuneType.slip_jig, TuneType.slide],
     "reel_family": [TuneType.reel, TuneType.hornpipe, TuneType.barndance],
     "march_family": [TuneType.march, TuneType.strathspey],
-    "other": [TuneType.polka, TuneType.waltz, TuneType.air],
+    "other": [TuneType.polka, TuneType.waltz, TuneType.air, TuneType.mazurka, TuneType.three_two],
 }
 
 FAMILY_LABELS: dict[str, str] = {
@@ -62,6 +62,11 @@ def get_setting_for_instrument(tune: Tune, instrument: Instrument | None) -> Tun
 def core_setting(tune: Tune) -> TuneSetting | None:
     """Return the tune's instrument-agnostic core setting, if any."""
     return next((s for s in tune.settings if s.is_core and s.instrument is None), None)
+
+
+def existing_alias_names(tune: Tune) -> set[str]:
+    """Return the tune's alias names normalised for case-insensitive dedup checks."""
+    return {a.name.strip().lower() for a in tune.aliases}
 
 
 def preview_abc(tune: Tune, setting: TuneSetting | None = None, n_bars: int = 4) -> str | None:

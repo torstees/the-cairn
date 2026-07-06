@@ -29,6 +29,13 @@
             {{ setting.ornamentation_level.label }} ornamentation
           </span>
           {% endif %}
+          {% if setting.thesession_setting_id %}
+          <a href="https://thesession.org/tunes/{{ tune.thesession_tune_id }}#setting{{ setting.thesession_setting_id }}"
+             target="_blank" rel="noopener noreferrer" @click.stop
+             class="text-xs text-stone-400 hover:text-stone-600 underline">
+            TheSession.org &#8599;
+          </a>
+          {% endif %}
         </div>
         <div class="flex items-center gap-2 shrink-0">
           {% if not setting.is_core %}

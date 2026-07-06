@@ -1,0 +1,25 @@
+<div class="cairn-modal-backdrop fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+     onclick="if(event.target===this)closeTheSessionWizard()">
+  <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg mx-4 w-full max-h-[85vh] flex flex-col">
+    <div class="flex items-center justify-between mb-4 shrink-0">
+      <h3 class="text-lg font-semibold text-stone-800">Link to TheSession.org &mdash; Step 1 of 4</h3>
+      <button type="button" onclick="closeTheSessionWizard()" class="text-stone-400 hover:text-stone-600 text-xl leading-none">&times;</button>
+    </div>
+
+    <input type="text" name="q" value="{{ q }}" placeholder="Search by title or alias…" autocomplete="off"
+           hx-get="/tunes/{{ tune_id }}/thesession-search-results"
+           hx-target="#thesession-results-wrap" hx-swap="innerHTML"
+           hx-trigger="input changed delay:300ms, search"
+           hx-include="[name='q'], [name='type'], [name='family']"
+           class="w-full border border-stone-300 rounded-lg px-4 py-2 text-sm mb-3
+                  focus:outline-none focus:ring-2 focus:ring-stone-400 placeholder:text-stone-400 shrink-0">
+
+    <div id="thesession-filter-bar" class="space-y-2 mb-3 shrink-0">
+      {% include "tunes/partials/_thesession_wizard_filter_bar.html" %}
+    </div>
+
+    <div id="thesession-results-wrap" class="overflow-y-auto flex-1 -mx-1 px-1">
+      {% include "tunes/partials/_thesession_wizard_results.html" %}
+    </div>
+  </div>
+</div>
