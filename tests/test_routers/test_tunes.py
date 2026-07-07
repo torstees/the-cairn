@@ -4,8 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, Role, TuneType, User
 from cairn.routers.tunes import _STUB_USER_ID
 from cairn.schemas import TuneCreate, TuneSettingCreate
-from cairn.services.boxes import create_box, get_box_entry
-from cairn.services.lists import create_list, get_list_entry
+from cairn.services.boxes import add_tune, create_box, get_box_entry, set_preferred_setting
+from cairn.services.lists import add_tune_to_list, create_list, get_list_entry
 from cairn.services.tunes import create_setting, create_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
@@ -77,6 +77,59 @@ async def test_tune_detail_shows_membership_for_box_containing_tune(client: Asyn
     assert "Core setting" in resp.text
     assert f'hx-post="/tunes/{tune.id}/boxes/{box.id}/setting"' not in resp.text  # no non-core settings yet
     assert f'href="/boxes/{box.id}"' in resp.text
+
+
+async def test_tune_detail_breadcrumbs_to_list_when_list_id_given(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    practice_list = await create_list(db, _STUB_USER_ID, box.id, "Weekly Session", PracticeListType.repertoire)
+    await add_tune_to_list(db, practice_list.id, tune.id)
+
+    resp = await client.get(f"/tunes/{tune.id}", params={"list_id": practice_list.id})
+    assert resp.status_code == 200
+    assert f'href="/lists/{practice_list.id}"' in resp.text
+    assert "Weekly Session" in resp.text
+    assert '&larr; Tunes' not in resp.text
+
+
+async def test_tune_detail_uses_list_setting_override(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    practice_list = await create_list(db, _STUB_USER_ID, box.id, "Weekly Session", PracticeListType.repertoire)
+    setting = await create_setting(
+        db, tune.id, TuneSettingCreate(tune_id=tune.id, label="Alt", abc_notation=_ABC, instrument=Instrument.fiddle)
+    )
+    await add_tune_to_list(db, practice_list.id, tune.id, setting_id=setting.id)
+
+    resp = await client.get(f"/tunes/{tune.id}", params={"list_id": practice_list.id})
+    assert resp.status_code == 200
+    assert f'window.__cairnActiveSettingId = {setting.id};' in resp.text
+
+
+async def test_tune_detail_list_setting_outranks_box_setting(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    practice_list = await create_list(db, _STUB_USER_ID, box.id, "Weekly Session", PracticeListType.repertoire)
+    box_setting = await create_setting(
+        db,
+        tune.id,
+        TuneSettingCreate(tune_id=tune.id, label="Box Alt", abc_notation=_ABC, instrument=Instrument.fiddle),
+    )
+    list_setting = await create_setting(
+        db,
+        tune.id,
+        TuneSettingCreate(tune_id=tune.id, label="List Alt", abc_notation=_ABC, instrument=Instrument.flute),
+    )
+    await add_tune(db, box.id, tune.id)
+    await set_preferred_setting(db, box.id, tune.id, box_setting.id)
+    await add_tune_to_list(db, practice_list.id, tune.id, setting_id=list_setting.id)
+
+    resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "list_id": practice_list.id})
+    assert resp.status_code == 200
+    assert f'window.__cairnActiveSettingId = {list_setting.id};' in resp.text
 
 
 async def test_tune_add_to_box(client: AsyncClient, db: AsyncSession) -> None:

@@ -6,7 +6,9 @@
 
   <div class="flex items-start justify-between mb-6 gap-4">
     <div>
-      {% if box %}
+      {% if linked_list %}
+      <a href="/lists/{{ list_id }}" class="text-stone-500 hover:text-stone-700 text-sm">&larr; {{ linked_list.name }}</a>
+      {% elif box %}
       <a href="/boxes/{{ box_id }}" class="text-stone-500 hover:text-stone-700 text-sm">&larr; {{ box.name }}</a>
       {% else %}
       <a href="/tunes" class="text-stone-500 hover:text-stone-700 text-sm">&larr; Tunes</a>
