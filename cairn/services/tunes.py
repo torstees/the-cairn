@@ -19,6 +19,7 @@ from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, T
 from cairn.services.abc_utils import build_abc, truncate_to_bars
 
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
+_TEMPO_HEADER_RE = re.compile(r"^Q:[^\n]*\n?", re.MULTILINE)
 
 
 def sort_key(title: str) -> str:
@@ -70,11 +71,18 @@ def existing_alias_names(tune: Tune) -> set[str]:
 
 
 def preview_abc(tune: Tune, setting: TuneSetting | None = None, n_bars: int = 4) -> str | None:
-    """Return an ABC preview (opening bars) for tune, preferring `setting` over the core setting."""
+    """Return an ABC preview (opening bars) for tune, preferring `setting` over the core setting.
+
+    Strips the Q: tempo header — like the main score view's client-side
+    stripping (app.js' render()), a tempo marking on a static preview is
+    misleading since it never reflects anything the user can actually change
+    there.
+    """
     setting = setting or core_setting(tune)
     if setting is None:
         return None
-    return truncate_to_bars(build_abc(tune, setting), n_bars)
+    abc = truncate_to_bars(build_abc(tune, setting), n_bars)
+    return _TEMPO_HEADER_RE.sub("", abc, count=1)
 
 
 def build_tune_previews(tunes: Iterable[Tune], n_bars: int = 4) -> dict[int, str]:
