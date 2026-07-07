@@ -600,6 +600,27 @@
     return (window.__cairnBeatsPerBar || 4) / metroSubdivision;
   }
 
+  // SMuFL (Bravura Text) codepoints for the metronome-mark label — "tail up"
+  // quarter note, plus an augmentation dot for the compound-meter (3-per-
+  // beat) types, so the label always shows the same beat unit metroSchedule
+  // is actually counting. Derived from metroSubdivision directly (rather
+  // than a second tune-type lookup) so the two can't drift out of sync.
+  var SMUFL_QUARTER_NOTE = "";
+  var SMUFL_AUGMENTATION_DOT = "";
+
+  function metroTempoGlyph() {
+    return metroSubdivision === 3 ? SMUFL_QUARTER_NOTE + SMUFL_AUGMENTATION_DOT : SMUFL_QUARTER_NOTE;
+  }
+
+  // Refresh the #abc-tempo-unit glyph to match the currently-resolved
+  // metroSubdivision. Called wherever metroPattern/metroSubdivision are
+  // (re)resolved for a tune type, so the glyph and the audible click never
+  // disagree about what the tempo number means.
+  function updateTempoGlyph() {
+    var el = document.getElementById("abc-tempo-unit");
+    if (el) el.textContent = metroTempoGlyph();
+  }
+
   // Update the metronome's live tempo without stopping/restarting it — no
   // beat-phase reset, no audible restart click. A no-op if it isn't running;
   // callers don't need to check metroTimer themselves before calling this.
@@ -661,6 +682,7 @@
 
     metroPattern = METRO_PATTERNS[window.__cairnTuneType] || METRO_PATTERNS.reel;
     metroSubdivision = METRO_SUBDIVISION[window.__cairnTuneType] || 1;
+    updateTempoGlyph();
 
     if (window.__cairnLastTempo) {
       var slider = document.getElementById("abc-tempo");
@@ -1016,6 +1038,12 @@
 
     renderCombined();
     initDrone();
+
+    // A set mixes tune types with no single subdivision, so metroPattern/
+    // metroSubdivision are left at their module defaults (reel / 1) rather
+    // than resolved per-member — updateTempoGlyph() just confirms the label
+    // matches that default rather than leaving it unset.
+    updateTempoGlyph();
 
     var playBtn     = document.getElementById("abc-play");
     var tempoSlider = document.getElementById("abc-tempo");
@@ -1377,6 +1405,7 @@
 
     metroPattern = METRO_PATTERNS[opts.tuneType] || METRO_PATTERNS.reel;
     metroSubdivision = METRO_SUBDIVISION[opts.tuneType] || 1;
+    updateTempoGlyph();
 
     var slider = document.getElementById("abc-tempo");
     var label  = document.getElementById("abc-tempo-label");

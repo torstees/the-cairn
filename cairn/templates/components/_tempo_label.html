@@ -2,8 +2,17 @@
   Editable BPM label paired with the #abc-tempo range slider. Typing a value
   and pressing Enter (or blurring) applies it via wireTempoLabelEditing() in
   static/js/app.js, which clamps to this input's own min/max.
+
+  #abc-tempo-unit shows a metronome mark (SMuFL note-value glyph, e.g. a
+  dotted quarter for jig/slip_jig/slide) instead of "bpm" — the placeholder
+  glyph below (plain quarter note) is corrected at page load by
+  updateTempoGlyph() in app.js, the same place metroPattern/metroSubdivision
+  are resolved for the tune's actual type, so the glyph and the audible
+  click always agree on what the tempo number means. The glyph itself is a
+  Private Use Area character with no meaningful accessible name, so it's
+  aria-hidden with a sr-only "beats per minute" label alongside it.
 #}
+<span id="abc-tempo-unit" class="smufl text-lg text-stone-500 align-middle" aria-hidden="true">&#xECA5;</span><span class="sr-only">beats per minute</span><span class="text-sm text-stone-500" aria-hidden="true">=</span>
 <input id="abc-tempo-label" type="number" min="40" max="250" step="1" value="100"
        class="w-14 text-sm text-stone-500 bg-transparent border-0 border-b border-transparent
               focus:border-stone-400 focus:outline-none text-center cursor-default focus:cursor-text">
-<span class="text-sm text-stone-500">bpm</span>
