@@ -5,11 +5,13 @@ from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneS
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
 from cairn.services.tunes import (
     TUNE_FAMILIES,
+    build_tune_previews,
     create_setting,
     create_tune,
     delete_tune,
     get_tune,
     list_tunes,
+    preview_abc,
     set_core_setting,
     set_difficulty,
     sort_key,
@@ -388,3 +390,67 @@ async def test_set_difficulty_different_instruments_are_independent(db: AsyncSes
     by_instrument = {d.instrument: d.difficulty for d in found.difficulties}
     assert by_instrument[Instrument.fiddle] == 3
     assert by_instrument[Instrument.flute] == 5
+
+
+# ── preview_abc / build_tune_previews ────────────────────────────────────────
+
+
+async def test_preview_abc_returns_opening_bars(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation="X:1\nT:x\nM:4/4\nK:D\n|:DEFG|ABcd|efga|bagf:|\n")
+    tune = await get_tune(db, created.id)  # eager-loads .settings; core_setting() needs it loaded
+    assert tune is not None
+    preview = preview_abc(tune, n_bars=2)
+    assert preview is not None
+    assert preview.endswith("|:DEFG|ABcd|\n")
+    assert "efga" not in preview
+
+
+async def test_preview_abc_strips_tempo_header(db: AsyncSession) -> None:
+    # build_abc() always injects a Q: tempo header (the tune's own, or a
+    # type-based default) — issue #118: this must not leak into previews,
+    # which are static and never reflect a tempo the user actually controls.
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    tune = await get_tune(db, created.id)
+    assert tune is not None
+    preview = preview_abc(tune)
+    assert preview is not None
+    assert "Q:" not in preview
+
+
+async def test_preview_abc_prefers_given_setting_over_core(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    alt = await create_setting(
+        db,
+        created.id,
+        TuneSettingCreate(tune_id=created.id, label="Alternate", abc_notation="X:1\nT:x\nK:D\n|:GABc|dcBA:|\n"),
+    )
+    assert alt is not None
+    tune = await get_tune(db, created.id)
+    assert tune is not None
+    preview = preview_abc(tune, setting=alt)
+    assert preview is not None
+    assert "GABc" in preview
+
+
+def test_preview_abc_returns_none_without_a_core_setting() -> None:
+    from cairn.models import Tune
+
+    tune = Tune(
+        title="No Settings Yet",
+        sort_title="No Settings Yet",
+        tune_type=TuneType.reel,
+        key_root=KeyRoot.D,
+        key_mode=KeyMode.major,
+        time_signature="4/4",
+    )
+    tune.settings = []
+    assert preview_abc(tune) is None
+
+
+async def test_build_tune_previews_maps_tune_id_to_abc(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    tune = await get_tune(db, created.id)
+    assert tune is not None
+    previews = build_tune_previews([tune])
+    assert tune.id in previews
+    assert "Q:" not in previews[tune.id]
