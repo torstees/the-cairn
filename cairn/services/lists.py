@@ -119,6 +119,7 @@ async def get_list(db: AsyncSession, list_id: int) -> PracticeList | None:
         .where(PracticeList.id == list_id)
         .options(
             selectinload(PracticeList.entries).selectinload(TuneListEntry.tune).selectinload(Tune.settings),
+            selectinload(PracticeList.entries).selectinload(TuneListEntry.tune).selectinload(Tune.aliases),
             selectinload(PracticeList.entries).selectinload(TuneListEntry.setting),
             selectinload(PracticeList.box),
         )
@@ -147,6 +148,7 @@ async def get_list_entry(db: AsyncSession, list_id: int, tune_id: int) -> TuneLi
         .where(TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id)
         .options(
             selectinload(TuneListEntry.tune).selectinload(Tune.settings),
+            selectinload(TuneListEntry.tune).selectinload(Tune.aliases),
             selectinload(TuneListEntry.setting),
         )
     )

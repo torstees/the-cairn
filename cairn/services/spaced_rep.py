@@ -265,7 +265,7 @@ async def get_user_progress(
     Ordered alphabetically by sort_title.
     """
     tunes_result = await db.execute(
-        select(Tune).order_by(Tune.sort_title).options(selectinload(Tune.settings))
+        select(Tune).order_by(Tune.sort_title).options(selectinload(Tune.settings), selectinload(Tune.aliases))
     )
     tunes = list(tunes_result.scalars().all())
     if not tunes:

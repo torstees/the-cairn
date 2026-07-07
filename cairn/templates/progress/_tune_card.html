@@ -2,6 +2,7 @@
   Standalone HTMX partial for a single tune's progress card.
   Required context: tune, progress (or None), statuses, now, tune_previews
 #}
+{% from "components/_alias_summary.html" import alias_summary %}
 {% set is_due = progress and progress.next_suggested and progress.next_suggested <= now %}
 <div id="progress-card-{{ tune.id }}" class="bg-white rounded-lg shadow-sm px-5 py-4">
 
@@ -22,6 +23,9 @@
         {% endif %}
       </div>
       <p class="text-xs text-stone-400 mt-0.5">{{ tune.tune_type.label }}</p>
+      {% if tune.aliases %}
+      <div class="mt-0.5">{{ alias_summary(tune.aliases) }}</div>
+      {% endif %}
     </div>
 
     <div class="flex items-center gap-3 shrink-0 flex-wrap">
