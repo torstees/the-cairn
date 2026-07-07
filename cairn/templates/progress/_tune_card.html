@@ -10,7 +10,7 @@
   <div class="flex items-start justify-between gap-4 flex-wrap">
     <div class="min-w-0">
       <div class="flex items-center gap-2">
-        <a href="/tunes/{{ tune.id }}"
+        <a href="/tunes/{{ tune.id }}?from=progress"
            class="font-medium text-stone-800 hover:text-stone-600 hover:underline"
            {% if tune.id in tune_previews %}data-abc-preview-id="{{ tune.id }}"{% endif %}>
           {{ tune.title }}

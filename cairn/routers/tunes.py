@@ -103,10 +103,16 @@ async def tune_detail(
     db: AsyncSession = Depends(get_db),
     box_id: int | None = Query(default=None),
     list_id: int | None = Query(default=None),
+    from_: str | None = Query(default=None, alias="from"),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
+
+    # Progress is not a setting-override source the way a box or list entry
+    # is (see #120) — it only ever affects the breadcrumb, and only when
+    # nothing more specific (list, then box) is already provided.
+    from_progress = from_ == "progress"
 
     active_setting = None
     box = None
@@ -152,6 +158,7 @@ async def tune_detail(
             "box_id": box_id,
             "linked_list": linked_list,
             "list_id": list_id,
+            "from_progress": from_progress,
             "min_tempo": min_tempo,
             "tempo_records": tempo_records,
             "last_tempo": tempo_records[-1].tempo if tempo_records else None,
