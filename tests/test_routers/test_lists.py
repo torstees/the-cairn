@@ -6,7 +6,7 @@ from cairn.routers.lists import _STUB_USER_ID
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.boxes import create_box
 from cairn.services.lists import add_tune_to_list, create_list, update_list_entry_setting
-from cairn.services.tunes import create_setting, create_tune
+from cairn.services.tunes import add_alias, create_setting, create_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
 _ALT_ABC = "X:1\nT:x\nK:D\n|:GABc defg|GABc defg|GABc defg|GABc defg|GABc defg|GABc defg:|"
@@ -42,6 +42,14 @@ async def test_list_detail_includes_abc_hover_preview(client: AsyncClient, db: A
     assert resp.status_code == 200
     assert f'data-abc-preview-id="{tune.id}"' in resp.text
     assert f'<template id="tune-abc-preview-{tune.id}">' in resp.text
+
+
+async def test_list_detail_shows_tune_aliases(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    await add_alias(db, tune.id, "Sunrise Reel")
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert resp.status_code == 200
+    assert "Also known as: Sunrise Reel" in resp.text
 
 
 async def test_list_add_tune_response_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:

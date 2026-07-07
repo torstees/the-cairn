@@ -1,4 +1,5 @@
 {# Filter controls + tune list — both inside #tune-content so active state re-renders with results #}
+{% from "components/_alias_summary.html" import alias_summary %}
 
 <div class="space-y-2 mb-5">
   <div class="flex flex-wrap items-center gap-2">
@@ -50,9 +51,7 @@
         {{ tune.tune_type.label }} &middot; {{ tune.key_root.label }} {{ tune.key_mode.label }}
       </span>
       {% if tune.aliases %}
-      <div class="mt-0.5">
-        <span class="text-xs text-stone-400">Also known as: {{ tune.aliases | map(attribute='name') | join(', ') }}</span>
-      </div>
+      <div class="mt-0.5">{{ alias_summary(tune.aliases) }}</div>
       {% endif %}
     </div>
     <div class="flex items-center gap-3 shrink-0">

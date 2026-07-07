@@ -118,6 +118,7 @@ async def get_box_detail(
         .options(
             selectinload(TuneBox.instruments),
             selectinload(TuneBox.entries).selectinload(TuneBoxEntry.tune).selectinload(Tune.settings),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.tune).selectinload(Tune.aliases),
             selectinload(TuneBox.entries).selectinload(TuneBoxEntry.setting),
         )
     )
@@ -134,6 +135,7 @@ async def get_box_entry(
         .where(TuneBoxEntry.box_id == box_id, TuneBoxEntry.tune_id == tune_id)
         .options(
             selectinload(TuneBoxEntry.tune).selectinload(Tune.settings),
+            selectinload(TuneBoxEntry.tune).selectinload(Tune.aliases),
             selectinload(TuneBoxEntry.setting),
         )
     )

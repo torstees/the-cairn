@@ -5,7 +5,7 @@ from cairn.models import Instrument, KeyMode, KeyRoot, Role, TuneType, User
 from cairn.routers.boxes import _STUB_USER_ID
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.boxes import add_tune, create_box, set_preferred_setting
-from cairn.services.tunes import create_setting, create_tune
+from cairn.services.tunes import add_alias, create_setting, create_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
 _ALT_ABC = "X:1\nT:x\nK:D\n|:GABc defg|GABc defg|GABc defg|GABc defg|GABc defg|GABc defg:|"
@@ -40,6 +40,14 @@ async def test_box_detail_includes_abc_hover_preview(client: AsyncClient, db: As
     assert resp.status_code == 200
     assert f'data-abc-preview-id="{tune.id}"' in resp.text
     assert f'<template id="tune-abc-preview-{tune.id}">' in resp.text
+
+
+async def test_box_detail_shows_tune_aliases(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    await add_alias(db, tune.id, "Sunrise Reel")
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+    assert "Also known as: Sunrise Reel" in resp.text
 
 
 async def test_box_add_tune_response_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:

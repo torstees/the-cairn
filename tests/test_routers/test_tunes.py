@@ -6,7 +6,7 @@ from cairn.routers.tunes import _STUB_USER_ID
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.boxes import add_tune, create_box, get_box_entry, set_preferred_setting
 from cairn.services.lists import add_tune_to_list, create_list, get_list_entry
-from cairn.services.tunes import create_setting, create_tune
+from cairn.services.tunes import add_alias, create_setting, create_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
 
@@ -51,6 +51,43 @@ async def test_tune_list_includes_abc_hover_preview(client: AsyncClient, db: Asy
     # Only the first four bars should be present, not the closing repeat.
     assert preview.count("|") == 5
     assert "DEFA BAFA:|" not in preview
+
+
+async def test_tune_list_shows_all_aliases_when_five_or_fewer(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    # Tune.aliases is ordered by sort_name, which strips a leading article —
+    # "The Dawn Air" sorts as "Dawn Air", ahead of "Morning Star".
+    for name in ["Morning Star", "The Dawn Air", "Sunrise Reel"]:
+        await add_alias(db, tune.id, name)
+
+    resp = await client.get("/tunes/")
+    assert resp.status_code == 200
+    assert "Also known as: The Dawn Air, Morning Star, Sunrise Reel" in resp.text
+    assert "hellip" not in resp.text  # no truncation, no tooltip needed
+    assert "group-hover:block" not in resp.text
+
+
+async def test_tune_list_truncates_aliases_with_hover_tooltip(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    names = [f"Alias {n}" for n in range(1, 8)]  # 7 aliases, over the 5-shown cap
+    for name in names:
+        await add_alias(db, tune.id, name)
+
+    resp = await client.get("/tunes/")
+    assert resp.status_code == 200
+    # Only the first 5 are shown inline, followed by an ellipsis — the visible
+    # summary line ends at "&hellip;</span>", before the hidden tooltip span.
+    shown = ", ".join(names[:5])
+    marker = f"Also known as: {shown}&hellip;"
+    assert marker in resp.text
+    visible_summary = resp.text.split(marker, 1)[1].split("</span>", 1)[0]
+    assert "Alias 6" not in visible_summary
+    assert "Alias 7" not in visible_summary
+    # The hover tooltip carries the full list, including the truncated tail.
+    assert "group-hover:block" in resp.text
+    tooltip = resp.text.split("group-hover:block", 1)[1]
+    assert "Alias 6" in tooltip
+    assert "Alias 7" in tooltip
 
 
 async def test_tune_detail_shows_add_form_for_box_not_containing_tune(client: AsyncClient, db: AsyncSession) -> None:
