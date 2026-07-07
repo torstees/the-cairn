@@ -116,6 +116,34 @@ async def test_tune_detail_shows_membership_for_box_containing_tune(client: Asyn
     assert f'href="/boxes/{box.id}"' in resp.text
 
 
+async def test_tune_detail_breadcrumbs_to_progress_when_from_progress(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}", params={"from": "progress"})
+    assert resp.status_code == 200
+    assert 'href="/progress"' in resp.text
+    assert '&larr; Progress' in resp.text
+    assert '&larr; Tunes' not in resp.text
+
+
+async def test_tune_detail_box_breadcrumb_outranks_from_progress(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    await client.post(f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id)})
+
+    resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "from": "progress"})
+    assert resp.status_code == 200
+    assert f'href="/boxes/{box.id}"' in resp.text
+    assert '&larr; Progress' not in resp.text
+
+
+async def test_tune_detail_no_from_param_still_breadcrumbs_to_tunes(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert '&larr; Tunes' in resp.text
+
+
 async def test_tune_detail_breadcrumbs_to_list_when_list_id_given(client: AsyncClient, db: AsyncSession) -> None:
     await _seed_user(db)
     tune = await _seed_tune(db)

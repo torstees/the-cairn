@@ -55,6 +55,13 @@ async def test_progress_index_shows_tune(client: AsyncClient, db: AsyncSession) 
     assert "Morning Dew" in resp.text
 
 
+async def test_progress_index_tune_link_includes_from_progress(client: AsyncClient, db: AsyncSession) -> None:
+    _, tune = await _seed(db)
+    resp = await client.get("/progress/")
+    assert resp.status_code == 200
+    assert f'href="/tunes/{tune.id}?from=progress"' in resp.text
+
+
 async def test_progress_index_shows_not_started_badge(client: AsyncClient, db: AsyncSession) -> None:
     await _seed(db)
     resp = await client.get("/progress/")
