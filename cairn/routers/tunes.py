@@ -8,7 +8,7 @@ from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune,
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_preferred_setting
-from cairn.services.lists import add_tune_to_list, get_active_list, list_lists
+from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
 from cairn.services.tunes import (
     FAMILY_LABELS,
     add_alias,
@@ -102,6 +102,7 @@ async def tune_detail(
     tune_id: int,
     db: AsyncSession = Depends(get_db),
     box_id: int | None = Query(default=None),
+    list_id: int | None = Query(default=None),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
@@ -113,6 +114,14 @@ async def tune_detail(
         box, entry = await get_box(db, box_id), await get_box_entry(db, box_id, tune_id)
         if entry and entry.setting_id is not None:
             active_setting = entry.setting
+
+    linked_list = None
+    if list_id is not None:
+        linked_list, list_entry = await get_list(db, list_id), await get_list_entry(db, list_id, tune_id)
+        # A list's own setting override outranks the box's, per the setting
+        # resolution order in AGENTS.md.
+        if list_entry and list_entry.setting_id is not None:
+            active_setting = list_entry.setting
 
     core = core_setting(tune)
     if active_setting is None:
@@ -141,6 +150,8 @@ async def tune_detail(
             "thesession_setting_anchor_id": core.thesession_setting_id if core else None,
             "box": box,
             "box_id": box_id,
+            "linked_list": linked_list,
+            "list_id": list_id,
             "min_tempo": min_tempo,
             "tempo_records": tempo_records,
             "last_tempo": tempo_records[-1].tempo if tempo_records else None,
