@@ -8,6 +8,8 @@
 
     <form hx-post="/tunes/{{ tune_id }}/thesession-tune/{{ external_tune_id }}/settings"
           hx-target="#thesession-wizard" hx-swap="innerHTML" class="flex flex-col min-h-0 flex-1">
+      <input type="hidden" name="box_id" value="{{ box_id }}">
+      <input type="hidden" name="list_id" value="{{ list_id }}">
       <p class="text-sm text-stone-600 mb-2 shrink-0">Choose which alternate titles to import as aliases.</p>
 
       {% if aliases %}
@@ -37,6 +39,7 @@
       <div class="flex items-center justify-between mt-4 shrink-0">
         <button type="button"
                 hx-get="/tunes/{{ tune_id }}/thesession-search"
+                hx-include="[name='box_id'], [name='list_id']"
                 hx-target="#thesession-wizard" hx-swap="innerHTML"
                 class="px-4 py-2 text-sm font-medium text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">
           &larr; Back

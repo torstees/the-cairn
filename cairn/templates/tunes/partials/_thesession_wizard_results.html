@@ -2,7 +2,7 @@
 <ul class="space-y-2">
   {% for r in results %}
   <li class="border border-stone-200 rounded-lg px-3 py-2 hover:bg-stone-50 cursor-pointer"
-      hx-get="/tunes/{{ tune_id }}/thesession-tune/{{ r.tune_id }}"
+      hx-get="/tunes/{{ tune_id }}/thesession-tune/{{ r.tune_id }}{% if list_id %}?list_id={{ list_id }}{% elif box_id %}?box_id={{ box_id }}{% endif %}"
       hx-target="#thesession-wizard" hx-swap="innerHTML">
     <span class="font-medium text-stone-800"
           {% if r.tune_id in previews %}data-abc-preview-id="ext-{{ r.tune_id }}"{% endif %}>

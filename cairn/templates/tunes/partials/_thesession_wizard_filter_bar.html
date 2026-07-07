@@ -9,7 +9,7 @@
 <div class="flex flex-wrap items-center gap-2">
   <span class="text-xs text-stone-400 w-14 shrink-0">Family</span>
   <button type="button"
-          hx-get="/tunes/{{ tune_id }}/thesession-search-results" hx-include="[name='q']"
+          hx-get="/tunes/{{ tune_id }}/thesession-search-results" hx-include="[name='q'], [name='box_id'], [name='list_id']"
           hx-target="#thesession-results-wrap" hx-swap="innerHTML"
           class="px-3 py-1 rounded-full text-sm border transition-colors
                  {% if not active_type and not active_family %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
@@ -17,7 +17,7 @@
   </button>
   {% for key, label in family_labels.items() %}
   <button type="button"
-          hx-get="/tunes/{{ tune_id }}/thesession-search-results?family={{ key }}" hx-include="[name='q']"
+          hx-get="/tunes/{{ tune_id }}/thesession-search-results?family={{ key }}" hx-include="[name='q'], [name='box_id'], [name='list_id']"
           hx-target="#thesession-results-wrap" hx-swap="innerHTML"
           class="px-3 py-1 rounded-full text-sm border transition-colors
                  {% if active_family == key %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
@@ -29,7 +29,7 @@
   <span class="text-xs text-stone-400 w-14 shrink-0">Type</span>
   {% for tt in tune_types %}
   <button type="button"
-          hx-get="/tunes/{{ tune_id }}/thesession-search-results?type={{ tt.value }}" hx-include="[name='q']"
+          hx-get="/tunes/{{ tune_id }}/thesession-search-results?type={{ tt.value }}" hx-include="[name='q'], [name='box_id'], [name='list_id']"
           hx-target="#thesession-results-wrap" hx-swap="innerHTML"
           class="px-3 py-1 rounded-full text-sm border transition-colors
                  {% if active_type == tt %}bg-stone-700 text-white border-stone-700{% else %}border-stone-300 text-stone-600 hover:bg-stone-50{% endif %}">
