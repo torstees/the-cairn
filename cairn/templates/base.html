@@ -10,8 +10,19 @@
   <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
   <!-- Alpine.js v3.14.9 -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+  <!-- Bravura Text v1.392 (SMuFL) — text-optimised metric for inline glyphs like the
+       metronome mark, SIL OFL licensed. Pinned to a tag (not @master), matching every
+       other CDN dependency in this file. font-display: block rather than swap since
+       these are Private Use Area codepoints with no legible fallback glyph in `serif`
+       — better to render nothing briefly than a tofu box before the real font loads. -->
   <style>
+    @font-face {
+      font-family: 'Bravura Text';
+      src: url('https://cdn.jsdelivr.net/gh/steinbergmedia/bravura@bravura-1.392/redist/woff/BravuraText.woff2') format('woff2');
+      font-display: block;
+    }
     [x-cloak]{display:none!important}
+    .smufl { font-family: 'Bravura Text', serif; }
     .abcjs-cursor-active path,
     .abcjs-cursor-active rect,
     .abcjs-cursor-active polygon,
@@ -46,7 +57,7 @@
     </main>
   </div>
 
-  <script src="/static/js/app.js?v=25"></script>
+  <script src="/static/js/app.js?v=26"></script>
   {% block scripts %}{% endblock %}
 
   <!-- Tuner drawer — fixed panel, no backdrop so page content stays readable -->
