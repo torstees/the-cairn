@@ -265,6 +265,7 @@
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
         tempoLabel.value = this.value;
+        setLiveMetroTempo(parseInt(this.value, 10));
         if (activeSynth) {
           activeSynth.stop();
           teardownAudio();
@@ -492,9 +493,28 @@
     air:        [H, L, M, L],
   };
 
+  // Compound-meter types display/accept tempo as the dotted-quarter (main
+  // beat) rate, but METRO_PATTERNS above has one slot per eighth note — 3
+  // slots per beat for these types. metroSchedule() divides the beat
+  // interval by this to get the actual per-slot click interval, so the
+  // number the user sees and types always means beats per minute, never a
+  // raw per-slot rate. Anything not listed here is 1 (one slot per beat).
+  var METRO_SUBDIVISION = {
+    jig: 3,
+    slip_jig: 3,
+    slide: 3,
+  };
+
   var metroPattern = METRO_PATTERNS.reel;  // resolved in initMetronome
+  var metroSubdivision = 1;                // resolved alongside metroPattern
+  var metroBpm = 100;                      // live tempo metroSchedule reads each tick
   var metroTimer = null;
   var metroNextBeat = 0;
+  // Time the metronome was started, OR last had its tempo live-changed
+  // (setLiveMetroTempo resets this too) — "how long has this *specific*
+  // tempo actually been running," used by the click handlers' record-this-
+  // tempo threshold. Distinct from metroNextBeat/metroBeatCount, which track
+  // audible beat phase and must never reset from a live tempo change.
   var metroStartTime = 0;
   var metroBeatCount = 0;
   var metroNodes = [];          // scheduled oscillators — cancelled on stop
@@ -502,9 +522,20 @@
   var METRO_LOOKAHEAD = 25;    // ms between scheduler ticks
   var METRO_SCHEDULE = 0.25;   // seconds to schedule ahead — must exceed worst-case GC pause
 
-  function metroSchedule(bpm) {
+  function metroSchedule() {
     var ctx = sharedAudioCtx;
-    var interval = 60.0 / bpm;
+    // Read the live tempo/subdivision fresh on every tick (rather than
+    // capturing them as of when the metronome started) so a slider drag or
+    // tempo-field edit applies with no stop/restart and no beat-phase reset.
+    // Beats already scheduled up to METRO_SCHEDULE seconds ahead in a prior
+    // tick still play at the old interval, so the audible change lands
+    // within METRO_SCHEDULE, not METRO_LOOKAHEAD — imperceptible in practice
+    // at METRO_SCHEDULE's current 0.25s, but worth naming precisely. metroBpm
+    // is the displayed beats-per-minute rate; metroSubdivision (3 for
+    // jig/slip_jig/slide, 1 otherwise) converts that into the actual
+    // per-pattern-slot interval, since METRO_PATTERNS has one slot per
+    // eighth note for those meters.
+    var interval = (60.0 / metroBpm) / metroSubdivision;
     // If the JS timer fired late (tab hidden, busy thread), skip forward rather
     // than flooding with catch-up beats that all land within milliseconds.
     while (metroNextBeat < ctx.currentTime - interval) {
@@ -539,7 +570,7 @@
       metroNextBeat += interval;
       metroBeatCount++;
     }
-    metroTimer = setTimeout(function () { metroSchedule(bpm); }, METRO_LOOKAHEAD);
+    metroTimer = setTimeout(metroSchedule, METRO_LOOKAHEAD);
   }
 
   function startMetronome(bpm) {
@@ -548,7 +579,8 @@
     metroNextBeat = ctx.currentTime;
     metroStartTime = ctx.currentTime;
     metroBeatCount = 0;
-    metroSchedule(bpm);
+    metroBpm = bpm;
+    metroSchedule();
   }
 
   function stopMetronome() {
@@ -557,6 +589,34 @@
     metroGains.forEach(function(g) { try { g.disconnect(); } catch(e) {} });
     metroNodes = [];
     metroGains = [];
+  }
+
+  // __cairnBeatsPerBar is the time signature's numerator (e.g. 6 for a 6/8
+  // jig) — a slot count, not a beat count, for compound meters. Divide by
+  // the subdivision to get actual dotted-quarter beats/bar, matching bpm's
+  // beats-per-minute meaning, for the Metro click handlers' recording-
+  // duration threshold.
+  function currentBeatsPerBar() {
+    return (window.__cairnBeatsPerBar || 4) / metroSubdivision;
+  }
+
+  // Update the metronome's live tempo without stopping/restarting it — no
+  // beat-phase reset, no audible restart click. A no-op if it isn't running;
+  // callers don't need to check metroTimer themselves before calling this.
+  //
+  // metroStartTime also resets here (deliberately — see its declaration):
+  // without this, "elapsed time since metroStartTime" — the gate the Metro
+  // click handlers use to decide whether a tempo is worth recording — would
+  // keep counting time spent at a *different*, earlier tempo, letting a
+  // last-second tempo jump right before stopping satisfy that tempo's
+  // (smaller, since duration scales inversely with bpm) threshold despite
+  // never actually having been played at that speed for long. Resetting it
+  // here doesn't touch metroNextBeat/metroBeatCount, so it has no effect on
+  // beat continuity — only on how "long enough at this tempo" is measured.
+  function setLiveMetroTempo(bpm) {
+    if (!metroTimer) return;
+    metroBpm = bpm;
+    metroStartTime = sharedAudioCtx.currentTime;
   }
 
   // Clamp a bpm value to the tempo slider's own min/max, falling back to
@@ -572,7 +632,7 @@
   // Makes the #abc-tempo-label <input type="number"> editable in place: typing
   // a value and pressing Enter (or blurring) clamps it to the slider's range
   // and syncs both controls. Non-numeric input is ignored, restoring the
-  // previous value. Restarts the metronome at the new tempo if it's running.
+  // previous value. Updates the metronome's tempo live if it's running.
   function wireTempoLabelEditing(tempoSlider, tempoLabel) {
     if (!tempoSlider || !tempoLabel) return;
 
@@ -587,7 +647,7 @@
       var clamped = clampTempo(Math.round(parsed), tempoSlider);
       tempoSlider.value = clamped;
       tempoLabel.value = clamped;
-      if (metroTimer) { stopMetronome(); startMetronome(clamped); }
+      setLiveMetroTempo(clamped);
     });
 
     tempoLabel.addEventListener("keydown", function (e) {
@@ -600,6 +660,7 @@
     if (!btn) return;
 
     metroPattern = METRO_PATTERNS[window.__cairnTuneType] || METRO_PATTERNS.reel;
+    metroSubdivision = METRO_SUBDIVISION[window.__cairnTuneType] || 1;
 
     if (window.__cairnLastTempo) {
       var slider = document.getElementById("abc-tempo");
@@ -615,8 +676,7 @@
 
       if (metroTimer) {
         var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
-        var beatsPerBar = window.__cairnBeatsPerBar || 4;
-        var minDuration = (beatsPerBar * 4 / bpm) * 60;
+        var minDuration = (currentBeatsPerBar() * 4 / bpm) * 60;
         var shouldRecord = elapsed >= minDuration;
         stopMetronome();
         btn.textContent = "♩ Metro";
@@ -969,6 +1029,7 @@
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
         tempoLabel.value = this.value;
+        setLiveMetroTempo(parseInt(this.value, 10));
         if (activeSynth) { activeSynth.stop(); teardownAudio(); if (playBtn) playBtn.textContent = "▶ Play"; }
       });
       wireTempoLabelEditing(tempoSlider, tempoLabel);
@@ -1043,6 +1104,7 @@
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
         tempoLabel.value = this.value;
+        setLiveMetroTempo(parseInt(this.value, 10));
         if (activeSynth) {
           activeSynth.stop();
           teardownAudio();
@@ -1254,6 +1316,7 @@
     if (tempoSlider && tempoLabel) {
       tempoSlider.addEventListener("input", function () {
         tempoLabel.value = this.value;
+        setLiveMetroTempo(parseInt(this.value, 10));
         if (activeSynth) { activeSynth.stop(); teardownAudio(); if (playBtn) playBtn.textContent = "▶ Play"; }
       });
       wireTempoLabelEditing(tempoSlider, tempoLabel);
@@ -1265,8 +1328,7 @@
         var bpm = slider ? parseInt(slider.value, 10) : 100;
         if (metroTimer) {
           var elapsed = sharedAudioCtx ? sharedAudioCtx.currentTime - metroStartTime : 0;
-          var beatsPerBar = window.__cairnBeatsPerBar || 4;
-          var minDuration = (beatsPerBar * 4 / bpm) * 60;
+          var minDuration = (currentBeatsPerBar() * 4 / bpm) * 60;
           var shouldRecord = elapsed >= minDuration && window.__cairnTuneId;
           stopMetronome();
           metroBtn.textContent = "♩ Metro";
@@ -1314,6 +1376,7 @@
     window.__cairnBoxId       = opts.boxId || null;
 
     metroPattern = METRO_PATTERNS[opts.tuneType] || METRO_PATTERNS.reel;
+    metroSubdivision = METRO_SUBDIVISION[opts.tuneType] || 1;
 
     var slider = document.getElementById("abc-tempo");
     var label  = document.getElementById("abc-tempo-label");
