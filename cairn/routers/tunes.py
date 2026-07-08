@@ -9,6 +9,7 @@ from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_preferred_setting
 from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
+from cairn.services.tune_sets import list_sets_for_tune
 from cairn.services.tunes import (
     FAMILY_LABELS,
     add_alias,
@@ -144,12 +145,14 @@ async def tune_detail(
     for practice_list in await list_lists(db, _STUB_USER_ID):
         lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
     active_list = await get_active_list(db, _STUB_USER_ID)
+    member_sets = await list_sets_for_tune(db, tune_id)
 
     return templates.TemplateResponse(
         request,
         "tunes/detail.html",
         {
             "tune": tune,
+            "member_sets": member_sets,
             "built_abc": built_abc,
             "settings_abc": settings_abc,
             "active_setting_id": active_setting.id if active_setting else None,
