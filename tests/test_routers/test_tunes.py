@@ -6,6 +6,7 @@ from cairn.routers.tunes import _STUB_USER_ID
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.boxes import add_tune, create_box, get_box_entry, set_preferred_setting
 from cairn.services.lists import add_tune_to_list, create_list, get_list_entry
+from cairn.services.tune_sets import create_set, set_members
 from cairn.services.tunes import add_alias, create_setting, create_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
@@ -114,6 +115,24 @@ async def test_tune_detail_shows_membership_for_box_containing_tune(client: Asyn
     assert "Core setting" in resp.text
     assert f'hx-post="/tunes/{tune.id}/boxes/{box.id}/setting"' not in resp.text  # no non-core settings yet
     assert f'href="/boxes/{box.id}"' in resp.text
+
+
+async def test_tune_detail_shows_sets_it_belongs_to(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    tune_set = await create_set(db, title="Evening Reels")
+    await set_members(db, tune_set.id, [{"tune_id": tune.id, "setting_id": None}])
+
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert "Evening Reels" in resp.text
+    assert f'href="/sets/{tune_set.id}"' in resp.text
+
+
+async def test_tune_detail_no_sets_message_when_not_a_member(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert "Not part of any sets yet." in resp.text
 
 
 async def test_tune_detail_breadcrumbs_to_progress_when_from_progress(client: AsyncClient, db: AsyncSession) -> None:

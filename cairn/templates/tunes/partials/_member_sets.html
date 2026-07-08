@@ -1,0 +1,20 @@
+{#
+  Required context: tune, member_sets (list[TuneSet] this tune belongs to)
+#}
+<section id="member-sets-section" class="mb-8">
+  <h2 class="text-xl font-semibold text-stone-700 mb-3">Sets</h2>
+
+  {% if member_sets %}
+  <ul class="bg-white rounded-lg shadow-sm divide-y divide-stone-100">
+    {% for tune_set in member_sets %}
+    <li class="px-5 py-3">
+      <a href="/sets/{{ tune_set.id }}" class="font-medium text-stone-800 hover:text-stone-600">
+        {{ tune_set.title }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-stone-500 text-sm">Not part of any sets yet.</p>
+  {% endif %}
+</section>

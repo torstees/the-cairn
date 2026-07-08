@@ -53,6 +53,16 @@ async def list_sets(db: AsyncSession) -> list[TuneSet]:
     return list(result.scalars().all())
 
 
+async def list_sets_for_tune(db: AsyncSession, tune_id: int) -> list[TuneSet]:
+    result = await db.execute(
+        select(TuneSet)
+        .join(TuneSetMember, TuneSetMember.set_id == TuneSet.id)
+        .where(TuneSetMember.tune_id == tune_id)
+        .order_by(TuneSet.title)
+    )
+    return list(result.scalars().all())
+
+
 async def update_set(
     db: AsyncSession,
     set_id: int,
