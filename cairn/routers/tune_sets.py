@@ -242,7 +242,7 @@ async def set_detail(
     # Keyed by tune_id rather than folded into members_display, since that
     # list is also json.dumps()'d for window.__cairnSetMembers — TuneAlias
     # ORM objects aren't JSON-serializable, and the JS side has no use for
-    # them anyway (the tooltip is rendered server-side, see alias_badge()).
+    # them anyway (the tooltip is rendered server-side via alias_tooltip()).
     tune_aliases_by_id: dict[int, list] = {}
     for member in tune_set.members:
         tune = member.tune
@@ -255,6 +255,8 @@ async def set_detail(
         members_display.append({
             "tune_id": tune.id,
             "title": tune.title,
+            "type_label": tune.tune_type.label,
+            "key_label": f"{tune.key_root.label} {tune.key_mode.label}",
             "has_abc": setting is not None,
             "progress": status.value if status else None,
             "default_bars": _bars_from_progress(status),
