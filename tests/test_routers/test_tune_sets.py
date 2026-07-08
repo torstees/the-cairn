@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, TuneType
 from cairn.schemas import TuneCreate
-from cairn.services.tune_sets import create_set, get_set, get_set_tempo, set_members
-from cairn.services.tunes import create_tune
+from cairn.services.tune_sets import create_set, get_set, get_set_tempo
+from cairn.services.tunes import add_alias, create_tune
 
 
 async def _tune(db: AsyncSession, title: str = "The Morning Dew"):
@@ -243,6 +243,34 @@ async def test_set_detail_with_members_shows_bar_controls(
     assert resp.status_code == 200
     assert "set-bars-toggle" in resp.text
     assert "The Foxhunter's" in resp.text
+
+
+async def test_set_detail_member_title_is_hover_trigger_when_aliased(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    t = await _tune(db, "The Foxhunter's")
+    await add_alias(db, t.id, "Sunrise Reel")
+    s = await _set(db, "Reel Set")
+    members_json = json.dumps([{"tune_id": t.id, "setting_id": None}])
+    await client.post(f"/sets/{s.id}", data={"title": "Reel Set", "members": members_json})
+
+    resp = await client.get(f"/sets/{s.id}")
+    assert resp.status_code == 200
+    assert "cursor-help border-b border-dotted border-stone-300" in resp.text
+    assert "Sunrise Reel" in resp.text
+
+
+async def test_set_detail_member_title_not_a_hover_trigger_without_aliases(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    t = await _tune(db, "The Foxhunter's")
+    s = await _set(db, "Reel Set")
+    members_json = json.dumps([{"tune_id": t.id, "setting_id": None}])
+    await client.post(f"/sets/{s.id}", data={"title": "Reel Set", "members": members_json})
+
+    resp = await client.get(f"/sets/{s.id}")
+    assert resp.status_code == 200
+    assert "cursor-help" not in resp.text
 
 
 async def test_set_detail_shows_set_abc(client: AsyncClient, db: AsyncSession) -> None:

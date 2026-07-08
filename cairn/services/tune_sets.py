@@ -3,12 +3,13 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Tune, TuneBox, TuneBoxSetEntry, TuneSet, TuneSetMember, TuneSetTempo
+from cairn.models import Tune, TuneBoxSetEntry, TuneSet, TuneSetMember, TuneSetTempo
 
 
 def _deep_load():
     return [
         selectinload(TuneSet.members).selectinload(TuneSetMember.tune).selectinload(Tune.settings),
+        selectinload(TuneSet.members).selectinload(TuneSetMember.tune).selectinload(Tune.aliases),
         selectinload(TuneSet.members).selectinload(TuneSetMember.setting),
     ]
 
