@@ -91,6 +91,9 @@
           </span>
           {% if member_aliases %}{{ alias_tooltip(member_aliases | map(attribute='name') | list) }}{% endif %}
         </span>
+        <span class="shrink-0 text-xs text-stone-400 whitespace-nowrap">
+          {{ m.type_label }} &middot; {{ m.key_label }}
+        </span>
         {% if m.progress %}
         <span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-500">
           {{ m.progress | replace('_', ' ') }}

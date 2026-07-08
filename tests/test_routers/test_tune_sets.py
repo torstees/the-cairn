@@ -245,6 +245,18 @@ async def test_set_detail_with_members_shows_bar_controls(
     assert "The Foxhunter's" in resp.text
 
 
+async def test_set_detail_shows_member_type_and_key(client: AsyncClient, db: AsyncSession) -> None:
+    t = await _tune(db, "The Foxhunter's")
+    s = await _set(db, "Reel Set")
+    members_json = json.dumps([{"tune_id": t.id, "setting_id": None}])
+    await client.post(f"/sets/{s.id}", data={"title": "Reel Set", "members": members_json})
+
+    resp = await client.get(f"/sets/{s.id}")
+    assert resp.status_code == 200
+    assert "Reel" in resp.text
+    assert "D Major" in resp.text
+
+
 async def test_set_detail_member_title_is_hover_trigger_when_aliased(
     client: AsyncClient, db: AsyncSession
 ) -> None:
