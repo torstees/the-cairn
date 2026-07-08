@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, TuneType
 from cairn.schemas import TuneCreate
-from cairn.services.tune_sets import create_set, get_set, get_set_tempo, set_members
+from cairn.services.tune_sets import create_set, get_set, get_set_tempo
 from cairn.services.tunes import add_alias, create_tune
 
 
@@ -245,7 +245,9 @@ async def test_set_detail_with_members_shows_bar_controls(
     assert "The Foxhunter's" in resp.text
 
 
-async def test_set_detail_shows_alias_badge_for_member_with_aliases(client: AsyncClient, db: AsyncSession) -> None:
+async def test_set_detail_member_title_is_hover_trigger_when_aliased(
+    client: AsyncClient, db: AsyncSession
+) -> None:
     t = await _tune(db, "The Foxhunter's")
     await add_alias(db, t.id, "Sunrise Reel")
     s = await _set(db, "Reel Set")
@@ -254,11 +256,13 @@ async def test_set_detail_shows_alias_badge_for_member_with_aliases(client: Asyn
 
     resp = await client.get(f"/sets/{s.id}")
     assert resp.status_code == 200
-    assert "aka" in resp.text
+    assert "cursor-help border-b border-dotted border-stone-300" in resp.text
     assert "Sunrise Reel" in resp.text
 
 
-async def test_set_detail_no_alias_badge_for_member_without_aliases(client: AsyncClient, db: AsyncSession) -> None:
+async def test_set_detail_member_title_not_a_hover_trigger_without_aliases(
+    client: AsyncClient, db: AsyncSession
+) -> None:
     t = await _tune(db, "The Foxhunter's")
     s = await _set(db, "Reel Set")
     members_json = json.dumps([{"tune_id": t.id, "setting_id": None}])
@@ -266,7 +270,7 @@ async def test_set_detail_no_alias_badge_for_member_without_aliases(client: Asyn
 
     resp = await client.get(f"/sets/{s.id}")
     assert resp.status_code == 200
-    assert "aka" not in resp.text
+    assert "cursor-help" not in resp.text
 
 
 async def test_set_detail_shows_set_abc(client: AsyncClient, db: AsyncSession) -> None:
