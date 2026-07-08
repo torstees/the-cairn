@@ -6,11 +6,17 @@
       <button type="button" onclick="closeTheSessionWizard()" class="text-stone-400 hover:text-stone-600 text-xl leading-none">&times;</button>
     </div>
 
+    {# box_id/list_id are fixed for the whole wizard session (unlike q/type/family,
+       which the user can change), so they're plain hidden fields, not refreshed
+       via OOB swap — every step's hx-get/hx-post carries them forward from here. #}
+    <input type="hidden" name="box_id" value="{{ box_id }}">
+    <input type="hidden" name="list_id" value="{{ list_id }}">
+
     <input type="text" name="q" value="{{ q }}" placeholder="Search by title or alias…" autocomplete="off"
            hx-get="/tunes/{{ tune_id }}/thesession-search-results"
            hx-target="#thesession-results-wrap" hx-swap="innerHTML"
            hx-trigger="input changed delay:300ms, search"
-           hx-include="[name='q'], [name='type'], [name='family']"
+           hx-include="[name='q'], [name='type'], [name='family'], [name='box_id'], [name='list_id']"
            class="w-full border border-stone-300 rounded-lg px-4 py-2 text-sm mb-3
                   focus:outline-none focus:ring-2 focus:ring-stone-400 placeholder:text-stone-400 shrink-0">
 

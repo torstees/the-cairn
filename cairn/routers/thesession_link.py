@@ -32,7 +32,13 @@ def _parse_tune_type(raw: str) -> TuneType | None:
 
 
 async def _results_context(
-    db: AsyncSession, tune_id: int, q: str, tune_type: TuneType | None, family: str | None
+    db: AsyncSession,
+    tune_id: int,
+    q: str,
+    tune_type: TuneType | None,
+    family: str | None,
+    box_id: str,
+    list_id: str,
 ) -> dict:
     results = await search_thesession_tunes(db, q=q, tune_type=tune_type, family=family)
     previews = {
@@ -47,6 +53,8 @@ async def _results_context(
         "family_labels": FAMILY_LABELS,
         "active_type": tune_type,
         "active_family": family,
+        "box_id": box_id,
+        "list_id": list_id,
     }
 
 
@@ -58,6 +66,8 @@ async def thesession_search_open(
     q: str = "",
     type: str = Query(default=""),
     family: str | None = None,
+    box_id: str = Query(default=""),
+    list_id: str = Query(default=""),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
@@ -65,7 +75,9 @@ async def thesession_search_open(
     # Prefill the search with the tune's own title (articles stripped, same as
     # sort_title) so the common case — this tune already exists on
     # TheSession.org — doesn't require retyping its name.
-    ctx = await _results_context(db, tune_id, q or tune.sort_title, _parse_tune_type(type), family or None)
+    ctx = await _results_context(
+        db, tune_id, q or tune.sort_title, _parse_tune_type(type), family or None, box_id, list_id
+    )
     return templates.TemplateResponse(request, "tunes/partials/_thesession_wizard_search.html", ctx)
 
 
@@ -77,8 +89,10 @@ async def thesession_search_results(
     q: str = "",
     type: str = Query(default=""),
     family: str | None = None,
+    box_id: str = Query(default=""),
+    list_id: str = Query(default=""),
 ) -> Response:
-    ctx = await _results_context(db, tune_id, q, _parse_tune_type(type), family or None)
+    ctx = await _results_context(db, tune_id, q, _parse_tune_type(type), family or None, box_id, list_id)
     return templates.TemplateResponse(request, "tunes/partials/_thesession_wizard_results_response.html", ctx)
 
 
@@ -88,6 +102,8 @@ async def thesession_pick_tune(
     tune_id: int,
     external_tune_id: int,
     db: AsyncSession = Depends(get_db),
+    box_id: str = Query(default=""),
+    list_id: str = Query(default=""),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
@@ -102,6 +118,8 @@ async def thesession_pick_tune(
             "external_tune_id": external_tune_id,
             "aliases": aliases,
             "existing_names": existing_names,
+            "box_id": box_id,
+            "list_id": list_id,
         },
     )
 
@@ -113,6 +131,8 @@ async def thesession_pick_aliases(
     external_tune_id: int,
     db: AsyncSession = Depends(get_db),
     alias_ids: list[int] = Form(default=[]),
+    box_id: str = Form(default=""),
+    list_id: str = Form(default=""),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
@@ -131,6 +151,8 @@ async def thesession_pick_aliases(
             "other_settings": other_settings,
             "previews": previews,
             "alias_ids": alias_ids,
+            "box_id": box_id,
+            "list_id": list_id,
         },
     )
 
@@ -143,6 +165,8 @@ async def thesession_confirm(
     db: AsyncSession = Depends(get_db),
     alias_ids: list[int] = Form(default=[]),
     setting_ids: list[int] = Form(default=[]),
+    box_id: str = Form(default=""),
+    list_id: str = Form(default=""),
 ) -> Response:
     checked_settings = await get_thesession_settings(db, external_tune_id, setting_ids)
     return templates.TemplateResponse(
@@ -154,6 +178,8 @@ async def thesession_confirm(
             "settings": checked_settings,
             "alias_ids": alias_ids,
             "setting_ids": setting_ids,
+            "box_id": box_id,
+            "list_id": list_id,
         },
     )
 
@@ -166,6 +192,8 @@ async def thesession_save(
     alias_ids: list[int] = Form(default=[]),
     setting_ids: list[int] = Form(default=[]),
     default_setting_id: int | None = Form(default=None),
+    box_id: str = Form(default=""),
+    list_id: str = Form(default=""),
 ) -> Response:
     tune = await apply_thesession_link(
         db,
@@ -178,5 +206,15 @@ async def thesession_save(
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
     response = Response(status_code=200)
-    response.headers["HX-Redirect"] = f"/tunes/{tune_id}"
+    # Restore whichever breadcrumb context (list outranks box, matching the
+    # resolution order elsewhere — see #120) the tune page had before the
+    # wizard was opened, so completing it doesn't strand the user back on
+    # the generic Tunes index.
+    if list_id:
+        redirect_url = f"/tunes/{tune_id}?list_id={list_id}"
+    elif box_id:
+        redirect_url = f"/tunes/{tune_id}?box_id={box_id}"
+    else:
+        redirect_url = f"/tunes/{tune_id}"
+    response.headers["HX-Redirect"] = redirect_url
     return response

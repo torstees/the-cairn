@@ -88,12 +88,46 @@ async def test_search_open_explicit_q_overrides_prefill(client: AsyncClient, db:
     assert 'value="Morning Dew"' not in resp.text
 
 
+async def test_search_open_carries_box_id_into_hidden_field(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}/thesession-search", params={"box_id": "5"})
+    assert resp.status_code == 200
+    assert '<input type="hidden" name="box_id" value="5">' in resp.text
+    assert '<input type="hidden" name="list_id" value="">' in resp.text
+
+
+async def test_search_open_carries_list_id_into_hidden_field(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}/thesession-search", params={"list_id": "9"})
+    assert resp.status_code == 200
+    assert '<input type="hidden" name="list_id" value="9">' in resp.text
+    assert '<input type="hidden" name="box_id" value="">' in resp.text
+
+
 async def test_search_results_filters_by_query(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     await _seed_external_tune(db)
     resp = await client.get(f"/tunes/{tune.id}/thesession-search-results", params={"q": "nonexistent"})
     assert resp.status_code == 200
     assert "No matches" in resp.text
+
+
+async def test_search_results_row_link_carries_box_id(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await _seed_external_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}/thesession-search-results", params={"q": "abbey", "box_id": "5"})
+    assert resp.status_code == 200
+    assert f'hx-get="/tunes/{tune.id}/thesession-tune/100?box_id=5"' in resp.text
+
+
+async def test_search_results_row_link_prefers_list_id_over_box_id(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await _seed_external_tune(db)
+    resp = await client.get(
+        f"/tunes/{tune.id}/thesession-search-results", params={"q": "abbey", "box_id": "5", "list_id": "9"}
+    )
+    assert resp.status_code == 200
+    assert f'hx-get="/tunes/{tune.id}/thesession-tune/100?list_id=9"' in resp.text
 
 
 async def test_pick_tune_renders_aliases(client: AsyncClient, db: AsyncSession) -> None:
@@ -103,6 +137,26 @@ async def test_pick_tune_renders_aliases(client: AsyncClient, db: AsyncSession) 
     assert resp.status_code == 200
     assert "Abbey Road, The" in resp.text
     assert "Step 2 of 4" in resp.text
+
+
+async def test_pick_tune_carries_list_id_into_form_and_back_link(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await _seed_external_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}/thesession-tune/100", params={"list_id": "9"})
+    assert resp.status_code == 200
+    assert '<input type="hidden" name="list_id" value="9">' in resp.text
+    # The Back button (to Step 1) must also carry it, since that's a plain GET.
+    assert "hx-include=\"[name='box_id'], [name='list_id']\"" in resp.text
+
+
+async def test_pick_aliases_carries_box_id_into_form(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await _seed_external_tune(db)
+    resp = await client.post(
+        f"/tunes/{tune.id}/thesession-tune/100/settings", data={"alias_ids": [], "box_id": "5"}
+    )
+    assert resp.status_code == 200
+    assert '<input type="hidden" name="box_id" value="5">' in resp.text
 
 
 async def test_pick_aliases_renders_settings_with_abc(client: AsyncClient, db: AsyncSession) -> None:
@@ -162,6 +216,19 @@ async def test_pick_aliases_shows_everything_with_no_toggle_when_nothing_matches
     assert "Show all" not in resp.text
 
 
+async def test_confirm_carries_box_id_into_form_and_back_vals(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    ext = await _seed_external_tune(db)
+    resp = await client.post(
+        f"/tunes/{tune.id}/thesession-tune/100/confirm",
+        data={"alias_ids": [], "setting_ids": [ext.id], "box_id": "5"},
+    )
+    assert resp.status_code == 200
+    assert '<input type="hidden" name="box_id" value="5">' in resp.text
+    # The Back button (a POST via hx-vals, not a plain form field) must carry it too.
+    assert '"box_id": "5"' in resp.text
+
+
 async def test_confirm_shows_only_checked_settings(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     ext = await _seed_external_tune(db)
@@ -212,6 +279,58 @@ async def test_save_links_tune_and_imports_setting(client: AsyncClient, db: Asyn
     imported = next(s for s in settings if not s.is_core)
     assert imported.thesession_setting_id == 477
     assert imported.thesession_username == "Josh Kane"
+
+
+async def test_save_redirects_with_box_id_when_present(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    ext = await _seed_external_tune(db)
+    resp = await client.post(
+        f"/tunes/{tune.id}/thesession-link",
+        data={
+            "external_tune_id": 100,
+            "alias_ids": [],
+            "setting_ids": [ext.id],
+            "default_setting_id": ext.id,
+            "box_id": "5",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.headers["hx-redirect"] == f"/tunes/{tune.id}?box_id=5"
+
+
+async def test_save_redirects_with_list_id_when_present(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    ext = await _seed_external_tune(db)
+    resp = await client.post(
+        f"/tunes/{tune.id}/thesession-link",
+        data={
+            "external_tune_id": 100,
+            "alias_ids": [],
+            "setting_ids": [ext.id],
+            "default_setting_id": ext.id,
+            "list_id": "9",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.headers["hx-redirect"] == f"/tunes/{tune.id}?list_id=9"
+
+
+async def test_save_redirect_prefers_list_id_over_box_id(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    ext = await _seed_external_tune(db)
+    resp = await client.post(
+        f"/tunes/{tune.id}/thesession-link",
+        data={
+            "external_tune_id": 100,
+            "alias_ids": [],
+            "setting_ids": [ext.id],
+            "default_setting_id": ext.id,
+            "box_id": "5",
+            "list_id": "9",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.headers["hx-redirect"] == f"/tunes/{tune.id}?list_id=9"
 
 
 async def test_save_unknown_tune_404s(client: AsyncClient) -> None:
