@@ -1,14 +1,30 @@
 {#
-  Shared "Also known as: ..." renderer for tune listings (tunes/, boxes/{id},
-  lists/{id}, progress/). Shows the first `max_shown` alias names inline,
-  followed by "…" and a hover tooltip listing all of them when there are
-  more than that. Callers import this macro and wrap the call in whatever
-  block-level spacing fits their own layout (e.g. a <div class="mt-0.5">) —
-  this macro itself renders inline so it drops into an existing line cleanly.
+  Shared alias-name renderers for tune listings. Both macros share the same
+  hover tooltip box (via _alias_tooltip_names, private to this file) so the
+  truncation/tooltip markup only exists in one place.
 
-  Usage: {% from "components/_alias_summary.html" import alias_summary %}
+  alias_summary(aliases): "Also known as: ..." — used where a tune's row
+  already has room for a second line (tunes/, boxes/{id}, lists/{id},
+  progress/).
+
+  alias_badge(aliases): a compact "aka" trigger with the same hover tooltip
+  but no visible name list — used where the row layout has no room for a
+  second line (sets/{id}'s single-line, numbered member rows).
+
+  Both render inline and take a list of objects with a `.name` attribute
+  (i.e. TuneAlias instances, or anything shaped like one) — callers wrap the
+  call in whatever block-level spacing fits their own layout.
+
+  Usage: {% from "components/_alias_summary.html" import alias_summary, alias_badge %}
          {{ alias_summary(tune.aliases) }}
+         {{ alias_badge(tune.aliases) }}
 #}
+{% macro _alias_tooltip_names(names, align="left") %}
+<span class="hidden group-hover:block absolute z-20 {{ 'right-0' if align == 'right' else 'left-0' }} top-full mt-1 w-72 bg-white border border-stone-200 rounded-lg shadow-lg p-2 text-xs text-stone-600 leading-relaxed normal-case">
+  {{ names | join(', ') }}
+</span>
+{% endmacro %}
+
 {% macro alias_summary(aliases, max_shown=5) %}
 {% if aliases %}
 {% set names = aliases | map(attribute='name') | list %}
@@ -16,11 +32,22 @@
   <span class="text-xs text-stone-400{% if names | length > max_shown %} cursor-help border-b border-dotted border-stone-300{% endif %}">
     Also known as: {{ names[:max_shown] | join(', ') }}{% if names | length > max_shown %}&hellip;{% endif %}
   </span>
-  {% if names | length > max_shown %}
-  <span class="hidden group-hover:block absolute z-20 left-0 top-full mt-1 w-72 bg-white border border-stone-200 rounded-lg shadow-lg p-2 text-xs text-stone-600 leading-relaxed normal-case">
-    {{ names | join(', ') }}
+  {% if names | length > max_shown %}{{ _alias_tooltip_names(names) }}{% endif %}
+</span>
+{% endif %}
+{% endmacro %}
+
+{% macro alias_badge(aliases) %}
+{% if aliases %}
+{% set names = aliases | map(attribute='name') | list %}
+{# Right-anchored, unlike alias_summary's tooltip: this trigger always sits
+   at the end (shrink-0) of a row, so a left-anchored tooltip would
+   routinely overflow off the right edge of the viewport. #}
+<span class="relative inline-block group shrink-0">
+  <span class="text-[10px] uppercase tracking-wide text-stone-400 cursor-help border-b border-dotted border-stone-300">
+    aka
   </span>
-  {% endif %}
+  {{ _alias_tooltip_names(names, align="right") }}
 </span>
 {% endif %}
 {% endmacro %}

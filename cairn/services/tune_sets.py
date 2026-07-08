@@ -9,6 +9,7 @@ from cairn.models import Tune, TuneBox, TuneBoxSetEntry, TuneSet, TuneSetMember,
 def _deep_load():
     return [
         selectinload(TuneSet.members).selectinload(TuneSetMember.tune).selectinload(Tune.settings),
+        selectinload(TuneSet.members).selectinload(TuneSetMember.tune).selectinload(Tune.aliases),
         selectinload(TuneSet.members).selectinload(TuneSetMember.setting),
     ]
 

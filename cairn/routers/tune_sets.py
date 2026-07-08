@@ -239,6 +239,11 @@ async def set_detail(
         progress_map = {row.tune_id: row.status for row in rows}
 
     members_display = []
+    # Keyed by tune_id rather than folded into members_display, since that
+    # list is also json.dumps()'d for window.__cairnSetMembers — TuneAlias
+    # ORM objects aren't JSON-serializable, and the JS side has no use for
+    # them anyway (the tooltip is rendered server-side, see alias_badge()).
+    tune_aliases_by_id: dict[int, list] = {}
     for member in tune_set.members:
         tune = member.tune
         setting = member.setting
@@ -248,11 +253,14 @@ async def set_detail(
                 setting = tune.settings[0]
         status = progress_map.get(tune.id)
         members_display.append({
+            "tune_id": tune.id,
             "title": tune.title,
             "has_abc": setting is not None,
             "progress": status.value if status else None,
             "default_bars": _bars_from_progress(status),
         })
+        if tune.aliases:
+            tune_aliases_by_id[tune.id] = tune.aliases
 
     return templates.TemplateResponse(
         request,
@@ -264,6 +272,7 @@ async def set_detail(
             "set_abc_2": set_abc_2,
             "members_display": members_display,
             "members_json": json.dumps(members_display),
+            "tune_aliases_by_id": tune_aliases_by_id,
             "box_id": box_id,
             "last_tempo": last_tempo,
         },
