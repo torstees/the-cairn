@@ -42,6 +42,18 @@ async def test_box_detail_includes_abc_hover_preview(client: AsyncClient, db: As
     assert f'<template id="tune-abc-preview-{tune.id}">' in resp.text
 
 
+async def test_box_detail_hover_preview_trigger_is_row_not_title(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+
+    tr_open = resp.text.split(f'<tr id="box-tune-{tune.id}"', 1)[1].split(">", 1)[0]
+    assert f'data-abc-preview-id="{tune.id}"' in tr_open
+
+    a_open = resp.text.split(f'<a href="/tunes/{tune.id}?box_id={box.id}"', 1)[1].split(">", 1)[0]
+    assert "data-abc-preview-id" not in a_open
+
+
 async def test_box_detail_shows_tune_aliases(client: AsyncClient, db: AsyncSession) -> None:
     box, tune = await _seed(db)
     await add_alias(db, tune.id, "Sunrise Reel")

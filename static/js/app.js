@@ -1513,9 +1513,13 @@
 
     function show(trigger) {
       var previewId = trigger.dataset.abcPreviewId;
-      if (!previewId) return;
+      // Both bail-outs below can be reached mid-hover, moving from a real
+      // trigger straight into one with no preview (e.g. the alias-tooltip
+      // area carved out of a row's trigger via data-abc-preview-id="") —
+      // hide() clears any popover left over from the trigger just departed.
+      if (!previewId) { hide(); return; }
       var tmpl = document.getElementById("tune-abc-preview-" + previewId);
-      if (!tmpl) return;
+      if (!tmpl) { hide(); return; }
       var abc = tmpl.content.textContent;
       activeTrigger = trigger;
       ensurePopover();

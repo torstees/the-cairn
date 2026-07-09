@@ -54,6 +54,28 @@ async def test_tune_list_includes_abc_hover_preview(client: AsyncClient, db: Asy
     assert "DEFA BAFA:|" not in preview
 
 
+async def test_tune_list_hover_preview_trigger_is_row_not_title(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get("/tunes/")
+    assert resp.status_code == 200
+
+    li_open = resp.text.split("<li ", 1)[1].split(">", 1)[0]
+    assert f'data-abc-preview-id="{tune.id}"' in li_open
+
+    a_open = resp.text.split(f'<a href="/tunes/{tune.id}"', 1)[1].split(">", 1)[0]
+    assert "data-abc-preview-id" not in a_open
+
+
+async def test_tune_list_alias_hover_does_not_trigger_abc_preview(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await add_alias(db, tune.id, "Sunrise Reel")
+    resp = await client.get("/tunes/")
+    assert resp.status_code == 200
+
+    alias_open = resp.text.split('class="relative inline-block group"', 1)[1].split(">", 1)[0]
+    assert 'data-abc-preview-id=""' in alias_open
+
+
 async def test_tune_list_shows_all_aliases_when_five_or_fewer(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     # Tune.aliases is ordered by sort_name, which strips a leading article —
