@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import Instrument, WarmupInstrument, WarmupType
+from cairn.models import Instrument, WarmupType
 from cairn.services.content import render_markdown
 from cairn.services.warmups import (
     create_warmup,

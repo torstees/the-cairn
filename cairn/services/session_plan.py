@@ -416,9 +416,7 @@ async def rate_item(
         if confidence >= 4:
             await advance_status_one(db, user_id, session.box_id, item.tune_id)
 
-    result = await db.execute(
-        select(PracticeSessionItem).where(PracticeSessionItem.id == item_id)
-    )
+    result = await db.execute(select(PracticeSessionItem).where(PracticeSessionItem.id == item_id))
     db_item = result.scalar_one_or_none()
     if db_item is not None:
         db_item.rating_given = confidence

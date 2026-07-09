@@ -30,11 +30,7 @@ router = APIRouter(prefix="/sets", tags=["sets"])
 _STUB_USER_ID = 1
 
 _TUNE_TYPES = list(TuneType)
-_FAMILY_FOR_TYPE: dict[str, str] = {
-    t.value: family
-    for family, types in TUNE_FAMILIES.items()
-    for t in types
-}
+_FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FAMILIES.items() for t in types}
 
 
 def _parse_members(members_raw: str) -> list[dict]:
@@ -48,38 +44,44 @@ def _parse_members(members_raw: str) -> list[dict]:
         if not tune_id:
             continue
         sid = m.get("setting_id")
-        result.append({
-            "tune_id": int(tune_id),
-            "setting_id": int(sid) if sid else None,
-        })
+        result.append(
+            {
+                "tune_id": int(tune_id),
+                "setting_id": int(sid) if sid else None,
+            }
+        )
     return result
 
 
 async def _form_context(db: AsyncSession, tune_set=None, error: str | None = None) -> dict:
     tunes = await list_tunes(db)
-    tunes_json = json.dumps([{
-        "id": t.id,
-        "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
-        "type": t.tune_type.value,
-        "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
-    } for t in tunes])
+    tunes_json = json.dumps(
+        [
+            {
+                "id": t.id,
+                "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
+                "type": t.tune_type.value,
+                "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
+            }
+            for t in tunes
+        ]
+    )
 
     members_data: list[dict] = []
     set_abc_json: str | None = None
 
     if tune_set is not None:
         for member in tune_set.members:
-            settings = [
-                {"id": s.id, "label": s.label, "is_core": s.is_core}
-                for s in member.tune.settings
-            ]
-            members_data.append({
-                "tune_id": member.tune_id,
-                "title": member.tune.title,
-                "type_label": member.tune.tune_type.label,
-                "setting_id": str(member.setting_id) if member.setting_id else "",
-                "settings": settings,
-            })
+            settings = [{"id": s.id, "label": s.label, "is_core": s.is_core} for s in member.tune.settings]
+            members_data.append(
+                {
+                    "tune_id": member.tune_id,
+                    "title": member.tune.title,
+                    "type_label": member.tune.tune_type.label,
+                    "setting_id": str(member.setting_id) if member.setting_id else "",
+                    "settings": settings,
+                }
+            )
         set_abc_json = json.dumps(build_set_abc(tune_set))
 
     return {
@@ -113,10 +115,7 @@ async def tune_settings_json(tune_id: int, db: AsyncSession = Depends(get_db)) -
         .order_by(TuneSetting.is_core.desc(), TuneSetting.label)
     )
     settings = result.scalars().all()
-    return JSONResponse([
-        {"id": s.id, "label": s.label, "is_core": s.is_core}
-        for s in settings
-    ])
+    return JSONResponse([{"id": s.id, "label": s.label, "is_core": s.is_core} for s in settings])
 
 
 @router.post("")
@@ -148,9 +147,7 @@ async def set_create(
 
 
 @router.get("/{set_id}/edit")
-async def set_edit(
-    request: Request, set_id: int, db: AsyncSession = Depends(get_db)
-) -> Response:
+async def set_edit(request: Request, set_id: int, db: AsyncSession = Depends(get_db)) -> Response:
     tune_set = await get_set(db, set_id)
     if tune_set is None:
         raise HTTPException(status_code=404)
@@ -252,15 +249,17 @@ async def set_detail(
             if setting is None and tune.settings:
                 setting = tune.settings[0]
         status = progress_map.get(tune.id)
-        members_display.append({
-            "tune_id": tune.id,
-            "title": tune.title,
-            "type_label": tune.tune_type.label,
-            "key_label": f"{tune.key_root.label} {tune.key_mode.label}",
-            "has_abc": setting is not None,
-            "progress": status.value if status else None,
-            "default_bars": _bars_from_progress(status),
-        })
+        members_display.append(
+            {
+                "tune_id": tune.id,
+                "title": tune.title,
+                "type_label": tune.tune_type.label,
+                "key_label": f"{tune.key_root.label} {tune.key_mode.label}",
+                "has_abc": setting is not None,
+                "progress": status.value if status else None,
+                "default_bars": _bars_from_progress(status),
+            }
+        )
         if tune.aliases:
             tune_aliases_by_id[tune.id] = tune.aliases
 

@@ -71,9 +71,7 @@ async def _resolve_setting_id(db, tune_id: int, label: str | None) -> int | None
     if label is None:
         return None
     return (
-        await db.execute(
-            select(TuneSetting.id).where(TuneSetting.tune_id == tune_id, TuneSetting.label == label)
-        )
+        await db.execute(select(TuneSetting.id).where(TuneSetting.tune_id == tune_id, TuneSetting.label == label))
     ).scalar_one_or_none()
 
 
@@ -110,9 +108,7 @@ async def seed_tunes(db, records: list) -> tuple[int, int, int]:
             if core_setting.get("source") or core_setting.get("source_notes"):
                 core_row = (
                     await db.execute(
-                        select(TuneSetting).where(
-                            TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True)
-                        )
+                        select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True))
                     )
                 ).scalar_one_or_none()
                 if core_row:
@@ -159,9 +155,7 @@ async def seed_warmups(db, records: list) -> tuple[int, int, int]:
     loaded = skipped = errors = 0
     for rec in records:
         title = rec["title"]
-        if (
-            await db.execute(select(WarmupItem.id).where(WarmupItem.title == title))
-        ).scalar_one_or_none() is not None:
+        if (await db.execute(select(WarmupItem.id).where(WarmupItem.title == title))).scalar_one_or_none() is not None:
             skipped += 1
             continue
         try:
@@ -190,9 +184,7 @@ async def seed_boxes(db, records: list) -> tuple[int, int, int]:
     for rec in records:
         name = rec["name"]
         if (
-            await db.execute(
-                select(TuneBox.id).where(TuneBox.user_id == _STUB_USER_ID, TuneBox.name == name)
-            )
+            await db.execute(select(TuneBox.id).where(TuneBox.user_id == _STUB_USER_ID, TuneBox.name == name))
         ).scalar_one_or_none() is not None:
             skipped += 1
             continue
@@ -281,9 +273,7 @@ async def seed_sets(db, records: list) -> tuple[int, int, int]:
     loaded = skipped = errors = 0
     for rec in records:
         title = rec["title"]
-        if (
-            await db.execute(select(TuneSet.id).where(TuneSet.title == title))
-        ).scalar_one_or_none() is not None:
+        if (await db.execute(select(TuneSet.id).where(TuneSet.title == title))).scalar_one_or_none() is not None:
             skipped += 1
             continue
         try:

@@ -152,9 +152,7 @@ async def test_pick_tune_carries_list_id_into_form_and_back_link(client: AsyncCl
 async def test_pick_aliases_carries_box_id_into_form(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     await _seed_external_tune(db)
-    resp = await client.post(
-        f"/tunes/{tune.id}/thesession-tune/100/settings", data={"alias_ids": [], "box_id": "5"}
-    )
+    resp = await client.post(f"/tunes/{tune.id}/thesession-tune/100/settings", data={"alias_ids": [], "box_id": "5"})
     assert resp.status_code == 200
     assert '<input type="hidden" name="box_id" value="5">' in resp.text
 

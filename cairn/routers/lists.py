@@ -29,11 +29,7 @@ router = APIRouter(prefix="/lists", tags=["lists"])
 _STUB_USER_ID = 1
 _LIST_TYPES = list(PracticeListType)
 _PROGRESS_STATUSES = [s for s in ProgressStatus if s != ProgressStatus.just_learning]
-_FAMILY_FOR_TYPE: dict[str, str] = {
-    t.value: family
-    for family, types in TUNE_FAMILIES.items()
-    for t in types
-}
+_FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FAMILIES.items() for t in types}
 
 
 def _entry_previews(entries) -> dict[int, str]:
@@ -156,12 +152,17 @@ async def list_detail(
     entry_tune_ids = {e.tune_id for e in practice_list.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
-    addable_tunes_json = json.dumps([{
-        "id": t.id,
-        "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
-        "type": t.tune_type.value,
-        "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
-    } for t in addable_tunes])
+    addable_tunes_json = json.dumps(
+        [
+            {
+                "id": t.id,
+                "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
+                "type": t.tune_type.value,
+                "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
+            }
+            for t in addable_tunes
+        ]
+    )
     settings_by_tune_id = json.dumps(
         {
             t.id: [

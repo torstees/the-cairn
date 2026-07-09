@@ -63,6 +63,7 @@ def parse_key(raw: str) -> tuple[KeyRoot, KeyMode] | None:
         return None
     return root, mode
 
+
 # Q:1/4=N anchors tempo to quarter notes regardless of L:, avoiding ambiguity.
 _DEFAULT_TEMPO: dict[str, str] = {
     "reel": "Q:1/4=80",
@@ -154,9 +155,7 @@ def build_abc(tune: Tune, setting: TuneSetting, x: int = 1) -> str:
     return "\n".join(headers + music_lines) + "\n"
 
 
-def build_set_abc(
-    tune_set: TuneSet, box: TuneBox | None = None, n_bars: int | None = None
-) -> str:
+def build_set_abc(tune_set: TuneSet, box: TuneBox | None = None, n_bars: int | None = None) -> str:
     """Assemble a multi-tune ABC string for a TuneSet.
 
     A file-header block (T:, S:, G: plus any user-supplied abc_header lines)
@@ -229,7 +228,7 @@ def build_set_abc(
             mini = truncate_to_bars(mini, n_bars)
             k_match = re.search(r"^K:.*$", mini, re.MULTILINE)
             if k_match:
-                body = mini[k_match.end():]
+                body = mini[k_match.end() :]
                 music_lines = [l for l in body.splitlines() if l.strip()]
 
         compact: list[str] = [f"T:{tune.title}"]

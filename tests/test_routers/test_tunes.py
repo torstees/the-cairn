@@ -162,8 +162,8 @@ async def test_tune_detail_breadcrumbs_to_progress_when_from_progress(client: As
     resp = await client.get(f"/tunes/{tune.id}", params={"from": "progress"})
     assert resp.status_code == 200
     assert 'href="/progress"' in resp.text
-    assert '&larr; Progress' in resp.text
-    assert '&larr; Tunes' not in resp.text
+    assert "&larr; Progress" in resp.text
+    assert "&larr; Tunes" not in resp.text
 
 
 async def test_tune_detail_box_breadcrumb_outranks_from_progress(client: AsyncClient, db: AsyncSession) -> None:
@@ -175,14 +175,14 @@ async def test_tune_detail_box_breadcrumb_outranks_from_progress(client: AsyncCl
     resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "from": "progress"})
     assert resp.status_code == 200
     assert f'href="/boxes/{box.id}"' in resp.text
-    assert '&larr; Progress' not in resp.text
+    assert "&larr; Progress" not in resp.text
 
 
 async def test_tune_detail_no_from_param_still_breadcrumbs_to_tunes(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     resp = await client.get(f"/tunes/{tune.id}")
     assert resp.status_code == 200
-    assert '&larr; Tunes' in resp.text
+    assert "&larr; Tunes" in resp.text
 
 
 async def test_tune_detail_breadcrumbs_to_list_when_list_id_given(client: AsyncClient, db: AsyncSession) -> None:
@@ -196,7 +196,7 @@ async def test_tune_detail_breadcrumbs_to_list_when_list_id_given(client: AsyncC
     assert resp.status_code == 200
     assert f'href="/lists/{practice_list.id}"' in resp.text
     assert "Weekly Session" in resp.text
-    assert '&larr; Tunes' not in resp.text
+    assert "&larr; Tunes" not in resp.text
 
 
 async def test_tune_detail_uses_list_setting_override(client: AsyncClient, db: AsyncSession) -> None:
@@ -211,7 +211,7 @@ async def test_tune_detail_uses_list_setting_override(client: AsyncClient, db: A
 
     resp = await client.get(f"/tunes/{tune.id}", params={"list_id": practice_list.id})
     assert resp.status_code == 200
-    assert f'window.__cairnActiveSettingId = {setting.id};' in resp.text
+    assert f"window.__cairnActiveSettingId = {setting.id};" in resp.text
 
 
 async def test_tune_detail_list_setting_outranks_box_setting(client: AsyncClient, db: AsyncSession) -> None:
@@ -235,7 +235,7 @@ async def test_tune_detail_list_setting_outranks_box_setting(client: AsyncClient
 
     resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "list_id": practice_list.id})
     assert resp.status_code == 200
-    assert f'window.__cairnActiveSettingId = {list_setting.id};' in resp.text
+    assert f"window.__cairnActiveSettingId = {list_setting.id};" in resp.text
 
 
 async def test_tune_add_to_box(client: AsyncClient, db: AsyncSession) -> None:
@@ -259,9 +259,7 @@ async def test_tune_add_to_box_with_setting(client: AsyncClient, db: AsyncSessio
         db, tune.id, TuneSettingCreate(tune_id=tune.id, label="Alt", abc_notation=_ABC, instrument=Instrument.fiddle)
     )
 
-    resp = await client.post(
-        f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id), "setting_id": str(setting.id)}
-    )
+    resp = await client.post(f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id), "setting_id": str(setting.id)})
     assert resp.status_code == 200
 
     entry = await get_box_entry(db, box.id, tune.id)
@@ -275,9 +273,7 @@ async def test_tune_add_to_box_also_adds_to_list(client: AsyncClient, db: AsyncS
     box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
     practice_list = await create_list(db, _STUB_USER_ID, box.id, "Weekly Session", PracticeListType.repertoire)
 
-    resp = await client.post(
-        f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id), "list_id": str(practice_list.id)}
-    )
+    resp = await client.post(f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id), "list_id": str(practice_list.id)})
     assert resp.status_code == 200
 
     box_entry = await get_box_entry(db, box.id, tune.id)
@@ -312,9 +308,7 @@ async def test_tune_update_box_setting(client: AsyncClient, db: AsyncSession) ->
     )
     await client.post(f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id)})
 
-    resp = await client.post(
-        f"/tunes/{tune.id}/boxes/{box.id}/setting", data={"setting_id": str(setting.id)}
-    )
+    resp = await client.post(f"/tunes/{tune.id}/boxes/{box.id}/setting", data={"setting_id": str(setting.id)})
     assert resp.status_code == 200
     assert "Alt" in resp.text
 

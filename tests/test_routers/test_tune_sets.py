@@ -145,10 +145,12 @@ async def test_set_update_persists_members(client: AsyncClient, db: AsyncSession
     t1 = await _tune(db, "Tune A")
     t2 = await _tune(db, "Tune B")
     s = await _set(db)
-    members_json = json.dumps([
-        {"tune_id": t1.id, "setting_id": None},
-        {"tune_id": t2.id, "setting_id": None},
-    ])
+    members_json = json.dumps(
+        [
+            {"tune_id": t1.id, "setting_id": None},
+            {"tune_id": t2.id, "setting_id": None},
+        ]
+    )
     await client.post(
         f"/sets/{s.id}",
         data={"title": "My Set", "members": members_json},
@@ -232,9 +234,7 @@ async def test_set_detail_404(client: AsyncClient) -> None:
     assert resp.status_code == 404
 
 
-async def test_set_detail_with_members_shows_bar_controls(
-    client: AsyncClient, db: AsyncSession
-) -> None:
+async def test_set_detail_with_members_shows_bar_controls(client: AsyncClient, db: AsyncSession) -> None:
     t = await _tune(db, "The Foxhunter's")
     s = await _set(db, "Reel Set")
     members_json = json.dumps([{"tune_id": t.id, "setting_id": None}])
@@ -257,9 +257,7 @@ async def test_set_detail_shows_member_type_and_key(client: AsyncClient, db: Asy
     assert "D Major" in resp.text
 
 
-async def test_set_detail_member_title_is_hover_trigger_when_aliased(
-    client: AsyncClient, db: AsyncSession
-) -> None:
+async def test_set_detail_member_title_is_hover_trigger_when_aliased(client: AsyncClient, db: AsyncSession) -> None:
     t = await _tune(db, "The Foxhunter's")
     await add_alias(db, t.id, "Sunrise Reel")
     s = await _set(db, "Reel Set")
