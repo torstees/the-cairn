@@ -1,10 +1,10 @@
 {% from "components/_alias_summary.html" import alias_summary %}
 <tr id="box-tune-{{ entry.tune_id }}" class="border-b border-stone-100 hover:bg-stone-50"
-    data-title="{{ entry.tune.title | lower }}" data-type="{{ entry.tune.tune_type.label | lower }}">
+    data-title="{{ entry.tune.title | lower }}" data-type="{{ entry.tune.tune_type.label | lower }}"
+    {% if entry.tune.id in tune_previews %}data-abc-preview-id="{{ entry.tune.id }}"{% endif %}>
   <td class="py-3 px-4">
     <a href="/tunes/{{ entry.tune.id }}?box_id={{ box_id }}"
-       class="font-medium text-stone-800 hover:text-stone-600"
-       {% if entry.tune.id in tune_previews %}data-abc-preview-id="{{ entry.tune.id }}"{% endif %}>
+       class="font-medium text-stone-800 hover:text-stone-600">
       {{ entry.tune.title }}
     </a>
     {% if entry.tune.id in tune_previews %}

@@ -121,6 +121,18 @@ async def test_progress_index_includes_abc_hover_preview(client: AsyncClient, db
     assert f'<template id="tune-abc-preview-{t.id}">' in resp.text
 
 
+async def test_progress_index_hover_preview_trigger_is_card_not_title(client: AsyncClient, db: AsyncSession) -> None:
+    _, t = await _seed(db)
+    resp = await client.get("/progress/")
+    assert resp.status_code == 200
+
+    card_open = resp.text.split(f'<div id="progress-card-{t.id}"', 1)[1].split(">", 1)[0]
+    assert f'data-abc-preview-id="{t.id}"' in card_open
+
+    a_open = resp.text.split(f'<a href="/tunes/{t.id}?from=progress"', 1)[1].split(">", 1)[0]
+    assert "data-abc-preview-id" not in a_open
+
+
 async def test_progress_record_response_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:
     _, t = await _seed(db)
     resp = await client.post(f"/progress/{t.id}", data={"confidence": "4"})

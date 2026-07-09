@@ -16,10 +16,10 @@
         htmx.ajax('DELETE', '/lists/{{ list_id }}/tunes/{{ entry.tune_id }}', {target: $el, swap: 'delete'});
       }
     }"
-    class="border-b border-stone-100 hover:bg-stone-50">
+    class="border-b border-stone-100 hover:bg-stone-50"
+    {% if entry.tune.id in tune_previews %}data-abc-preview-id="{{ entry.tune.id }}"{% endif %}>
   <td class="py-3 px-4 text-stone-800">
-    <a href="/tunes/{{ entry.tune.id }}?list_id={{ list_id }}" class="font-medium hover:underline"
-       {% if entry.tune.id in tune_previews %}data-abc-preview-id="{{ entry.tune.id }}"{% endif %}>{{ entry.tune.title }}</a>
+    <a href="/tunes/{{ entry.tune.id }}?list_id={{ list_id }}" class="font-medium hover:underline">{{ entry.tune.title }}</a>
     {% if entry.tune.id in tune_previews %}
     <template id="tune-abc-preview-{{ entry.tune.id }}">{{ tune_previews[entry.tune.id] }}</template>
     {% endif %}
