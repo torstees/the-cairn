@@ -24,7 +24,13 @@
 #}
 {% macro alias_tooltip(names, align="left") %}
 {% if names %}
-<span class="hidden group-hover:block absolute z-20 {{ 'right-0' if align == 'right' else 'left-0' }} top-full mt-1 w-72 bg-white border border-stone-200 rounded-lg shadow-lg p-2 text-xs text-stone-600 leading-relaxed normal-case">
+{# No margin between the trigger and this box (top-full, no mt-*): a gap
+   would be dead space outside both the trigger's box and this element,
+   losing :hover the instant the cursor crosses it on the way down to read
+   the tooltip, which un-hides whatever is really beneath that pixel — a
+   row-level ABC hover-preview trigger, once those existed (#135). Visual
+   spacing instead comes from this box's own border/shadow/padding. #}
+<span class="hidden group-hover:block absolute z-20 {{ 'right-0' if align == 'right' else 'left-0' }} top-full w-72 bg-white border border-stone-200 rounded-lg shadow-lg p-2 text-xs text-stone-600 leading-relaxed normal-case">
   {{ names | join(', ') }}
 </span>
 {% endif %}
