@@ -219,7 +219,8 @@
     if (rebuildMapTimer) { clearTimeout(rebuildMapTimer); rebuildMapTimer = null; }
     // Strip Q: from the visual render — tempo annotation is misleading since
     // it never updates when the slider moves. Audio uses currentAbcString.
-    var displayAbc = abcString.replace(/^Q:[^\n]*\n?/m, "");
+    // Global flag: a combined set ABC concatenates one Q: line per member tune.
+    var displayAbc = abcString.replace(/^Q:[^\n]*\n?/gm, "");
     visualObj = ABCJS.renderAbc("abc-render", displayAbc, RENDER_OPTS);
     if (visualObj && visualObj[0]) {
       charMap = buildCharMap(visualObj[0], "abc-render");
@@ -1030,10 +1031,9 @@
     }
 
     function renderCombined() {
-      currentAbcString = getSetAbc();
-      var disp = currentAbcString.replace(/^Q:[^\n]*\n?/gm, "");
-      visualObj = ABCJS.renderAbc("abc-render", disp, RENDER_OPTS);
-      updateDroneDisplay();
+      render(getSetAbc());
+      var editor = document.getElementById("abc-editor");
+      if (editor) editor.value = currentAbcString;
     }
 
     renderCombined();
@@ -1109,6 +1109,20 @@
         barsBtn.textContent = "Bars: " + barLabel(barsMode);
         renderCombined();
       });
+    }
+
+    var editor = document.getElementById("abc-editor");
+    if (editor) {
+      editor.addEventListener("input", function () {
+        if (activeSynth) {
+          activeSynth.stop();
+          teardownAudio();
+          if (playBtn) playBtn.textContent = "▶ Play";
+        }
+        render(editor.value);
+      });
+      editor.addEventListener("keyup", syncCursorToScore);
+      editor.addEventListener("click", syncCursorToScore);
     }
   }
 
