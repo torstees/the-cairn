@@ -16,6 +16,7 @@ from cairn.services.boxes import (
     get_box_entry,
     list_boxes,
     remove_tune,
+    set_display_alias,
     set_preferred_setting,
 )
 from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting
@@ -33,10 +34,15 @@ _FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FA
 
 
 def _entry_previews(entries) -> dict[int, str]:
-    """Map tune id -> ABC preview for box entries, preferring each entry's chosen setting."""
+    """Map tune id -> ABC preview for box entries, preferring each entry's chosen setting.
+
+    Uses the entry's own display alias (if any) for the preview's T: header,
+    matching the name the row itself shows (#119).
+    """
     previews: dict[int, str] = {}
     for entry in entries:
-        abc = preview_abc(entry.tune, entry.setting)
+        display_name = entry.display_alias.name if entry.display_alias else None
+        abc = preview_abc(entry.tune, entry.setting, display_name=display_name)
         if abc is not None:
             previews[entry.tune_id] = abc
     return previews
@@ -200,6 +206,27 @@ async def box_set_setting(
         }
     )
     return Response(content=row_html + modal_html, media_type="text/html")
+
+
+@router.post("/{box_id}/tunes/{tune_id}/display-alias")
+async def box_set_display_alias(
+    request: Request,
+    box_id: int,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    display_alias_id: str = Form(default=""),
+) -> Response:
+    if await get_box_entry(db, box_id, tune_id) is None:
+        raise HTTPException(status_code=404, detail="Tune not in box")
+
+    daid = int(display_alias_id) if display_alias_id else None
+    await set_display_alias(db, box_id, tune_id, daid)
+    entry = await get_box_entry(db, box_id, tune_id)
+    return templates.TemplateResponse(
+        request,
+        "boxes/partials/_tune_row.html",
+        {"entry": entry, "box_id": box_id, "tune_previews": _entry_previews([entry])},
+    )
 
 
 @router.post("/{box_id}/tunes/{tune_id}/propagate-setting")

@@ -14,10 +14,10 @@ from cairn.models import (
 )
 from cairn.routers.practice import _STUB_USER_ID
 from cairn.schemas import TuneCreate
-from cairn.services.boxes import add_tune, create_box
+from cairn.services.boxes import add_tune, create_box, set_display_alias
 from cairn.services.lists import create_list, get_active_list
 from cairn.services.session_plan import build_session
-from cairn.services.tunes import create_tune
+from cairn.services.tunes import add_alias, create_tune
 
 _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
@@ -92,6 +92,19 @@ async def test_session_detail_shows_items(client: AsyncClient, db: AsyncSession)
 async def test_session_detail_404_for_unknown(client: AsyncClient) -> None:
     resp = await client.get("/practice/session/9999")
     assert resp.status_code == 404
+
+
+async def test_session_detail_shows_box_display_alias(client: AsyncClient, db: AsyncSession) -> None:
+    _, box, tune, _ = await _seed(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    await set_display_alias(db, box.id, tune.id, alias.id)
+
+    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    resp = await client.get(f"/practice/session/{session.id}")
+    assert resp.status_code == 200
+    assert '"title": "Sunrise Reel"' in resp.text
+    assert '"title": "The Morning Dew"' not in resp.text
+    assert "T:Sunrise Reel" in resp.text
 
 
 async def test_item_complete_returns_done_indicator(client: AsyncClient, db: AsyncSession) -> None:

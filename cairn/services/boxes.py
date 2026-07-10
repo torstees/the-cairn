@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Instrument, Tune, TuneBox, TuneBoxEntry, TuneBoxInstrument, TuneSetting
+from cairn.models import Instrument, Tune, TuneAlias, TuneBox, TuneBoxEntry, TuneBoxInstrument, TuneSetting
 
 
 async def create_box(
@@ -27,6 +27,7 @@ async def add_tune(
     db: AsyncSession,
     box_id: int,
     tune_id: int,
+    display_alias_id: int | None = None,
 ) -> TuneBoxEntry:
     instruments_result = await db.execute(select(TuneBoxInstrument).where(TuneBoxInstrument.box_id == box_id))
     box_instruments = {row.instrument for row in instruments_result.scalars().all()}
@@ -40,7 +41,7 @@ async def add_tune(
     matching = settings_result.scalars().all()
     setting_id = matching[0].id if len(matching) == 1 else None
 
-    entry = TuneBoxEntry(box_id=box_id, tune_id=tune_id, setting_id=setting_id)
+    entry = TuneBoxEntry(box_id=box_id, tune_id=tune_id, setting_id=setting_id, display_alias_id=display_alias_id)
     db.add(entry)
     await db.commit()
     await db.refresh(entry)
@@ -64,6 +65,37 @@ async def set_preferred_setting(
     await db.commit()
     await db.refresh(entry)
     return entry
+
+
+async def set_display_alias(
+    db: AsyncSession,
+    box_id: int,
+    tune_id: int,
+    display_alias_id: int | None,
+) -> TuneBoxEntry:
+    result = await db.execute(
+        select(TuneBoxEntry).where(
+            TuneBoxEntry.box_id == box_id,
+            TuneBoxEntry.tune_id == tune_id,
+        )
+    )
+    entry = result.scalar_one()
+    entry.display_alias_id = display_alias_id
+    await db.commit()
+    await db.refresh(entry)
+    return entry
+
+
+async def get_display_names_for_tunes(db: AsyncSession, box_id: int, tune_ids: set[int]) -> dict[int, str]:
+    """Single query: tune_id -> display alias name, for entries in box_id that have one chosen (#119)."""
+    if not tune_ids:
+        return {}
+    rows = await db.execute(
+        select(TuneBoxEntry.tune_id, TuneAlias.name)
+        .join(TuneAlias, TuneBoxEntry.display_alias_id == TuneAlias.id)
+        .where(TuneBoxEntry.box_id == box_id, TuneBoxEntry.tune_id.in_(tune_ids))
+    )
+    return dict(rows.all())
 
 
 async def remove_tune(
@@ -96,6 +128,7 @@ async def list_boxes(
         .options(
             selectinload(TuneBox.instruments),
             selectinload(TuneBox.entries).selectinload(TuneBoxEntry.setting),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.display_alias),
         )
     )
     return list(result.scalars().all())
@@ -120,6 +153,7 @@ async def get_box_detail(
             selectinload(TuneBox.entries).selectinload(TuneBoxEntry.tune).selectinload(Tune.settings),
             selectinload(TuneBox.entries).selectinload(TuneBoxEntry.tune).selectinload(Tune.aliases),
             selectinload(TuneBox.entries).selectinload(TuneBoxEntry.setting),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.display_alias),
         )
     )
     return result.scalar_one_or_none()
@@ -137,6 +171,7 @@ async def get_box_entry(
             selectinload(TuneBoxEntry.tune).selectinload(Tune.settings),
             selectinload(TuneBoxEntry.tune).selectinload(Tune.aliases),
             selectinload(TuneBoxEntry.setting),
+            selectinload(TuneBoxEntry.display_alias),
         )
     )
     return result.scalar_one_or_none()

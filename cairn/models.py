@@ -348,12 +348,14 @@ class TuneBoxEntry(TimestampMixin, Base):
     box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), nullable=False)
     tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
     setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
+    display_alias_id: Mapped[int | None] = mapped_column(ForeignKey("tune_aliases.id"), nullable=True)
 
     __table_args__ = (UniqueConstraint("box_id", "tune_id", name="uq_tune_box_entry_box_tune"),)
 
     box: Mapped["TuneBox"] = relationship(back_populates="entries")
     tune: Mapped["Tune"] = relationship(back_populates="box_entries")
     setting: Mapped["TuneSetting | None"] = relationship()
+    display_alias: Mapped["TuneAlias | None"] = relationship()
 
 
 class TuneBoxSetEntry(TimestampMixin, Base):
@@ -404,12 +406,14 @@ class TuneListEntry(TimestampMixin, Base):
     list_id: Mapped[int] = mapped_column(ForeignKey("practice_lists.id"), nullable=False)
     tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
     setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
+    display_alias_id: Mapped[int | None] = mapped_column(ForeignKey("tune_aliases.id"), nullable=True)
 
     __table_args__ = (UniqueConstraint("tune_id", "list_id", name="uq_tune_list_entry_tune_list"),)
 
     practice_list: Mapped["PracticeList"] = relationship(back_populates="entries")
     tune: Mapped["Tune"] = relationship()
     setting: Mapped["TuneSetting | None"] = relationship()
+    display_alias: Mapped["TuneAlias | None"] = relationship()
 
 
 class SettingProgress(TimestampMixin, Base):

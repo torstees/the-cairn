@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.dependencies import get_db
 from cairn.models import ProgressStatus, TempoRecord
 from cairn.services.abc_utils import build_abc, truncate_to_bars
-from cairn.services.boxes import list_boxes
+from cairn.services.boxes import get_display_names_for_tunes, list_boxes
 from cairn.services.lists import activate_list, deactivate_list, get_active_list, list_lists
 from cairn.services.session_plan import (
     _load_progress_map,
@@ -38,8 +38,17 @@ _CHEAT_LEVELS: dict[int | None, list[int | None]] = {
 }
 
 
-def _build_item_display(items, progress_map: dict[int, ProgressStatus]) -> dict[int, dict]:
-    """Build per-item display data (ABC variants + cheat levels) for tune items."""
+def _build_item_display(
+    items, progress_map: dict[int, ProgressStatus], display_names: dict[int, str] | None = None
+) -> dict[int, dict]:
+    """Build per-item display data (ABC variants + cheat levels) for tune items.
+
+    display_names is tune_id -> the box's chosen display alias name (#119),
+    for tunes that have one — used for the ABC's T: header and the session
+    item's own title, so a tune's alias follows it into the active practice
+    session the same way it already shows in that box's own tune list.
+    """
+    display_names = display_names or {}
     display: dict[int, dict] = {}
     for item in items:
         if item.tune is None:
@@ -53,7 +62,8 @@ def _build_item_display(items, progress_map: dict[int, ProgressStatus]) -> dict[
         bars = bars_for_status(status)
         levels = _CHEAT_LEVELS.get(bars, [-1])
 
-        abc_full = build_abc(tune, core)
+        display_name = display_names.get(tune.id, tune.title)
+        abc_full = build_abc(tune, core, display_name=display_name)
         abc_4 = truncate_to_bars(abc_full, 4) if 4 in levels else None
         abc_8 = truncate_to_bars(abc_full, 8) if 8 in levels else None
 
@@ -65,6 +75,7 @@ def _build_item_display(items, progress_map: dict[int, ProgressStatus]) -> dict[
             "abc_8": abc_8 or "",
             "key_label": key_label,
             "initial_bars": bars,
+            "display_name": display_name,
         }
     return display
 
@@ -122,10 +133,12 @@ async def session_detail(
 
     tune_ids = {item.tune_id for item in session.items if item.tune_id}
     progress_map: dict[int, ProgressStatus] = {}
+    display_names: dict[int, str] = {}
     if tune_ids and session.box_id:
         progress_map = await _load_progress_map(db, _STUB_USER_ID, session.box_id, tune_ids)
+        display_names = await get_display_names_for_tunes(db, session.box_id, tune_ids)
 
-    item_display = _build_item_display(session.items, progress_map)
+    item_display = _build_item_display(session.items, progress_map, display_names)
 
     # Batch-fetch last recorded tempo for each tune in this session.
     last_tempo_map: dict[int, int] = {}
@@ -155,7 +168,7 @@ async def session_detail(
                     "type": "tune",
                     "itemType": item.item_type.value,
                     "itemTypeLabel": item.item_type.label,
-                    "title": tune.title,
+                    "title": disp["display_name"] if disp else tune.title,
                     "minutesAllocated": item.minutes_allocated,
                     "completed": item.completed,
                     "tuneId": tune.id,

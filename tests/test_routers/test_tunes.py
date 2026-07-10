@@ -4,8 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, Role, TuneType, User
 from cairn.routers.tunes import _STUB_USER_ID
 from cairn.schemas import TuneCreate, TuneSettingCreate
-from cairn.services.boxes import add_tune, create_box, get_box_entry, set_preferred_setting
-from cairn.services.lists import add_tune_to_list, create_list, get_list_entry
+from cairn.services.boxes import add_tune, create_box, get_box_entry, set_display_alias, set_preferred_setting
+from cairn.services.lists import add_tune_to_list, create_list, get_list_entry, update_list_entry_display_alias
 from cairn.services.tune_sets import create_set, set_members
 from cairn.services.tunes import add_alias, create_setting, create_tune
 
@@ -324,6 +324,96 @@ async def test_tune_update_box_setting_404_for_tune_not_in_box(client: AsyncClie
     # never added to the box
     resp = await client.post(f"/tunes/{tune.id}/boxes/{box.id}/setting", data={"setting_id": ""})
     assert resp.status_code == 404
+
+
+async def test_tune_add_to_box_with_display_alias(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+
+    resp = await client.post(f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id), "display_alias_id": str(alias.id)})
+    assert resp.status_code == 200
+    assert "Sunrise Reel" in resp.text
+
+    entry = await get_box_entry(db, box.id, tune.id)
+    assert entry is not None
+    assert entry.display_alias_id == alias.id
+
+
+async def test_tune_add_to_box_also_adds_to_list_with_display_alias(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    practice_list = await create_list(db, _STUB_USER_ID, box.id, "Weekly Session", PracticeListType.repertoire)
+
+    resp = await client.post(
+        f"/tunes/{tune.id}/boxes",
+        data={"box_id": str(box.id), "list_id": str(practice_list.id), "display_alias_id": str(alias.id)},
+    )
+    assert resp.status_code == 200
+
+    list_entry = await get_list_entry(db, practice_list.id, tune.id)
+    assert list_entry is not None
+    assert list_entry.display_alias_id == alias.id
+
+
+async def test_tune_update_box_display_alias(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    await client.post(f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id)})
+
+    resp = await client.post(f"/tunes/{tune.id}/boxes/{box.id}/display-alias", data={"display_alias_id": str(alias.id)})
+    assert resp.status_code == 200
+    assert "Sunrise Reel" in resp.text
+
+    entry = await get_box_entry(db, box.id, tune.id)
+    assert entry is not None
+    assert entry.display_alias_id == alias.id
+
+
+async def test_tune_update_box_display_alias_404_for_tune_not_in_box(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    resp = await client.post(f"/tunes/{tune.id}/boxes/{box.id}/display-alias", data={"display_alias_id": ""})
+    assert resp.status_code == 404
+
+
+async def test_tune_detail_uses_box_display_alias_in_heading_and_score(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    await add_tune(db, box.id, tune.id)
+    await set_display_alias(db, box.id, tune.id, alias.id)
+
+    resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id})
+    assert resp.status_code == 200
+    assert "<h1" in resp.text and "Sunrise Reel" in resp.text
+    assert "T:Sunrise Reel" in resp.text
+    assert "Tune: The Morning Dew" in resp.text
+
+
+async def test_tune_detail_list_display_alias_outranks_box_display_alias(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    box_alias = await add_alias(db, tune.id, "Box Name")
+    list_alias = await add_alias(db, tune.id, "List Name")
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    practice_list = await create_list(db, _STUB_USER_ID, box.id, "Weekly Session", PracticeListType.repertoire)
+    await add_tune(db, box.id, tune.id)
+    await set_display_alias(db, box.id, tune.id, box_alias.id)
+    await add_tune_to_list(db, practice_list.id, tune.id)
+    await update_list_entry_display_alias(db, practice_list.id, tune.id, list_alias.id)
+
+    resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "list_id": practice_list.id})
+    assert resp.status_code == 200
+    assert "T:List Name" in resp.text
+    assert "T:Box Name" not in resp.text
 
 
 async def test_tune_add_to_box_explicit_core_overrides_auto_pick(client: AsyncClient, db: AsyncSession) -> None:

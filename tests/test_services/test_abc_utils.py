@@ -75,6 +75,17 @@ def test_title_in_output() -> None:
     assert "T:Banish Misfortune" in result
 
 
+def test_display_name_overrides_title() -> None:
+    result = build_abc(_tune(title="Banish Misfortune"), _setting(), display_name="The Rambling Pitchfork")
+    assert "T:The Rambling Pitchfork" in result
+    assert "T:Banish Misfortune" not in result
+
+
+def test_display_name_none_falls_back_to_title() -> None:
+    result = build_abc(_tune(title="Banish Misfortune"), _setting(), display_name=None)
+    assert "T:Banish Misfortune" in result
+
+
 def test_tune_type_as_r_header() -> None:
     result = build_abc(_tune(tune_type=TuneType.jig), _setting())
     assert "R:jig" in result

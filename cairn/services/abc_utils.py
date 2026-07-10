@@ -110,18 +110,21 @@ def _parse_abc_notation(abc_notation: str) -> tuple[list[str], list[str]]:
     return user_headers, music_lines
 
 
-def build_abc(tune: Tune, setting: TuneSetting, x: int = 1) -> str:
+def build_abc(tune: Tune, setting: TuneSetting, x: int = 1, display_name: str | None = None) -> str:
     """Assemble a complete ABC string from DB fields and the raw music body.
 
     Headers are built from Tune and TuneSetting in canonical order. Any
     user-supplied headers in setting.abc_notation (letters not in the
     DB-mapped set, e.g. L:) are preserved and inserted before K:. Mapped
     headers found in abc_notation are silently dropped. K: is always last.
+
+    display_name overrides the T: header — used when a box or list entry has
+    chosen an alias to display instead of the tune's own title (#119).
     """
     user_headers, music_lines = _parse_abc_notation(setting.abc_notation)
 
     headers: list[str] = [f"X:{x}"]
-    headers.append(f"T:{tune.title}")
+    headers.append(f"T:{display_name or tune.title}")
     if tune.composer:
         headers.append(f"C:{tune.composer}")
     if tune.origin:

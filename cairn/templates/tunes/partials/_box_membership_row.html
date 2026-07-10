@@ -1,7 +1,7 @@
 {#
   One box's membership state for this tune, rendered both inline (looped from
-  _box_memberships.html) and as the HTMX response of the add/change-setting
-  endpoints in cairn/routers/tunes.py.
+  _box_memberships.html) and as the HTMX response of the add/change-setting/
+  change-display-alias endpoints in cairn/routers/tunes.py.
   Required context: tune, box, entry (TuneBoxEntry or None), non_core_settings,
   lists_for_box, active_list_id
 #}
@@ -15,6 +15,21 @@
       </span>
     </div>
     <div class="flex items-center gap-3 shrink-0">
+      {% if tune.aliases %}
+      <select name="display_alias_id"
+              hx-post="/tunes/{{ tune.id }}/boxes/{{ box.id }}/display-alias"
+              hx-target="#box-membership-{{ box.id }}"
+              hx-swap="outerHTML"
+              hx-trigger="change"
+              class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        <option value="">{{ tune.title }}</option>
+        {% for alias in tune.aliases %}
+        <option value="{{ alias.id }}" {% if entry.display_alias_id == alias.id %}selected{% endif %}>
+          {{ alias.name }}
+        </option>
+        {% endfor %}
+      </select>
+      {% endif %}
       {% if non_core_settings %}
       <select name="setting_id"
               hx-post="/tunes/{{ tune.id }}/boxes/{{ box.id }}/setting"
@@ -48,6 +63,15 @@
           hx-swap="outerHTML"
           class="mt-2 flex items-center gap-2 flex-wrap">
       <input type="hidden" name="box_id" value="{{ box.id }}">
+      {% if tune.aliases %}
+      <select name="display_alias_id"
+              class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        <option value="">{{ tune.title }}</option>
+        {% for alias in tune.aliases %}
+        <option value="{{ alias.id }}">{{ alias.name }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
       {% if non_core_settings %}
       <select name="setting_id"
               class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">

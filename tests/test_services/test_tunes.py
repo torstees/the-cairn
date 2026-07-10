@@ -5,6 +5,7 @@ from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneS
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
 from cairn.services.tunes import (
     TUNE_FAMILIES,
+    add_alias,
     build_tune_previews,
     create_setting,
     create_tune,
@@ -12,6 +13,7 @@ from cairn.services.tunes import (
     get_tune,
     list_tunes,
     preview_abc,
+    resolve_display_context,
     set_core_setting,
     set_difficulty,
     sort_key,
@@ -432,6 +434,16 @@ async def test_preview_abc_prefers_given_setting_over_core(db: AsyncSession) -> 
     assert "GABc" in preview
 
 
+async def test_preview_abc_display_name_overrides_title(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    tune = await get_tune(db, created.id)
+    assert tune is not None
+    preview = preview_abc(tune, display_name="Sunrise Reel")
+    assert preview is not None
+    assert "T:Sunrise Reel" in preview
+    assert "T:Test" not in preview
+
+
 def test_preview_abc_returns_none_without_a_core_setting() -> None:
     from cairn.models import Tune
 
@@ -454,3 +466,57 @@ async def test_build_tune_previews_maps_tune_id_to_abc(db: AsyncSession) -> None
     previews = build_tune_previews([tune])
     assert tune.id in previews
     assert "Q:" not in previews[tune.id]
+
+
+# ── resolve_display_context ───────────────────────────────────────────────────
+
+
+def _entry(setting_id=None, setting=None, display_alias_id=None, display_alias=None):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        setting_id=setting_id, setting=setting, display_alias_id=display_alias_id, display_alias=display_alias
+    )
+
+
+async def test_resolve_display_context_no_overrides_falls_back_to_title(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    tune = await get_tune(db, created.id)
+    setting, display_name = resolve_display_context(tune, None, None)
+    assert display_name == tune.title
+    assert setting is not None and setting.is_core
+
+
+async def test_resolve_display_context_box_alias_used_when_no_list(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    alias = await add_alias(db, created.id, "Sunrise Reel")
+    tune = await get_tune(db, created.id)
+    box_entry = _entry(display_alias_id=alias.id, display_alias=alias)
+    _, display_name = resolve_display_context(tune, box_entry, None)
+    assert display_name == "Sunrise Reel"
+
+
+async def test_resolve_display_context_list_alias_outranks_box_alias(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    box_alias = await add_alias(db, created.id, "Box Name")
+    list_alias = await add_alias(db, created.id, "List Name")
+    tune = await get_tune(db, created.id)
+    box_entry = _entry(display_alias_id=box_alias.id, display_alias=box_alias)
+    list_entry = _entry(display_alias_id=list_alias.id, display_alias=list_alias)
+    _, display_name = resolve_display_context(tune, box_entry, list_entry)
+    assert display_name == "List Name"
+
+
+async def test_resolve_display_context_list_setting_outranks_box_setting(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    tune = await get_tune(db, created.id)
+    box_setting = await create_setting(
+        db, created.id, TuneSettingCreate(tune_id=created.id, label="Box", abc_notation=ABC)
+    )
+    list_setting = await create_setting(
+        db, created.id, TuneSettingCreate(tune_id=created.id, label="List", abc_notation=ABC)
+    )
+    box_entry = _entry(setting_id=box_setting.id, setting=box_setting)
+    list_entry = _entry(setting_id=list_setting.id, setting=list_setting)
+    setting, _ = resolve_display_context(tune, box_entry, list_entry)
+    assert setting.id == list_setting.id
