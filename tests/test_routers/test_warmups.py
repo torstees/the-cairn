@@ -101,7 +101,11 @@ async def test_warmup_edit_form_checks_selected_instruments(client: AsyncClient,
     )
     resp = await client.get(f"/warmups/{w.id}/edit")
     assert resp.status_code == 200
-    assert 'value="fiddle" \n                 checked' in resp.text or 'value="fiddle"\n                 checked' in resp.text or "fiddle" in resp.text
+    assert (
+        'value="fiddle" \n                 checked' in resp.text
+        or 'value="fiddle"\n                 checked' in resp.text
+        or "fiddle" in resp.text
+    )
 
 
 async def test_warmup_update_redirects_to_detail(client: AsyncClient, db: AsyncSession) -> None:
@@ -144,8 +148,12 @@ async def test_warmup_update_persists_instruments(client: AsyncClient, db: Async
 
 async def test_warmup_update_clears_instruments(client: AsyncClient, db: AsyncSession) -> None:
     w = await create_warmup(
-        db, title="Scale", warmup_type=WarmupType.scale,
-        content=_ABC, difficulty=1, instruments=[Instrument.fiddle],
+        db,
+        title="Scale",
+        warmup_type=WarmupType.scale,
+        content=_ABC,
+        difficulty=1,
+        instruments=[Instrument.fiddle],
     )
     await client.post(
         f"/warmups/{w.id}",

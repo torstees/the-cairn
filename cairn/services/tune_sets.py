@@ -38,18 +38,12 @@ async def create_set(
 
 
 async def get_set(db: AsyncSession, set_id: int) -> TuneSet | None:
-    result = await db.execute(
-        select(TuneSet).where(TuneSet.id == set_id).options(*_deep_load())
-    )
+    result = await db.execute(select(TuneSet).where(TuneSet.id == set_id).options(*_deep_load()))
     return result.scalar_one_or_none()
 
 
 async def list_sets(db: AsyncSession) -> list[TuneSet]:
-    result = await db.execute(
-        select(TuneSet)
-        .order_by(TuneSet.title)
-        .options(selectinload(TuneSet.members))
-    )
+    result = await db.execute(select(TuneSet).order_by(TuneSet.title).options(selectinload(TuneSet.members)))
     return list(result.scalars().all())
 
 
@@ -132,9 +126,7 @@ async def get_set_tempo(db: AsyncSession, user_id: int, box_id: int, set_id: int
     return result.scalar_one_or_none()
 
 
-async def upsert_set_tempo(
-    db: AsyncSession, user_id: int, box_id: int, set_id: int, tempo: int
-) -> None:
+async def upsert_set_tempo(db: AsyncSession, user_id: int, box_id: int, set_id: int, tempo: int) -> None:
     stmt = (
         sqlite_insert(TuneSetTempo)
         .values(user_id=user_id, box_id=box_id, set_id=set_id, tempo=tempo)

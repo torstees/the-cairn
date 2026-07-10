@@ -29,11 +29,7 @@ router = APIRouter(prefix="/boxes", tags=["boxes"])
 _STUB_USER_ID = 1
 _INSTRUMENTS = list(Instrument)
 _TUNE_TYPES = list(TuneType)
-_FAMILY_FOR_TYPE: dict[str, str] = {
-    t.value: family
-    for family, types in TUNE_FAMILIES.items()
-    for t in types
-}
+_FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FAMILIES.items() for t in types}
 
 
 def _entry_previews(entries) -> dict[int, str]:
@@ -100,12 +96,17 @@ async def box_detail(
     entry_tune_ids = {e.tune_id for e in box.entries}
     all_tunes = await list_tunes(db)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
-    addable_tunes_json = json.dumps([{
-        "id": t.id,
-        "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
-        "type": t.tune_type.value,
-        "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
-    } for t in addable_tunes])
+    addable_tunes_json = json.dumps(
+        [
+            {
+                "id": t.id,
+                "label": f"{t.title} — {t.tune_type.label} · {t.key_root.label} {t.key_mode.label}",
+                "type": t.tune_type.value,
+                "family": _FAMILY_FOR_TYPE.get(t.tune_type.value, "other"),
+            }
+            for t in addable_tunes
+        ]
+    )
     tune_previews = _entry_previews(box.entries)
     return templates.TemplateResponse(
         request,

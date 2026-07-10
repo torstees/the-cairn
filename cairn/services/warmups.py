@@ -12,19 +12,13 @@ def _with_instruments():
 
 async def list_warmups(db: AsyncSession) -> list[WarmupItem]:
     result = await db.execute(
-        select(WarmupItem)
-        .options(_with_instruments())
-        .order_by(WarmupItem.difficulty, WarmupItem.title)
+        select(WarmupItem).options(_with_instruments()).order_by(WarmupItem.difficulty, WarmupItem.title)
     )
     return list(result.scalars().all())
 
 
 async def get_warmup(db: AsyncSession, warmup_id: int) -> WarmupItem | None:
-    result = await db.execute(
-        select(WarmupItem)
-        .where(WarmupItem.id == warmup_id)
-        .options(_with_instruments())
-    )
+    result = await db.execute(select(WarmupItem).where(WarmupItem.id == warmup_id).options(_with_instruments()))
     return result.scalar_one_or_none()
 
 

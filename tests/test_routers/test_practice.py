@@ -1,12 +1,21 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, ProgressStatus, Role, TuneType, User, WarmupItem, WarmupType
+from cairn.models import (
+    Instrument,
+    KeyMode,
+    KeyRoot,
+    PracticeListType,
+    Role,
+    TuneType,
+    User,
+    WarmupItem,
+    WarmupType,
+)
 from cairn.routers.practice import _STUB_USER_ID
 from cairn.schemas import TuneCreate
 from cairn.services.boxes import add_tune, create_box
-from cairn.services.lists import get_active_list
-from cairn.services.lists import create_list
+from cairn.services.lists import create_list, get_active_list
 from cairn.services.session_plan import build_session
 from cairn.services.tunes import create_tune
 

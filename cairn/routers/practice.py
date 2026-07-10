@@ -79,12 +79,8 @@ async def plan_form(
     all_lists = await list_lists(db, _STUB_USER_ID)
     lists_by_box: dict[int, list[dict]] = {}
     for pl in all_lists:
-        lists_by_box.setdefault(pl.box_id, []).append(
-            {"id": pl.id, "name": pl.name, "type_label": pl.list_type.label}
-        )
-    default_box_id = (
-        active_list.box_id if active_list else (boxes[0].id if boxes else None)
-    )
+        lists_by_box.setdefault(pl.box_id, []).append({"id": pl.id, "name": pl.name, "type_label": pl.list_type.label})
+    default_box_id = active_list.box_id if active_list else (boxes[0].id if boxes else None)
     return templates.TemplateResponse(
         request,
         "practice/plan.html",
@@ -153,48 +149,54 @@ async def session_detail(
                 beats = int(tune.time_signature.split("/")[0])
             except (ValueError, IndexError):
                 beats = 4
-            session_items.append({
-                "id": item.id,
-                "type": "tune",
-                "itemType": item.item_type.value,
-                "itemTypeLabel": item.item_type.label,
-                "title": tune.title,
-                "minutesAllocated": item.minutes_allocated,
-                "completed": item.completed,
-                "tuneId": tune.id,
-                "tuneType": tune.tune_type.value,
-                "beatsPerBar": beats,
-                "lastTempo": last_tempo_map.get(tune.id),
-                "boxId": session.box_id,
-                "levels": disp["levels"] if disp else [-1],
-                "abcFull": disp["abc_full"] if disp else "",
-                "abc4": disp["abc_4"] if disp else "",
-                "abc8": disp["abc_8"] if disp else "",
-                "keyLabel": disp["key_label"] if disp else "",
-                "hasAbc": bool(disp and disp["abc_full"]),
-            })
+            session_items.append(
+                {
+                    "id": item.id,
+                    "type": "tune",
+                    "itemType": item.item_type.value,
+                    "itemTypeLabel": item.item_type.label,
+                    "title": tune.title,
+                    "minutesAllocated": item.minutes_allocated,
+                    "completed": item.completed,
+                    "tuneId": tune.id,
+                    "tuneType": tune.tune_type.value,
+                    "beatsPerBar": beats,
+                    "lastTempo": last_tempo_map.get(tune.id),
+                    "boxId": session.box_id,
+                    "levels": disp["levels"] if disp else [-1],
+                    "abcFull": disp["abc_full"] if disp else "",
+                    "abc4": disp["abc_4"] if disp else "",
+                    "abc8": disp["abc_8"] if disp else "",
+                    "keyLabel": disp["key_label"] if disp else "",
+                    "hasAbc": bool(disp and disp["abc_full"]),
+                }
+            )
         elif item.warmup:
-            session_items.append({
-                "id": item.id,
-                "type": "warmup",
-                "itemType": "warmup",
-                "itemTypeLabel": "Warmup",
-                "title": item.warmup.title,
-                "minutesAllocated": item.minutes_allocated,
-                "completed": item.completed,
-                "hasAbc": False,
-            })
+            session_items.append(
+                {
+                    "id": item.id,
+                    "type": "warmup",
+                    "itemType": "warmup",
+                    "itemTypeLabel": "Warmup",
+                    "title": item.warmup.title,
+                    "minutesAllocated": item.minutes_allocated,
+                    "completed": item.completed,
+                    "hasAbc": False,
+                }
+            )
         else:
-            session_items.append({
-                "id": item.id,
-                "type": "other",
-                "itemType": "other",
-                "itemTypeLabel": "Item",
-                "title": "Practice Item",
-                "minutesAllocated": item.minutes_allocated,
-                "completed": item.completed,
-                "hasAbc": False,
-            })
+            session_items.append(
+                {
+                    "id": item.id,
+                    "type": "other",
+                    "itemType": "other",
+                    "itemTypeLabel": "Item",
+                    "title": "Practice Item",
+                    "minutesAllocated": item.minutes_allocated,
+                    "completed": item.completed,
+                    "hasAbc": False,
+                }
+            )
 
     active_list = await get_active_list(db, _STUB_USER_ID)
     return templates.TemplateResponse(

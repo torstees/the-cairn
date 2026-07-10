@@ -314,9 +314,7 @@ async def delete_tune(db: AsyncSession, tune_id: int) -> bool:
     return True
 
 
-async def record_tempo(
-    db: AsyncSession, user_id: int, tune_id: int, box_id: int | None, tempo: int
-) -> TempoRecord:
+async def record_tempo(db: AsyncSession, user_id: int, tune_id: int, box_id: int | None, tempo: int) -> TempoRecord:
     record = TempoRecord(user_id=user_id, tune_id=tune_id, box_id=box_id, tempo=tempo)
     db.add(record)
     await db.commit()
@@ -329,22 +327,24 @@ async def get_tempo_history(
 ) -> tuple[int | None, list[TempoRecord]]:
     """Return (all-time min tempo, last `limit` records oldest-first)."""
     recent = (
-        await db.execute(
-            select(TempoRecord)
-            .where(TempoRecord.user_id == user_id, TempoRecord.tune_id == tune_id)
-            .order_by(TempoRecord.created_at.desc())
-            .limit(limit)
+        (
+            await db.execute(
+                select(TempoRecord)
+                .where(TempoRecord.user_id == user_id, TempoRecord.tune_id == tune_id)
+                .order_by(TempoRecord.created_at.desc())
+                .limit(limit)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     if not recent:
         return None, []
 
     min_tempo = (
         await db.execute(
-            select(func.min(TempoRecord.tempo)).where(
-                TempoRecord.user_id == user_id, TempoRecord.tune_id == tune_id
-            )
+            select(func.min(TempoRecord.tempo)).where(TempoRecord.user_id == user_id, TempoRecord.tune_id == tune_id)
         )
     ).scalar_one_or_none()
 

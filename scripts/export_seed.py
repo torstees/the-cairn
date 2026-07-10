@@ -30,7 +30,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from cairn.database import AsyncSessionLocal
-from cairn.models import PracticeList, TuneBox, TuneBoxEntry, TuneListEntry, TuneSet, TuneSetMember, WarmupItem
+from cairn.models import PracticeList, TuneBox, TuneBoxEntry, TuneListEntry, TuneSet, TuneSetMember
 from cairn.services.tunes import list_tunes
 from cairn.services.warmups import list_warmups
 

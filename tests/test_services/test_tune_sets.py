@@ -1,4 +1,3 @@
-import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import (
@@ -135,11 +134,15 @@ async def test_set_members_assigns_order(db: AsyncSession) -> None:
     t3 = await _tune(db, "Tune C")
     s = await _set(db)
 
-    result = await set_members(db, s.id, [
-        {"tune_id": t1.id},
-        {"tune_id": t2.id},
-        {"tune_id": t3.id},
-    ])
+    result = await set_members(
+        db,
+        s.id,
+        [
+            {"tune_id": t1.id},
+            {"tune_id": t2.id},
+            {"tune_id": t3.id},
+        ],
+    )
     assert result is not None
     orders = [(m.tune_id, m.order) for m in result.members]
     assert orders == [(t1.id, 0), (t2.id, 1), (t3.id, 2)]
@@ -171,14 +174,13 @@ async def test_set_members_removes_dropped_members(db: AsyncSession) -> None:
 
 async def test_set_members_stores_setting_id(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
+
     from cairn.models import TuneSetting
 
     tune = await _tune(db)
     s = await _set(db)
     core_setting = (
-        await db.execute(
-            sa_select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True))
-        )
+        await db.execute(sa_select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True)))
     ).scalar_one()
 
     result = await set_members(db, s.id, [{"tune_id": tune.id, "setting_id": core_setting.id}])
@@ -221,6 +223,7 @@ async def test_add_and_remove_box_set(db: AsyncSession) -> None:
 
 def _make_tune(title="The Morning Dew", tune_type=TuneType.reel):
     from cairn.models import Tune
+
     return Tune(
         title=title,
         tune_type=tune_type,
@@ -236,6 +239,7 @@ def _make_tune(title="The Morning Dew", tune_type=TuneType.reel):
 
 def _make_setting(tune_id=1, abc=_ABC):
     from cairn.models import TuneSetting
+
     return TuneSetting(
         tune_id=tune_id,
         label="Standard",
@@ -299,6 +303,7 @@ def test_build_set_abc_with_source() -> None:
 
 def test_build_set_abc_with_box() -> None:
     from cairn.models import TuneBox
+
     s = _make_set()
     box = TuneBox(name="Flute Tunes", user_id=1)
     result = build_set_abc(s, box=box)
