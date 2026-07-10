@@ -238,6 +238,44 @@ async def test_tune_detail_list_setting_outranks_box_setting(client: AsyncClient
     assert f"window.__cairnActiveSettingId = {list_setting.id};" in resp.text
 
 
+async def test_tune_detail_transpose_shifts_key_and_notes(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}", params={"transpose": 2})
+    assert resp.status_code == 200
+    assert "K:E" in resp.text
+    assert "EFGB" in resp.text  # D transposed +2 -> E, per the source's "DEFA" opening
+    assert "transposed +2 semitones" in resp.text
+
+
+async def test_tune_detail_transpose_zero_is_untransposed(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert "K:D" in resp.text
+    assert "transposed" not in resp.text
+
+
+async def test_tune_detail_transpose_clamped_to_plus_minus_12(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}", params={"transpose": 999})
+    assert resp.status_code == 200
+    assert "transposed +12 semitones" in resp.text
+
+
+async def test_tune_detail_transpose_controls_preserve_box_and_list_context(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    await _seed_user(db)
+    tune = await _seed_tune(db)
+    box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
+    practice_list = await create_list(db, _STUB_USER_ID, box.id, "Weekly Session", PracticeListType.repertoire)
+
+    resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "list_id": practice_list.id, "transpose": 1})
+    assert resp.status_code == 200
+    assert f"box_id={box.id}&amp;list_id={practice_list.id}&amp;transpose=2" in resp.text
+    assert f"box_id={box.id}&amp;list_id={practice_list.id}&amp;transpose=0" in resp.text
+
+
 async def test_tune_add_to_box(client: AsyncClient, db: AsyncSession) -> None:
     await _seed_user(db)
     tune = await _seed_tune(db)

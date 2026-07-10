@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.dependencies import get_db
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
-from cairn.services.abc_utils import build_abc
+from cairn.services.abc_utils import build_abc, transpose_abc
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
 from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
 from cairn.services.tune_sets import list_sets_for_tune
@@ -106,6 +106,7 @@ async def tune_detail(
     box_id: int | None = Query(default=None),
     list_id: int | None = Query(default=None),
     from_: str | None = Query(default=None, alias="from"),
+    transpose: int = Query(default=0),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
@@ -115,6 +116,10 @@ async def tune_detail(
     # is (see #120) — it only ever affects the breadcrumb, and only when
     # nothing more specific (list, then box) is already provided.
     from_progress = from_ == "progress"
+
+    # View-time only (#122) — never persisted, and clamped to a range a
+    # simple-system instrument could plausibly still play in.
+    transpose = max(-12, min(12, transpose))
 
     box = None
     entry = None
@@ -131,6 +136,9 @@ async def tune_detail(
 
     built_abc = build_abc(tune, active_setting, display_name=display_name) if active_setting else ""
     settings_abc = {s.id: build_abc(tune, s, display_name=display_name) for s in tune.settings}
+    if transpose:
+        built_abc = transpose_abc(built_abc, transpose)
+        settings_abc = {sid: transpose_abc(abc, transpose) for sid, abc in settings_abc.items()}
     min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
     beats_per_bar = int(tune.time_signature.split("/")[0])
 
@@ -141,6 +149,18 @@ async def tune_detail(
         lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
     active_list = await get_active_list(db, _STUB_USER_ID)
     member_sets = await list_sets_for_tune(db, tune_id)
+
+    # Base query string (everything except transpose) so the transpose
+    # +/-/reset controls can change just that one param without dropping the
+    # box/list/breadcrumb context (#122).
+    other_params = []
+    if box_id is not None:
+        other_params.append(f"box_id={box_id}")
+    if list_id is not None:
+        other_params.append(f"list_id={list_id}")
+    if from_:
+        other_params.append(f"from={from_}")
+    transpose_qs_prefix = "&".join(other_params) + ("&" if other_params else "")
 
     return templates.TemplateResponse(
         request,
@@ -158,6 +178,8 @@ async def tune_detail(
             "linked_list": linked_list,
             "list_id": list_id,
             "from_progress": from_progress,
+            "transpose": transpose,
+            "transpose_qs_prefix": transpose_qs_prefix,
             "min_tempo": min_tempo,
             "tempo_records": tempo_records,
             "last_tempo": tempo_records[-1].tempo if tempo_records else None,

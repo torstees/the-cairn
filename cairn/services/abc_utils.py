@@ -64,6 +64,214 @@ def parse_key(raw: str) -> tuple[KeyRoot, KeyMode] | None:
     return root, mode
 
 
+# ── Transposition (#122) — render-time only, per AGENTS.md's domain invariant:
+# "Transposition is always applied at render time, never stored." ──────────────
+
+_NATURAL_PC: dict[str, int] = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+_SHARP_ORDER = "FCGDAEB"
+_FLAT_ORDER = "BEADGCF"
+_ACCIDENTAL_DELTA = {"^": 1, "^^": 2, "_": -1, "__": -2, "=": 0}
+
+# Pitch class (0-11) of each supported root, keyed by KeyRoot.value; enharmonic
+# pairs (C#/Db, F#/Gb) share a class.
+_ROOT_PC: dict[str, int] = {
+    "C": 0, "C#": 1, "Db": 1, "D": 2, "Eb": 3, "E": 4, "F": 5,
+    "F#": 6, "Gb": 6, "G": 7, "Ab": 8, "A": 9, "Bb": 10, "B": 11,
+}  # fmt: skip
+
+# The canonical (minimal-accidental-count) root spelling for each pitch class —
+# used to name the OUTPUT key after a transpose; always resolves the two
+# enharmonic classes to Db and F# rather than trying to guess a "better" match
+# for the input tune's own spelling.
+_PC_TO_ROOT: dict[int, str] = {
+    0: "C", 1: "Db", 2: "D", 3: "Eb", 4: "E", 5: "F",
+    6: "F#", 7: "G", 8: "Ab", 9: "A", 10: "Bb", 11: "B",
+}  # fmt: skip
+
+# Major-key signature (+N sharps / -N flats) for the major key rooted at each
+# pitch class, using the conventional minimal-accidental spelling.
+_MAJOR_SIGNATURE: dict[int, int] = {
+    0: 0, 1: -5, 2: 2, 3: -3, 4: 4, 5: -1,
+    6: 6, 7: 1, 8: -4, 9: 3, 10: -2, 11: 5,
+}  # fmt: skip
+
+# Semitones to add to a mode's tonic to reach its relative major's tonic
+# (e.g. D dorian's relative major is C, a whole tone below D — so +10, i.e.
+# -2 mod 12).
+_MODE_TO_MAJOR_OFFSET: dict[str, int] = {
+    "major": 0,
+    "lydian": 7,
+    "mixolydian": 5,
+    "dorian": 10,
+    "minor": 3,
+}
+
+# Matches, in order of priority: a quoted chord/annotation string, a `!...!`
+# bang decoration, a bar line, or a note token (optional accidental + letter +
+# octave marks). Only the note-token alternative is ever rewritten — the
+# others are copied through unchanged so transposition can't corrupt chord
+# symbols, positioned text, or ornament decorations that happen to contain
+# letters in the A-G range (e.g. "!fermata!").
+_TRANSPOSE_TOKEN_RE = re.compile(r'"[^"]*"|![^!]*!|\||(?P<acc>\^{1,2}|_{1,2}|=)?(?P<letter>[A-Ga-g])(?P<marks>[,\']*)')
+
+
+def _signature_for(root_value: str, mode_value: str) -> int:
+    """Key signature (+sharps/-flats) for a root+mode combination."""
+    parent_major_pc = (_ROOT_PC[root_value] + _MODE_TO_MAJOR_OFFSET[mode_value]) % 12
+    return _MAJOR_SIGNATURE[parent_major_pc]
+
+
+def _signature_accidentals(signature: int) -> dict[str, int]:
+    """Per-letter default accidental (-1/0/+1) implied by a key signature."""
+    acc = dict.fromkeys("CDEFGAB", 0)
+    if signature > 0:
+        for letter in _SHARP_ORDER[:signature]:
+            acc[letter] = 1
+    elif signature < 0:
+        for letter in _FLAT_ORDER[:-signature]:
+            acc[letter] = -1
+    return acc
+
+
+def _respell(pitch_class: int, signature: int) -> tuple[str, str]:
+    """Choose a (letter, accidental) spelling for a pitch class in a given key.
+
+    Prefers relying on the key signature (no explicit accidental) first. Next,
+    an explicit natural ("=") that just cancels the signature on some letter —
+    e.g. F-natural in a key that sharps F — since that's a smaller change than
+    introducing an accidental on an different letter (E# is the same pitch as
+    F-natural, but "=F" is the far more expected spelling). Only after that
+    does it fall back to a new sharp/flat, biased toward sharps in sharp-side
+    keys and flats in flat-side keys. Every pitch class has at least one
+    single-accidental spelling given the 7 natural letters are 1-2 semitones
+    apart, so this never needs a double sharp/flat for the output.
+    """
+    sig_acc = _signature_accidentals(signature)
+    for letter in "CDEFGAB":
+        if (_NATURAL_PC[letter] + sig_acc[letter]) % 12 == pitch_class:
+            return letter, ""
+
+    candidates: dict[str, tuple[str, str]] = {}
+    for letter in "CDEFGAB":
+        if (_NATURAL_PC[letter] + 1) % 12 == pitch_class:
+            candidates["^"] = (letter, "^")
+        if (_NATURAL_PC[letter] - 1) % 12 == pitch_class:
+            candidates["_"] = (letter, "_")
+        if _NATURAL_PC[letter] % 12 == pitch_class:
+            candidates["="] = (letter, "=")
+    order = ("=", "^", "_") if signature >= 0 else ("=", "_", "^")
+    for key in order:
+        if key in candidates:
+            return candidates[key]
+    raise AssertionError(f"no single-accidental spelling found for pitch class {pitch_class}")  # pragma: no cover
+
+
+def _transpose_line(line: str, semitones: int, src_signature: int, dst_signature: int) -> str:
+    """Transpose one music-body line. Chord symbols, annotations, and bang
+    decorations pass through untouched; bar lines reset the per-bar
+    accidental-carry tracking used to interpret notes with no explicit mark.
+    """
+    src_sig_acc = _signature_accidentals(src_signature)
+    active: dict[tuple[str, int], int] = {}
+    out: list[str] = []
+    pos = 0
+    for m in _TRANSPOSE_TOKEN_RE.finditer(line):
+        out.append(line[pos : m.start()])
+        pos = m.end()
+        text = m.group(0)
+        if text.startswith('"') or text.startswith("!"):
+            out.append(text)
+            continue
+        if text == "|":
+            active.clear()
+            out.append(text)
+            continue
+
+        letter = m.group("letter")
+        letter_upper = letter.upper()
+        marks = m.group("marks") or ""
+        acc = m.group("acc")
+
+        absolute_octave = (1 if letter.islower() else 0) + marks.count("'") - marks.count(",")
+
+        if acc is not None:
+            accidental_offset = _ACCIDENTAL_DELTA[acc]
+            active[(letter_upper, absolute_octave)] = accidental_offset
+        else:
+            accidental_offset = active.get((letter_upper, absolute_octave), src_sig_acc[letter_upper])
+
+        absolute_pitch = absolute_octave * 12 + _NATURAL_PC[letter_upper] + accidental_offset
+        new_absolute_octave, new_pitch_class = divmod(absolute_pitch + semitones, 12)
+        new_letter, new_acc = _respell(new_pitch_class, dst_signature)
+
+        if new_absolute_octave >= 1:
+            new_marks = "'" * (new_absolute_octave - 1)
+            new_letter_str = new_letter.lower()
+        elif new_absolute_octave == 0:
+            new_marks = ""
+            new_letter_str = new_letter
+        else:
+            new_marks = "," * -new_absolute_octave
+            new_letter_str = new_letter
+
+        out.append(f"{new_acc}{new_letter_str}{new_marks}")
+
+    out.append(line[pos:])
+    return "".join(out)
+
+
+def transpose_abc(abc: str, semitones: int) -> str:
+    """Shift every pitch in a complete, already-assembled ABC string (e.g. from
+    build_abc()) by `semitones`, updating K: to match and leaving a visible
+    note in Z: (appended if Z: already has content, added fresh otherwise) so
+    the change is obvious even on a printed/exported copy — #122.
+
+    Render-time only: the result must never be written back to a tune's
+    stored ABC (see AGENTS.md's transposition invariant).
+    """
+    if semitones == 0:
+        return abc
+
+    lines = abc.splitlines()
+    key_line_idx = next(
+        (i for i, line in enumerate(lines) if (s := line.strip())[:1].upper() == "K" and s[1:2] == ":"), None
+    )
+    if key_line_idx is None:
+        return abc
+    parsed = parse_key(lines[key_line_idx].strip()[2:].strip())
+    if parsed is None:
+        return abc
+    key_root, key_mode = parsed
+
+    new_root_pc = (_ROOT_PC[key_root.value] + semitones) % 12
+    new_root_value = _PC_TO_ROOT[new_root_pc]
+    src_signature = _signature_for(key_root.value, key_mode.value)
+    dst_signature = _signature_for(new_root_value, key_mode.value)
+
+    note = f"(transposed {semitones:+d} semitone{'s' if abs(semitones) != 1 else ''})"
+
+    out_lines: list[str] = []
+    z_line_idx = None
+    for i, line in enumerate(lines):
+        s = line.strip()
+        is_header = len(s) >= 2 and s[1] == ":" and s[0].isalpha()
+        if i == key_line_idx:
+            out_lines.append(f"K:{new_root_value}{ABC_MODE_SUFFIX[key_mode.value]}")
+        elif is_header and s[0].upper() == "Z":
+            z_line_idx = i
+            existing = s[2:].strip()
+            out_lines.append(f"Z:{existing + '  ' if existing else ''}{note}")
+        elif is_header:
+            out_lines.append(line)
+        else:
+            out_lines.append(_transpose_line(line, semitones, src_signature, dst_signature))
+
+    if z_line_idx is None:
+        out_lines.insert(key_line_idx, f"Z:{note}")
+
+    return "\n".join(out_lines) + ("\n" if abc.endswith("\n") else "")
+
+
 # Q:1/4=N anchors tempo to quarter notes regardless of L:, avoiding ambiguity.
 _DEFAULT_TEMPO: dict[str, str] = {
     "reel": "Q:1/4=80",

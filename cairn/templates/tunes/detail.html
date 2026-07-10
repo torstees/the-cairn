@@ -88,6 +88,20 @@
                  class="w-28 accent-stone-600 cursor-pointer">
           {% include "components/_tempo_label.html" %}
         </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-sm text-stone-500 select-none">Transpose</span>
+          <a href="?{{ transpose_qs_prefix }}transpose={{ transpose - 1 }}"
+             class="px-2 py-1 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">&minus;</a>
+          <span class="text-sm text-stone-700 w-10 text-center select-none">
+            {{ transpose }}{% if transpose %} st{% endif %}
+          </span>
+          <a href="?{{ transpose_qs_prefix }}transpose={{ transpose + 1 }}"
+             class="px-2 py-1 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">+</a>
+          {% if transpose %}
+          <a href="?{{ transpose_qs_prefix }}transpose=0"
+             class="text-xs text-stone-400 hover:text-stone-600 underline ml-1">Reset</a>
+          {% endif %}
+        </div>
         <div id="drone-controls" class="hidden flex items-center gap-1.5">
           <button id="drone-prev" type="button"
                   class="hidden px-2 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
