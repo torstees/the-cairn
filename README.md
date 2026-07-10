@@ -8,16 +8,20 @@ A web app for learning and retaining traditional Irish music tunes — practice 
 spaced repetition, and interactive sheet music, built to declutter a student's desktop
 and make the most of limited practice time.
 
-```
+<div align='center'>
+       
+```bash
        (o_o)
       <( : )>
-        _/\_
+       _/\_
      (========)
-    (   )(    |)
+       (  )(    |)
    (  |  )(   )
  (  )(      )(    )
 (________________)
 ```
+
+</div>
 
 ## What it does
 
