@@ -7,11 +7,14 @@ from cairn.services.boxes import (
     add_tune,
     create_box,
     get_box,
+    get_box_entry,
+    get_display_names_for_tunes,
     list_boxes,
     remove_tune,
+    set_display_alias,
     set_preferred_setting,
 )
-from cairn.services.tunes import create_tune
+from cairn.services.tunes import add_alias, create_tune
 
 _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
@@ -160,6 +163,76 @@ async def test_set_preferred_setting_updates_entry(db: AsyncSession) -> None:
     updated = await set_preferred_setting(db, box.id, t.id, fs.id)
     assert updated.setting_id == fs.id
     assert updated.id == entry.id
+
+
+# ── display alias ─────────────────────────────────────────────────────────────
+
+
+async def test_add_tune_stores_display_alias_id(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+    alias = await add_alias(db, t.id, "Sunrise Reel")
+
+    entry = await add_tune(db, box.id, t.id, display_alias_id=alias.id)
+    assert entry.display_alias_id == alias.id
+
+
+async def test_add_tune_display_alias_defaults_to_none(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+
+    entry = await add_tune(db, box.id, t.id)
+    assert entry.display_alias_id is None
+
+
+async def test_set_display_alias_updates_entry(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+    alias = await add_alias(db, t.id, "Sunrise Reel")
+    entry = await add_tune(db, box.id, t.id)
+    assert entry.display_alias_id is None
+
+    updated = await set_display_alias(db, box.id, t.id, alias.id)
+    assert updated.display_alias_id == alias.id
+    assert updated.id == entry.id
+
+    reloaded = await get_box_entry(db, box.id, t.id)
+    assert reloaded is not None
+    assert reloaded.display_alias is not None
+    assert reloaded.display_alias.name == "Sunrise Reel"
+
+
+async def test_set_display_alias_can_clear_back_to_title(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+    alias = await add_alias(db, t.id, "Sunrise Reel")
+    await add_tune(db, box.id, t.id, display_alias_id=alias.id)
+
+    updated = await set_display_alias(db, box.id, t.id, None)
+    assert updated.display_alias_id is None
+
+
+async def test_get_display_names_for_tunes_only_includes_entries_with_alias_chosen(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t1 = await _tune(db, "Tune A")
+    t2 = await _tune(db, "Tune B")
+    alias = await add_alias(db, t1.id, "Sunrise Reel")
+    await add_tune(db, box.id, t1.id, display_alias_id=alias.id)
+    await add_tune(db, box.id, t2.id)
+
+    names = await get_display_names_for_tunes(db, box.id, {t1.id, t2.id})
+    assert names == {t1.id: "Sunrise Reel"}
+
+
+async def test_get_display_names_for_tunes_empty_tune_ids(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    assert await get_display_names_for_tunes(db, box.id, set()) == {}
 
 
 # ── remove_tune ───────────────────────────────────────────────────────────────

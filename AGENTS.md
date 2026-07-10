@@ -273,6 +273,17 @@ auto-set it as the `TuneBoxEntry.setting_id`. If zero or multiple match, leave n
 3. First `TuneSetting` where `instrument` ∈ box's instrument list — auto-match
 4. Core setting (`is_core = True`, `instrument = None`) — fallback
 
+**Display name resolution order** (`TuneBoxEntry`/`TuneListEntry.display_alias_id`,
+a `TuneAlias` a box or list can show instead of the tune's own title — #119):
+1. `TuneListEntry.display_alias_id` — active practice list override
+2. `TuneBoxEntry.display_alias_id` — box-level choice
+3. `Tune.title` — fallback
+
+Unlike settings, there's no instrument-based auto-match step for display
+names — a tune with no alias chosen anywhere always falls straight back to
+its own title. `cairn.services.tunes.resolve_display_context()` resolves
+both the effective setting and display name together in one call.
+
 ### SettingProgress
 
 Tracks progress on a specific `TuneSetting` (a particular version or arrangement)

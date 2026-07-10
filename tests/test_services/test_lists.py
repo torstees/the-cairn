@@ -11,9 +11,11 @@ from cairn.services.lists import (
     create_list,
     deactivate_list,
     get_active_list,
+    get_list_entry,
     remove_tune_from_list,
+    update_list_entry_display_alias,
 )
-from cairn.services.tunes import create_tune, get_tune
+from cairn.services.tunes import add_alias, create_tune, get_tune
 
 _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
@@ -171,6 +173,50 @@ async def test_add_tune_to_list_with_setting(db: AsyncSession) -> None:
 async def test_add_tune_to_list_unknown_list_returns_none(db: AsyncSession) -> None:
     tune = await _tune(db)
     result = await add_tune_to_list(db, 9999, tune.id)
+    assert result is None
+
+
+async def test_add_tune_to_list_with_display_alias(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    entry = await add_tune_to_list(db, pl.id, tune.id, display_alias_id=alias.id)
+    assert entry.display_alias_id == alias.id
+
+
+async def test_add_tune_to_list_display_alias_defaults_to_none(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    entry = await add_tune_to_list(db, pl.id, tune.id)
+    assert entry.display_alias_id is None
+
+
+async def test_update_list_entry_display_alias(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    await add_tune_to_list(db, pl.id, tune.id)
+
+    updated = await update_list_entry_display_alias(db, pl.id, tune.id, alias.id)
+    assert updated is not None
+    assert updated.display_alias_id == alias.id
+
+    reloaded = await get_list_entry(db, pl.id, tune.id)
+    assert reloaded.display_alias.name == "Sunrise Reel"
+
+
+async def test_update_list_entry_display_alias_missing_entry_returns_none(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    result = await update_list_entry_display_alias(db, pl.id, tune.id, None)
     assert result is None
 
 

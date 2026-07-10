@@ -73,10 +73,11 @@ async def add_tune_to_list(
     list_id: int,
     tune_id: int,
     setting_id: int | None = None,
+    display_alias_id: int | None = None,
 ) -> TuneListEntry | None:
     if await db.get(PracticeList, list_id) is None:
         return None
-    entry = TuneListEntry(list_id=list_id, tune_id=tune_id, setting_id=setting_id)
+    entry = TuneListEntry(list_id=list_id, tune_id=tune_id, setting_id=setting_id, display_alias_id=display_alias_id)
     db.add(entry)
     await db.commit()
     await db.refresh(entry)
@@ -121,6 +122,7 @@ async def get_list(db: AsyncSession, list_id: int) -> PracticeList | None:
             selectinload(PracticeList.entries).selectinload(TuneListEntry.tune).selectinload(Tune.settings),
             selectinload(PracticeList.entries).selectinload(TuneListEntry.tune).selectinload(Tune.aliases),
             selectinload(PracticeList.entries).selectinload(TuneListEntry.setting),
+            selectinload(PracticeList.entries).selectinload(TuneListEntry.display_alias),
             selectinload(PracticeList.box),
         )
     )
@@ -150,6 +152,7 @@ async def get_list_entry(db: AsyncSession, list_id: int, tune_id: int) -> TuneLi
             selectinload(TuneListEntry.tune).selectinload(Tune.settings),
             selectinload(TuneListEntry.tune).selectinload(Tune.aliases),
             selectinload(TuneListEntry.setting),
+            selectinload(TuneListEntry.display_alias),
         )
     )
     result = await db.execute(stmt)
@@ -169,6 +172,24 @@ async def update_list_entry_setting(
     if entry is None:
         return None
     entry.setting_id = setting_id
+    db.add(entry)
+    await db.commit()
+    return await get_list_entry(db, list_id, tune_id)
+
+
+async def update_list_entry_display_alias(
+    db: AsyncSession,
+    list_id: int,
+    tune_id: int,
+    display_alias_id: int | None,
+) -> TuneListEntry | None:
+    result = await db.execute(
+        select(TuneListEntry).where(TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id)
+    )
+    entry = result.scalar_one_or_none()
+    if entry is None:
+        return None
+    entry.display_alias_id = display_alias_id
     db.add(entry)
     await db.commit()
     return await get_list_entry(db, list_id, tune_id)

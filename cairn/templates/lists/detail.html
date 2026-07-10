@@ -36,6 +36,7 @@
          query: '',
          selectedId: null,
          selectedSettingId: '',
+         selectedDisplayAliasId: '',
          open: false,
          boxOnly: true,
          showModal: false,
@@ -53,6 +54,7 @@
            return list.slice(0, 50);
          },
          get availableSettings() { return (window.__cairnSettings || {})[this.selectedId] || []; },
+         get availableAliases() { return (window.__cairnAliases || {})[this.selectedId] || []; },
          get modalMessage() {
            return '&quot;' + this.query + '&quot; is not in ' + (window.__cairnBoxName || 'the box') + '. Add it to the box as well?';
          },
@@ -63,6 +65,9 @@
            const boxPref = (window.__cairnBoxSettings || {})[tune.id];
            const avail = (window.__cairnSettings || {})[tune.id] || [];
            this.selectedSettingId = (boxPref && avail.some(s => s.id === boxPref)) ? String(boxPref) : '';
+           const boxAliasPref = (window.__cairnBoxDisplayAlias || {})[tune.id];
+           const availAliases = (window.__cairnAliases || {})[tune.id] || [];
+           this.selectedDisplayAliasId = (boxAliasPref && availAliases.some(a => a.id === boxAliasPref)) ? String(boxAliasPref) : '';
          },
          async addToBox() {
            const fd = new FormData();
@@ -75,6 +80,7 @@
            const fd = new FormData();
            fd.append('tune_id', tuneId);
            fd.append('setting_id', this.selectedSettingId || '');
+           fd.append('display_alias_id', this.selectedDisplayAliasId || '');
            const resp = await fetch('/lists/{{ practice_list.id }}/tunes', {method: 'POST', body: fd});
            if (resp.ok) {
              const html = await resp.text();
@@ -116,7 +122,7 @@
          cancelModal() { this.showModal = false; }
        }"
        x-init="$watch('activeFamily', function(v) { filterListTable(v); })"
-       @cairn-tune-added.window="tunes=tunes.filter(t=>t.id!==$event.detail.id); query=''; selectedId=null; selectedSettingId=''; open=false"
+       @cairn-tune-added.window="tunes=tunes.filter(t=>t.id!==$event.detail.id); query=''; selectedId=null; selectedSettingId=''; selectedDisplayAliasId=''; open=false"
        @cairn-tune-removed.window="(function(d){ const fm=window.__cairnFamilyForType||{}; tunes=[...tunes,{id:d.id,label:d.label,type:d.type,family:fm[d.type]||'other'}].sort((a,b)=>a.label.localeCompare(b.label)); })($event.detail)"
        @keydown.escape.window="if(showModal) cancelModal()">
 
@@ -153,6 +159,7 @@
                   Type <span id="sort-icon-type" class="text-stone-300">↕</span>
                 </button>
               </th>
+              <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Name</th>
               <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Setting</th>
               <th class="py-2 px-4"></th>
             </tr>
@@ -186,7 +193,7 @@
             <input type="text"
                    x-model="query"
                    @focus="open=true"
-                   @input="open=true; selectedId=null; selectedSettingId=''"
+                   @input="open=true; selectedId=null; selectedSettingId=''; selectedDisplayAliasId=''"
                    @keydown.enter.prevent="open && filtered.length && pick(filtered[0])"
                    @keydown.escape.stop="open=false"
                    autocomplete="off"
@@ -202,6 +209,19 @@
                     x-text="tune.label"></li>
               </template>
             </ul>
+          </div>
+          <div class="flex-1 min-w-40" x-show="availableAliases.length > 0" x-cloak>
+            <label class="block text-xs font-medium text-stone-500 mb-1">
+              Name <span class="font-normal text-stone-400">(optional)</span>
+            </label>
+            <select name="display_alias_id"
+                    x-model="selectedDisplayAliasId"
+                    class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
+              <option value="">— tune title —</option>
+              <template x-for="a in availableAliases" :key="a.id">
+                <option :value="a.id" x-text="a.label"></option>
+              </template>
+            </select>
           </div>
           <div class="flex-1 min-w-40" x-show="availableSettings.length > 0" x-cloak>
             <label class="block text-xs font-medium text-stone-500 mb-1">
@@ -262,7 +282,9 @@
   window.__cairnFamilyForType = {{ family_for_type | tojson }};
   window.__cairnAddableTunes  = {{ addable_tunes_json | safe }};
   window.__cairnSettings      = {{ settings_by_tune_id | safe }};
+  window.__cairnAliases       = {{ aliases_by_tune_id | safe }};
   window.__cairnBoxSettings   = {{ box_setting_by_tune_id | safe }};
+  window.__cairnBoxDisplayAlias = {{ box_display_alias_by_tune_id | safe }};
   window.__cairnBoxTuneIds    = new Set({{ box_tune_ids_json | safe }});
   window.__cairnBoxName       = {{ box_name | tojson }};
 

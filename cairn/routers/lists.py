@@ -19,6 +19,7 @@ from cairn.services.lists import (
     list_lists,
     remove_tune_from_list,
     update_list,
+    update_list_entry_display_alias,
     update_list_entry_setting,
 )
 from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes, preview_abc
@@ -33,10 +34,15 @@ _FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FA
 
 
 def _entry_previews(entries) -> dict[int, str]:
-    """Map tune id -> ABC preview for list entries, preferring each entry's chosen setting."""
+    """Map tune id -> ABC preview for list entries, preferring each entry's chosen setting.
+
+    Uses the entry's own display alias (if any) for the preview's T: header,
+    matching the name the row itself shows (#119).
+    """
     previews: dict[int, str] = {}
     for entry in entries:
-        abc = preview_abc(entry.tune, entry.setting)
+        display_name = entry.display_alias.name if entry.display_alias else None
+        abc = preview_abc(entry.tune, entry.setting, display_name=display_name)
         if abc is not None:
             previews[entry.tune_id] = abc
     return previews
@@ -173,9 +179,13 @@ async def list_detail(
             for t in addable_tunes
         }
     )
+    aliases_by_tune_id = json.dumps({t.id: [{"id": a.id, "label": a.name} for a in t.aliases] for t in addable_tunes})
     box = await get_box_detail(db, practice_list.box_id)
     box_entries = box.entries if box else []
     box_setting_by_tune_id = json.dumps({e.tune_id: e.setting_id for e in box_entries if e.setting_id is not None})
+    box_display_alias_by_tune_id = json.dumps(
+        {e.tune_id: e.display_alias_id for e in box_entries if e.display_alias_id is not None}
+    )
     box_tune_ids_json = json.dumps([e.tune_id for e in box_entries])
     tune_previews = _entry_previews(practice_list.entries)
     return templates.TemplateResponse(
@@ -186,7 +196,9 @@ async def list_detail(
             "addable_tunes": addable_tunes,
             "addable_tunes_json": addable_tunes_json,
             "settings_by_tune_id": settings_by_tune_id,
+            "aliases_by_tune_id": aliases_by_tune_id,
             "box_setting_by_tune_id": box_setting_by_tune_id,
+            "box_display_alias_by_tune_id": box_display_alias_by_tune_id,
             "box_tune_ids_json": box_tune_ids_json,
             "box_name": box.name if box else "",
             "family_labels": FAMILY_LABELS,
@@ -237,13 +249,21 @@ async def list_add_tune(
     db: AsyncSession = Depends(get_db),
     tune_id: int = Form(...),
     setting_id: str = Form(default=""),
+    display_alias_id: str = Form(default=""),
 ) -> Response:
     practice_list = await get_list(db, list_id)
     if practice_list is None:
         raise HTTPException(status_code=404, detail="List not found")
     parsed_setting_id = int(setting_id) if setting_id else None
+    parsed_display_alias_id = int(display_alias_id) if display_alias_id else None
     try:
-        await add_tune_to_list(db, list_id, tune_id, setting_id=parsed_setting_id)
+        await add_tune_to_list(
+            db,
+            list_id,
+            tune_id,
+            setting_id=parsed_setting_id,
+            display_alias_id=parsed_display_alias_id,
+        )
     except IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Tune already in list") from exc
     entry = await get_list_entry(db, list_id, tune_id)
@@ -264,6 +284,25 @@ async def list_set_entry_setting(
 ) -> Response:
     sid = int(setting_id) if setting_id else None
     entry = await update_list_entry_setting(db, list_id, tune_id, sid)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return templates.TemplateResponse(
+        request,
+        "lists/partials/_entry_row.html",
+        {"entry": entry, "list_id": list_id, "tune_previews": _entry_previews([entry])},
+    )
+
+
+@router.post("/{list_id}/tunes/{tune_id}/display-alias")
+async def list_set_entry_display_alias(
+    request: Request,
+    list_id: int,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    display_alias_id: str = Form(default=""),
+) -> Response:
+    daid = int(display_alias_id) if display_alias_id else None
+    entry = await update_list_entry_display_alias(db, list_id, tune_id, daid)
     if entry is None:
         raise HTTPException(status_code=404, detail="Entry not found")
     return templates.TemplateResponse(

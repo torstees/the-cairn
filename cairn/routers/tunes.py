@@ -7,7 +7,7 @@ from cairn.dependencies import get_db
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import build_abc
-from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_preferred_setting
+from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
 from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
 from cairn.services.tune_sets import list_sets_for_tune
 from cairn.services.tunes import (
@@ -22,6 +22,7 @@ from cairn.services.tunes import (
     list_tunes,
     record_tempo,
     remove_alias,
+    resolve_display_context,
     update_tune,
 )
 from cairn.templating import templates
@@ -115,27 +116,21 @@ async def tune_detail(
     # nothing more specific (list, then box) is already provided.
     from_progress = from_ == "progress"
 
-    active_setting = None
     box = None
+    entry = None
     if box_id is not None:
         box, entry = await get_box(db, box_id), await get_box_entry(db, box_id, tune_id)
-        if entry and entry.setting_id is not None:
-            active_setting = entry.setting
 
     linked_list = None
+    list_entry = None
     if list_id is not None:
         linked_list, list_entry = await get_list(db, list_id), await get_list_entry(db, list_id, tune_id)
-        # A list's own setting override outranks the box's, per the setting
-        # resolution order in AGENTS.md.
-        if list_entry and list_entry.setting_id is not None:
-            active_setting = list_entry.setting
 
+    active_setting, display_name = resolve_display_context(tune, entry, list_entry)
     core = core_setting(tune)
-    if active_setting is None:
-        active_setting = core
 
-    built_abc = build_abc(tune, active_setting) if active_setting else ""
-    settings_abc = {s.id: build_abc(tune, s) for s in tune.settings}
+    built_abc = build_abc(tune, active_setting, display_name=display_name) if active_setting else ""
+    settings_abc = {s.id: build_abc(tune, s, display_name=display_name) for s in tune.settings}
     min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
     beats_per_bar = int(tune.time_signature.split("/")[0])
 
@@ -152,6 +147,7 @@ async def tune_detail(
         "tunes/detail.html",
         {
             "tune": tune,
+            "display_name": display_name,
             "member_sets": member_sets,
             "built_abc": built_abc,
             "settings_abc": settings_abc,
@@ -200,6 +196,7 @@ async def tune_add_to_box(
     db: AsyncSession = Depends(get_db),
     box_id: int = Form(...),
     setting_id: str = Form(default=""),
+    display_alias_id: str = Form(default=""),
     list_id: str = Form(default=""),
 ) -> Response:
     tune = await get_tune(db, tune_id)
@@ -207,8 +204,12 @@ async def tune_add_to_box(
         raise HTTPException(status_code=404, detail="Tune not found")
 
     sid = int(setting_id) if setting_id else None
+    daid = int(display_alias_id) if display_alias_id else None
     try:
-        await add_tune(db, box_id, tune_id)
+        # display_alias_id has no auto-pick heuristic (unlike setting_id, see
+        # below) so it's passed straight into add_tune() rather than needing
+        # a follow-up call to override anything.
+        await add_tune(db, box_id, tune_id, display_alias_id=daid)
     except IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Tune already in box") from exc
     # add_tune() may have auto-picked a setting via its own instrument-matching
@@ -219,7 +220,7 @@ async def tune_add_to_box(
 
     if list_id:
         try:
-            await add_tune_to_list(db, int(list_id), tune_id, setting_id=sid)
+            await add_tune_to_list(db, int(list_id), tune_id, setting_id=sid, display_alias_id=daid)
         except IntegrityError:
             pass  # already in that list — the box add still succeeded
 
@@ -243,6 +244,27 @@ async def tune_update_box_setting(
 
     sid = int(setting_id) if setting_id else None
     await set_preferred_setting(db, box_id, tune_id, sid)
+
+    ctx = await _box_membership_context(db, tune, box_id)
+    return templates.TemplateResponse(request, "tunes/partials/_box_membership_row.html", ctx)
+
+
+@router.post("/{tune_id}/boxes/{box_id}/display-alias")
+async def tune_update_box_display_alias(
+    request: Request,
+    tune_id: int,
+    box_id: int,
+    db: AsyncSession = Depends(get_db),
+    display_alias_id: str = Form(default=""),
+) -> Response:
+    tune = await get_tune(db, tune_id)
+    if tune is None:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    if await get_box_entry(db, box_id, tune_id) is None:
+        raise HTTPException(status_code=404, detail="Tune not in box")
+
+    daid = int(display_alias_id) if display_alias_id else None
+    await set_display_alias(db, box_id, tune_id, daid)
 
     ctx = await _box_membership_context(db, tune, box_id)
     return templates.TemplateResponse(request, "tunes/partials/_box_membership_row.html", ctx)

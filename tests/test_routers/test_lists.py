@@ -97,6 +97,83 @@ async def test_list_set_entry_setting_response_includes_abc_hover_preview(
     assert f'<template id="tune-abc-preview-{tune.id}">' in resp.text
 
 
+async def test_list_add_tune_with_display_alias(client: AsyncClient, db: AsyncSession) -> None:
+    u = User(username="tester", email="t@example.com", hashed_password="x", role=Role.student)
+    db.add(u)
+    await db.flush()
+    box = await create_box(db, u.id, "Session Box", [Instrument.fiddle])
+    practice_list = await create_list(db, u.id, box.id, "My Repertoire", PracticeListType.repertoire)
+    tune = await create_tune(
+        db,
+        TuneCreate(
+            title="The Morning Dew",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+        ),
+        abc_notation=_ABC,
+    )
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    resp = await client.post(
+        f"/lists/{practice_list.id}/tunes",
+        data={"tune_id": str(tune.id), "display_alias_id": str(alias.id)},
+    )
+    assert resp.status_code == 200
+    a_open_to_close = resp.text.split(f'<a href="/tunes/{tune.id}?list_id={practice_list.id}"', 1)[1].split("</a>", 1)[
+        0
+    ]
+    assert "Sunrise Reel" in a_open_to_close
+    assert "The Morning Dew" not in a_open_to_close
+
+
+async def test_list_set_entry_display_alias_updates_row(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+
+    resp = await client.post(
+        f"/lists/{practice_list.id}/tunes/{tune.id}/display-alias", data={"display_alias_id": str(alias.id)}
+    )
+    assert resp.status_code == 200
+    a_open_to_close = resp.text.split(f'<a href="/tunes/{tune.id}?list_id={practice_list.id}"', 1)[1].split("</a>", 1)[
+        0
+    ]
+    assert "Sunrise Reel" in a_open_to_close
+
+
+async def test_list_set_entry_display_alias_missing_entry_404(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    resp = await client.post(f"/lists/{practice_list.id}/tunes/9999/display-alias", data={"display_alias_id": ""})
+    assert resp.status_code == 404
+
+
+async def test_list_row_data_title_follows_display_alias(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    await client.post(
+        f"/lists/{practice_list.id}/tunes/{tune.id}/display-alias", data={"display_alias_id": str(alias.id)}
+    )
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert resp.status_code == 200
+    assert 'data-title="sunrise reel"' in resp.text
+    assert 'data-title="the morning dew"' not in resp.text
+
+
+async def test_list_hover_preview_uses_display_alias_in_title(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    await client.post(
+        f"/lists/{practice_list.id}/tunes/{tune.id}/display-alias", data={"display_alias_id": str(alias.id)}
+    )
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert resp.status_code == 200
+    marker = f'<template id="tune-abc-preview-{tune.id}">'
+    preview = resp.text.split(marker, 1)[1].split("</template>", 1)[0]
+    assert "T:Sunrise Reel" in preview
+
+
 async def test_list_preview_uses_preferred_setting_not_core(client: AsyncClient, db: AsyncSession) -> None:
     practice_list, tune = await _seed(db)
     alt = await create_setting(

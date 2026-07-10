@@ -11,7 +11,9 @@ from cairn.models import (
     TempoRecord,
     Tune,
     TuneAlias,
+    TuneBoxEntry,
     TuneDifficulty,
+    TuneListEntry,
     TuneSetting,
     TuneType,
 )
@@ -65,23 +67,59 @@ def core_setting(tune: Tune) -> TuneSetting | None:
     return next((s for s in tune.settings if s.is_core and s.instrument is None), None)
 
 
+def resolve_display_context(
+    tune: Tune,
+    box_entry: TuneBoxEntry | None,
+    list_entry: TuneListEntry | None,
+) -> tuple[TuneSetting | None, str]:
+    """Resolve the effective setting and display name for a tune in a box/list
+    context, following AGENTS.md's "Setting resolution order" (most to least
+    specific: list override, box override, then a fallback) — the same
+    precedence applies to the display name (#119): a list's own choice
+    outranks the box's, which outranks the tune's own title.
+    """
+    active_setting = None
+    active_display_alias = None
+    if box_entry:
+        if box_entry.setting_id is not None:
+            active_setting = box_entry.setting
+        if box_entry.display_alias_id is not None:
+            active_display_alias = box_entry.display_alias
+    if list_entry:
+        if list_entry.setting_id is not None:
+            active_setting = list_entry.setting
+        if list_entry.display_alias_id is not None:
+            active_display_alias = list_entry.display_alias
+
+    if active_setting is None:
+        active_setting = core_setting(tune)
+    display_name = active_display_alias.name if active_display_alias else tune.title
+    return active_setting, display_name
+
+
 def existing_alias_names(tune: Tune) -> set[str]:
     """Return the tune's alias names normalised for case-insensitive dedup checks."""
     return {a.name.strip().lower() for a in tune.aliases}
 
 
-def preview_abc(tune: Tune, setting: TuneSetting | None = None, n_bars: int = 4) -> str | None:
+def preview_abc(
+    tune: Tune, setting: TuneSetting | None = None, n_bars: int = 4, display_name: str | None = None
+) -> str | None:
     """Return an ABC preview (opening bars) for tune, preferring `setting` over the core setting.
 
     Strips the Q: tempo header — like the main score view's client-side
     stripping (app.js' render()), a tempo marking on a static preview is
     misleading since it never reflects anything the user can actually change
     there.
+
+    display_name overrides the T: header, matching whatever name (tune title
+    or box/list display alias, #119) the row this preview pops up from is
+    itself showing.
     """
     setting = setting or core_setting(tune)
     if setting is None:
         return None
-    abc = truncate_to_bars(build_abc(tune, setting), n_bars)
+    abc = truncate_to_bars(build_abc(tune, setting, display_name=display_name), n_bars)
     return _TEMPO_HEADER_RE.sub("", abc, count=1)
 
 
