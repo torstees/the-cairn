@@ -238,16 +238,24 @@ async def test_tune_detail_list_setting_outranks_box_setting(client: AsyncClient
     assert f"window.__cairnActiveSettingId = {list_setting.id};" in resp.text
 
 
-async def test_tune_detail_transpose_shifts_key_and_notes(client: AsyncClient, db: AsyncSession) -> None:
-    tune = await _seed_tune(db)
-    resp = await client.get(f"/tunes/{tune.id}", params={"transpose": 2})
+async def test_tune_detail_key_shifts_to_shortest_route(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)  # D major
+    resp = await client.get(f"/tunes/{tune.id}", params={"key": "E"})
     assert resp.status_code == 200
     assert "K:E" in resp.text
     assert "EFGB" in resp.text  # D transposed +2 -> E, per the source's "DEFA" opening
     assert "transposed +2 semitones" in resp.text
 
 
-async def test_tune_detail_transpose_zero_is_untransposed(client: AsyncClient, db: AsyncSession) -> None:
+async def test_tune_detail_key_picks_down_when_shorter(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)  # D major
+    resp = await client.get(f"/tunes/{tune.id}", params={"key": "B"})
+    assert resp.status_code == 200
+    assert "K:B" in resp.text
+    assert "transposed -3 semitones" in resp.text  # D -> B is shorter down (-3) than up (+9)
+
+
+async def test_tune_detail_no_key_or_octave_is_untransposed(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     resp = await client.get(f"/tunes/{tune.id}")
     assert resp.status_code == 200
@@ -255,25 +263,64 @@ async def test_tune_detail_transpose_zero_is_untransposed(client: AsyncClient, d
     assert "transposed" not in resp.text
 
 
-async def test_tune_detail_transpose_clamped_to_plus_minus_12(client: AsyncClient, db: AsyncSession) -> None:
-    tune = await _seed_tune(db)
-    resp = await client.get(f"/tunes/{tune.id}", params={"transpose": 999})
+async def test_tune_detail_selecting_own_key_is_untransposed(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)  # D major
+    resp = await client.get(f"/tunes/{tune.id}", params={"key": "D"})
     assert resp.status_code == 200
+    assert "transposed" not in resp.text
+
+
+async def test_tune_detail_octave_up_shifts_a_full_octave_same_key(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)  # D major
+    resp = await client.get(f"/tunes/{tune.id}", params={"octave": 1})
+    assert resp.status_code == 200
+    assert "K:D" in resp.text  # root/mode unchanged — only the octave shifted
     assert "transposed +12 semitones" in resp.text
 
 
-async def test_tune_detail_transpose_controls_preserve_box_and_list_context(
-    client: AsyncClient, db: AsyncSession
-) -> None:
+async def test_tune_detail_octave_clamped_to_plus_minus_1(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}", params={"octave": 5})
+    assert resp.status_code == 200
+    assert "transposed +12 semitones" in resp.text  # clamped from 5 to 1 octave
+
+
+async def test_tune_detail_key_and_octave_combine(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)  # D major
+    resp = await client.get(f"/tunes/{tune.id}", params={"key": "E", "octave": 1})
+    assert resp.status_code == 200
+    assert "K:E" in resp.text
+    assert "transposed +14 semitones" in resp.text  # +2 (key) + 12 (octave)
+
+
+async def test_tune_detail_reset_link_only_shown_when_transposed(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert ">Reset<" not in resp.text
+
+    resp = await client.get(f"/tunes/{tune.id}", params={"octave": 1})
+    assert resp.status_code == 200
+    assert ">Reset<" in resp.text
+
+
+async def test_tune_detail_octave_links_preserve_selected_key(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)  # D major
+    resp = await client.get(f"/tunes/{tune.id}", params={"key": "E"})
+    assert resp.status_code == 200
+    assert "key=E&amp;octave=1" in resp.text
+    assert "key=E&amp;octave=-1" in resp.text
+
+
+async def test_tune_detail_key_options_preserve_box_and_list_context(client: AsyncClient, db: AsyncSession) -> None:
     await _seed_user(db)
     tune = await _seed_tune(db)
     box = await create_box(db, _STUB_USER_ID, "Session Box", [Instrument.fiddle])
     practice_list = await create_list(db, _STUB_USER_ID, box.id, "Weekly Session", PracticeListType.repertoire)
 
-    resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "list_id": practice_list.id, "transpose": 1})
+    resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "list_id": practice_list.id, "octave": 1})
     assert resp.status_code == 200
-    assert f"box_id={box.id}&amp;list_id={practice_list.id}&amp;transpose=2" in resp.text
-    assert f"box_id={box.id}&amp;list_id={practice_list.id}&amp;transpose=0" in resp.text
+    assert f"box_id={box.id}&amp;list_id={practice_list.id}&amp;key=E&amp;octave=1" in resp.text
 
 
 async def test_tune_add_to_box(client: AsyncClient, db: AsyncSession) -> None:

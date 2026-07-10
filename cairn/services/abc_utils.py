@@ -88,6 +88,23 @@ _PC_TO_ROOT: dict[int, str] = {
     6: "F#", 7: "G", 8: "Ab", 9: "A", 10: "Bb", 11: "B",
 }  # fmt: skip
 
+
+def shortest_semitones_to_root(current_root: KeyRoot, target_root: KeyRoot) -> int:
+    """Signed semitone count from current_root to target_root, choosing
+    whichever direction (up or down) has the smaller absolute distance —
+    e.g. E to D is -2 (down a whole step), not +10. Mode is unaffected;
+    transpose_abc() never changes it.
+
+    A target exactly a tritone away (6 semitones either direction) is a genuine
+    tie in pitch-class terms, but the two directions still land the melody an
+    octave apart — this defaults to +6 (up) for that case; the caller is
+    expected to offer an explicit octave adjustment on top of this for exactly
+    that reason (#122's on-score octave toggle).
+    """
+    delta = (_ROOT_PC[target_root.value] - _ROOT_PC[current_root.value]) % 12
+    return delta - 12 if delta > 6 else delta
+
+
 # Major-key signature (+N sharps / -N flats) for the major key rooted at each
 # pitch class, using the conventional minimal-accidental spelling.
 _MAJOR_SIGNATURE: dict[int, int] = {

@@ -1,5 +1,12 @@
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneSetting, TuneType
-from cairn.services.abc_utils import _signature_for, build_abc, parse_key, transpose_abc, truncate_to_bars
+from cairn.services.abc_utils import (
+    _signature_for,
+    build_abc,
+    parse_key,
+    shortest_semitones_to_root,
+    transpose_abc,
+    truncate_to_bars,
+)
 
 MUSIC = "|:DEFG ABcd|efge dcAG:|\n"
 
@@ -477,3 +484,30 @@ def test_transpose_round_trip_up_then_down_restores_key_and_notes() -> None:
     back = transpose_abc(up, -3)
     assert "K:D\n" in back
     assert back.splitlines()[-1] == abc.splitlines()[-1]
+
+
+# ── shortest_semitones_to_root (#122) ───────────────────────────────────────────
+
+
+def test_shortest_semitones_to_root_picks_down_when_shorter() -> None:
+    assert shortest_semitones_to_root(KeyRoot.E, KeyRoot.D) == -2
+
+
+def test_shortest_semitones_to_root_picks_up_when_shorter() -> None:
+    assert shortest_semitones_to_root(KeyRoot.D, KeyRoot.E) == 2
+
+
+def test_shortest_semitones_to_root_tritone_defaults_up() -> None:
+    assert shortest_semitones_to_root(KeyRoot.C, KeyRoot.F_sharp) == 6
+
+
+def test_shortest_semitones_to_root_same_root_is_zero() -> None:
+    assert shortest_semitones_to_root(KeyRoot.C, KeyRoot.C) == 0
+
+
+def test_shortest_semitones_to_root_single_step_down() -> None:
+    assert shortest_semitones_to_root(KeyRoot.C, KeyRoot.B) == -1
+
+
+def test_shortest_semitones_to_root_single_step_up() -> None:
+    assert shortest_semitones_to_root(KeyRoot.B, KeyRoot.C) == 1

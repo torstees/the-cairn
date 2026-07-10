@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.dependencies import get_db
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
-from cairn.services.abc_utils import build_abc, transpose_abc
+from cairn.services.abc_utils import KEY_ROOT_MAP, build_abc, shortest_semitones_to_root, transpose_abc
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
 from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
 from cairn.services.tune_sets import list_sets_for_tune
@@ -106,7 +106,8 @@ async def tune_detail(
     box_id: int | None = Query(default=None),
     list_id: int | None = Query(default=None),
     from_: str | None = Query(default=None, alias="from"),
-    transpose: int = Query(default=0),
+    key: str | None = Query(default=None),
+    octave: int = Query(default=0),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
@@ -117,9 +118,17 @@ async def tune_detail(
     # nothing more specific (list, then box) is already provided.
     from_progress = from_ == "progress"
 
-    # View-time only (#122) — never persisted, and clamped to a range a
-    # simple-system instrument could plausibly still play in.
-    transpose = max(-12, min(12, transpose))
+    # View-time only (#122) — never persisted. `key` picks a target root (the
+    # tune's own mode always carries over — transpose_abc() never changes it)
+    # and is converted to the shortest-route semitone shift; `octave` is a
+    # separate +/-1-octave nudge on top of that (there's rarely a need for
+    # more range than that in trad tunes), since an exact tritone target is a
+    # genuine tie in pitch-class terms but still lands a full octave apart
+    # depending on direction — see shortest_semitones_to_root().
+    target_root = KEY_ROOT_MAP.get(key.lower()) if key else None
+    key_shift = shortest_semitones_to_root(tune.key_root, target_root) if target_root else 0
+    octave = max(-1, min(1, octave))
+    transpose = key_shift + octave * 12
 
     box = None
     entry = None
@@ -150,9 +159,9 @@ async def tune_detail(
     active_list = await get_active_list(db, _STUB_USER_ID)
     member_sets = await list_sets_for_tune(db, tune_id)
 
-    # Base query string (everything except transpose) so the transpose
-    # +/-/reset controls can change just that one param without dropping the
-    # box/list/breadcrumb context (#122).
+    # Base query string (box/list/breadcrumb context only) so the key picker
+    # and octave controls can each change just their own param(s) without
+    # dropping the others (#122).
     other_params = []
     if box_id is not None:
         other_params.append(f"box_id={box_id}")
@@ -160,7 +169,17 @@ async def tune_detail(
         other_params.append(f"list_id={list_id}")
     if from_:
         other_params.append(f"from={from_}")
-    transpose_qs_prefix = "&".join(other_params) + ("&" if other_params else "")
+    base_qs_prefix = "&".join(other_params) + ("&" if other_params else "")
+
+    selected_key = target_root.value if target_root else tune.key_root.value
+    key_param = f"key={selected_key}&" if key_shift else ""
+    key_options = [
+        (root.value, f"{root.label} {tune.key_mode.label}", f"?{base_qs_prefix}key={root.value}&octave={octave}")
+        for root in _KEY_ROOTS
+    ]
+    octave_up_href = f"?{base_qs_prefix}{key_param}octave={0 if octave == 1 else 1}"
+    octave_down_href = f"?{base_qs_prefix}{key_param}octave={0 if octave == -1 else -1}"
+    reset_href = f"?{base_qs_prefix}octave=0" if (key_shift or octave) else None
 
     return templates.TemplateResponse(
         request,
@@ -178,8 +197,12 @@ async def tune_detail(
             "linked_list": linked_list,
             "list_id": list_id,
             "from_progress": from_progress,
-            "transpose": transpose,
-            "transpose_qs_prefix": transpose_qs_prefix,
+            "selected_key": selected_key,
+            "key_options": key_options,
+            "octave": octave,
+            "octave_up_href": octave_up_href,
+            "octave_down_href": octave_down_href,
+            "reset_href": reset_href,
             "min_tempo": min_tempo,
             "tempo_records": tempo_records,
             "last_tempo": tempo_records[-1].tempo if tempo_records else None,
