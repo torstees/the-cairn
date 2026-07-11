@@ -2,7 +2,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Instrument, Tune, TuneAlias, TuneBox, TuneBoxEntry, TuneBoxInstrument, TuneSetting
+from cairn.models import (
+    Instrument,
+    KeyRoot,
+    Tune,
+    TuneAlias,
+    TuneBox,
+    TuneBoxEntry,
+    TuneBoxInstrument,
+    TuneListEntry,
+    TuneSetting,
+)
 
 
 async def create_box(
@@ -96,6 +106,64 @@ async def get_display_names_for_tunes(db: AsyncSession, box_id: int, tune_ids: s
         .where(TuneBoxEntry.box_id == box_id, TuneBoxEntry.tune_id.in_(tune_ids))
     )
     return dict(rows.all())
+
+
+async def set_transpose(
+    db: AsyncSession,
+    box_id: int,
+    tune_id: int,
+    key_root: KeyRoot | None,
+    octave: int,
+) -> TuneBoxEntry:
+    result = await db.execute(
+        select(TuneBoxEntry).where(
+            TuneBoxEntry.box_id == box_id,
+            TuneBoxEntry.tune_id == tune_id,
+        )
+    )
+    entry = result.scalar_one()
+    entry.transpose_key_root = key_root
+    entry.transpose_octave = octave
+    await db.commit()
+    await db.refresh(entry)
+    return entry
+
+
+async def get_transposes_for_tunes(
+    db: AsyncSession,
+    box_id: int,
+    tune_ids: set[int],
+    list_id: int | None = None,
+) -> dict[int, tuple[KeyRoot | None, int]]:
+    """tune_id -> (transpose_key_root, transpose_octave) for entries with a transpose set (#158).
+
+    Box entries are the base; when list_id is given, that list's own entries
+    override the box's per tune, matching resolve_display_context()'s
+    existing list-overrides-box precedence for setting/display_name.
+    """
+    if not tune_ids:
+        return {}
+    result: dict[int, tuple[KeyRoot | None, int]] = {}
+    box_rows = await db.execute(
+        select(TuneBoxEntry.tune_id, TuneBoxEntry.transpose_key_root, TuneBoxEntry.transpose_octave).where(
+            TuneBoxEntry.box_id == box_id, TuneBoxEntry.tune_id.in_(tune_ids)
+        )
+    )
+    for tune_id, key_root, octave in box_rows.all():
+        if key_root is not None or octave:
+            result[tune_id] = (key_root, octave)
+
+    if list_id is not None:
+        list_rows = await db.execute(
+            select(TuneListEntry.tune_id, TuneListEntry.transpose_key_root, TuneListEntry.transpose_octave).where(
+                TuneListEntry.list_id == list_id, TuneListEntry.tune_id.in_(tune_ids)
+            )
+        )
+        for tune_id, key_root, octave in list_rows.all():
+            if key_root is not None or octave:
+                result[tune_id] = (key_root, octave)
+
+    return result
 
 
 async def remove_tune(

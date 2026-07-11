@@ -1611,6 +1611,39 @@
     });
   }
 
+  // ── Transpose popup live preview (#158) ─────────────────────────────────────
+  // The popup's key/octave <select>s re-render the whole popup over HTMX on
+  // change, each time embedding the pending (unsaved) transposed ABC in a
+  // <template>; re-render it into the adjacent canvas div on every swap, same
+  // technique as the hover preview above. A no-op when the popup isn't open —
+  // this listener is global so it doesn't need separate wiring per swap target.
+  //
+  // Deliberately omits PREVIEW_OPTS' `responsive: "resize"` — that mode's
+  // ResizeObserver-based sizing gets confused when it's asked to re-render
+  // into a div that HTMX has replaced (via innerHTML swap) since the last
+  // render: the second render falls back to full window width instead of
+  // the container's, blowing the preview out past the modal and over the
+  // Save button. Uses a fixed `staffwidth` instead — that produces a properly
+  // viewBox-scaled SVG (so it still shrinks to fit via the CSS max-width rule
+  // in _transpose_popup.html) without any DOM measurement, sidestepping the
+  // whole class of bug; 360 comfortably fits the modal's ~400px content width.
+  var TRANSPOSE_PREVIEW_OPTS = {
+    add_classes: true,
+    staffwidth: 360,
+    wrap: { preferredMeasuresPerLine: 4, minSpacing: 1.5, maxSpacing: 2.5 },
+  };
+
+  function renderTransposePreview() {
+    var tmpl = document.getElementById("transpose-preview-abc");
+    var canvas = document.getElementById("transpose-preview-canvas");
+    if (!tmpl || !canvas) return;
+    try {
+      ABCJS.renderAbc(canvas.id, tmpl.content.textContent, TRANSPOSE_PREVIEW_OPTS);
+    } catch (e) {
+      // Malformed/unrenderable ABC — leave the canvas empty rather than crash.
+    }
+  }
+
   // ── init ───────────────────────────────────────────────────────────────────
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -1622,6 +1655,9 @@
     document.addEventListener("htmx:afterSwap", function (e) {
       renderMarkdownAbcBlocks(e.detail.target);
     });
+
+    renderTransposePreview();
+    document.addEventListener("htmx:afterSwap", renderTransposePreview);
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { clearCairnModal(); closeTheSessionWizard(); }

@@ -70,6 +70,18 @@
     <span class="text-xs text-stone-400">—</span>
     {% endif %}
   </td>
+  <td class="py-3 px-4">
+    <button hx-get="/lists/{{ list_id }}/tunes/{{ entry.tune_id }}/transpose"
+            hx-target="#list-transpose-modal"
+            hx-swap="innerHTML"
+            class="text-xs border border-stone-200 rounded px-2 py-1 text-stone-500 hover:bg-stone-50 whitespace-nowrap">
+      {% if entry.transpose_key_root or entry.transpose_octave %}
+      {{ entry.transpose_key_root.label if entry.transpose_key_root else "Same key" }} {{ entry.tune.key_mode.label if entry.transpose_key_root }}{% if entry.transpose_octave == 1 %}, +8ve{% elif entry.transpose_octave == -1 %}, -8ve{% endif %}
+      {% else %}
+      Transpose
+      {% endif %}
+    </button>
+  </td>
   <td class="py-3 px-4 text-right">
     <button @click="remove()"
             class="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-50">

@@ -5,7 +5,7 @@ from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, Role, T
 from cairn.routers.lists import _STUB_USER_ID
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.boxes import create_box
-from cairn.services.lists import add_tune_to_list, create_list, update_list_entry_setting
+from cairn.services.lists import add_tune_to_list, create_list, update_list_entry_setting, update_list_entry_transpose
 from cairn.services.tunes import add_alias, create_setting, create_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
@@ -189,3 +189,95 @@ async def test_list_preview_uses_preferred_setting_not_core(client: AsyncClient,
     preview = resp.text.split(marker, 1)[1].split("</template>", 1)[0]
     assert "GABc defg" in preview
     assert "DEFA BAFA" not in preview
+
+
+# ── transpose popup (#158) ───────────────────────────────────────────────────
+
+
+async def test_list_row_shows_transpose_button_default_label(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert resp.status_code == 200
+    assert "Transpose" in resp.text
+
+
+async def test_list_transpose_popup_key_options_exclude_tunes_own_key(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    resp = await client.get(f"/lists/{practice_list.id}/tunes/{tune.id}/transpose")
+    assert resp.status_code == 200
+    assert resp.text.count("D Major") == 1
+
+
+async def test_list_transpose_popup_get_seeds_from_saved_entry(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    await update_list_entry_transpose(db, practice_list.id, tune.id, KeyRoot.E, 1)
+
+    resp = await client.get(f"/lists/{practice_list.id}/tunes/{tune.id}/transpose")
+    assert resp.status_code == 200
+    assert "cairn-modal-backdrop" in resp.text
+    assert '<option value="E" selected>' in resp.text
+    assert '<input type="hidden" name="octave" value="1">' in resp.text
+
+
+async def test_list_transpose_popup_get_reflects_pending_query_params(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    resp = await client.get(
+        f"/lists/{practice_list.id}/tunes/{tune.id}/transpose", params={"key_root": "G", "octave": "-1"}
+    )
+    assert resp.status_code == 200
+    assert '<option value="G" selected>' in resp.text
+    assert '<input type="hidden" name="octave" value="-1">' in resp.text
+
+
+async def test_list_transpose_popup_404_for_missing_entry(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, _tune = await _seed(db)
+    resp = await client.get(f"/lists/{practice_list.id}/tunes/9999/transpose")
+    assert resp.status_code == 404
+
+
+async def test_list_set_transpose_updates_row_and_closes_modal(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    resp = await client.post(
+        f"/lists/{practice_list.id}/tunes/{tune.id}/transpose", data={"key_root": "E", "octave": "1"}
+    )
+    assert resp.status_code == 200
+    assert "E" in resp.text
+    assert "+8ve" in resp.text
+    assert '<div id="list-transpose-modal" hx-swap-oob="true"></div>' in resp.text
+
+
+async def test_list_set_transpose_persists(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    await client.post(f"/lists/{practice_list.id}/tunes/{tune.id}/transpose", data={"key_root": "E", "octave": "1"})
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert resp.status_code == 200
+    assert "+8ve" in resp.text
+
+
+async def test_list_set_transpose_can_clear(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    await update_list_entry_transpose(db, practice_list.id, tune.id, KeyRoot.E, 1)
+
+    resp = await client.post(
+        f"/lists/{practice_list.id}/tunes/{tune.id}/transpose", data={"key_root": "", "octave": "0"}
+    )
+    assert resp.status_code == 200
+    assert "+8ve" not in resp.text
+
+
+async def test_list_set_transpose_404_for_missing_entry(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, _tune = await _seed(db)
+    resp = await client.post(f"/lists/{practice_list.id}/tunes/9999/transpose", data={"key_root": "E", "octave": "0"})
+    assert resp.status_code == 404
+
+
+async def test_list_hover_preview_reflects_saved_transpose(client: AsyncClient, db: AsyncSession) -> None:
+    practice_list, tune = await _seed(db)
+    await update_list_entry_transpose(db, practice_list.id, tune.id, KeyRoot.E, 0)
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert resp.status_code == 200
+    marker = f'<template id="tune-abc-preview-{tune.id}">'
+    preview = resp.text.split(marker, 1)[1].split("</template>", 1)[0]
+    assert "K:E" in preview

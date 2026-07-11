@@ -5,7 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import PracticeList, PracticeListType, ProgressStatus, Tune, TuneListEntry
+from cairn.models import KeyRoot, PracticeList, PracticeListType, ProgressStatus, Tune, TuneListEntry
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +190,26 @@ async def update_list_entry_display_alias(
     if entry is None:
         return None
     entry.display_alias_id = display_alias_id
+    db.add(entry)
+    await db.commit()
+    return await get_list_entry(db, list_id, tune_id)
+
+
+async def update_list_entry_transpose(
+    db: AsyncSession,
+    list_id: int,
+    tune_id: int,
+    key_root: KeyRoot | None,
+    octave: int,
+) -> TuneListEntry | None:
+    result = await db.execute(
+        select(TuneListEntry).where(TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id)
+    )
+    entry = result.scalar_one_or_none()
+    if entry is None:
+        return None
+    entry.transpose_key_root = key_root
+    entry.transpose_octave = octave
     db.add(entry)
     await db.commit()
     return await get_list_entry(db, list_id, tune_id)

@@ -14,6 +14,7 @@ from cairn.services.lists import (
     get_list_entry,
     remove_tune_from_list,
     update_list_entry_display_alias,
+    update_list_entry_transpose,
 )
 from cairn.services.tunes import add_alias, create_tune, get_tune
 
@@ -217,6 +218,45 @@ async def test_update_list_entry_display_alias_missing_entry_returns_none(db: As
     pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
     tune = await _tune(db)
     result = await update_list_entry_display_alias(db, pl.id, tune.id, None)
+    assert result is None
+
+
+async def test_update_list_entry_transpose(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    await add_tune_to_list(db, pl.id, tune.id)
+
+    updated = await update_list_entry_transpose(db, pl.id, tune.id, KeyRoot.E, 1)
+    assert updated is not None
+    assert updated.transpose_key_root == KeyRoot.E
+    assert updated.transpose_octave == 1
+
+    reloaded = await get_list_entry(db, pl.id, tune.id)
+    assert reloaded.transpose_key_root == KeyRoot.E
+    assert reloaded.transpose_octave == 1
+
+
+async def test_update_list_entry_transpose_can_clear(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    await add_tune_to_list(db, pl.id, tune.id)
+    await update_list_entry_transpose(db, pl.id, tune.id, KeyRoot.E, 1)
+
+    cleared = await update_list_entry_transpose(db, pl.id, tune.id, None, 0)
+    assert cleared.transpose_key_root is None
+    assert cleared.transpose_octave == 0
+
+
+async def test_update_list_entry_transpose_missing_entry_returns_none(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    result = await update_list_entry_transpose(db, pl.id, tune.id, KeyRoot.E, 0)
     assert result is None
 
 

@@ -14,8 +14,14 @@ from cairn.models import (
 )
 from cairn.routers.practice import _STUB_USER_ID
 from cairn.schemas import TuneCreate
-from cairn.services.boxes import add_tune, create_box, set_display_alias
-from cairn.services.lists import create_list, get_active_list
+from cairn.services.boxes import add_tune, create_box, set_display_alias, set_transpose
+from cairn.services.lists import (
+    activate_list,
+    add_tune_to_list,
+    create_list,
+    get_active_list,
+    update_list_entry_transpose,
+)
 from cairn.services.session_plan import build_session
 from cairn.services.tunes import add_alias, create_tune
 
@@ -105,6 +111,33 @@ async def test_session_detail_shows_box_display_alias(client: AsyncClient, db: A
     assert '"title": "Sunrise Reel"' in resp.text
     assert '"title": "The Morning Dew"' not in resp.text
     assert "T:Sunrise Reel" in resp.text
+
+
+async def test_session_detail_shows_box_transpose(client: AsyncClient, db: AsyncSession) -> None:
+    _, box, tune, _ = await _seed(db)
+    await set_transpose(db, box.id, tune.id, KeyRoot.E, 0)
+
+    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    resp = await client.get(f"/practice/session/{session.id}")
+    assert resp.status_code == 200
+    assert '"keyLabel": "E Major"' in resp.text
+    assert "K:E" in resp.text
+
+
+async def test_session_detail_list_transpose_overrides_box_transpose(client: AsyncClient, db: AsyncSession) -> None:
+    _, box, tune, _ = await _seed(db)
+    await set_transpose(db, box.id, tune.id, KeyRoot.E, 0)
+
+    practice_list = await create_list(db, _STUB_USER_ID, box.id, "Session List", PracticeListType.repertoire)
+    await add_tune_to_list(db, practice_list.id, tune.id)
+    await update_list_entry_transpose(db, practice_list.id, tune.id, KeyRoot.G, 0)
+    await activate_list(db, _STUB_USER_ID, practice_list.id)
+
+    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    resp = await client.get(f"/practice/session/{session.id}")
+    assert resp.status_code == 200
+    assert '"keyLabel": "G Major"' in resp.text
+    assert "K:G" in resp.text
 
 
 async def test_item_complete_returns_done_indicator(client: AsyncClient, db: AsyncSession) -> None:

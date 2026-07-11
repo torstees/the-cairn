@@ -349,6 +349,8 @@ class TuneBoxEntry(TimestampMixin, Base):
     tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
     setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
     display_alias_id: Mapped[int | None] = mapped_column(ForeignKey("tune_aliases.id"), nullable=True)
+    transpose_key_root: Mapped[KeyRoot | None] = mapped_column(Enum(KeyRoot), nullable=True)
+    transpose_octave: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
     __table_args__ = (UniqueConstraint("box_id", "tune_id", name="uq_tune_box_entry_box_tune"),)
 
@@ -407,6 +409,8 @@ class TuneListEntry(TimestampMixin, Base):
     tune_id: Mapped[int] = mapped_column(ForeignKey("tunes.id"), nullable=False)
     setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
     display_alias_id: Mapped[int | None] = mapped_column(ForeignKey("tune_aliases.id"), nullable=True)
+    transpose_key_root: Mapped[KeyRoot | None] = mapped_column(Enum(KeyRoot), nullable=True)
+    transpose_octave: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
     __table_args__ = (UniqueConstraint("tune_id", "list_id", name="uq_tune_list_entry_tune_list"),)
 

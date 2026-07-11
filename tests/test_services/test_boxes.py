@@ -9,10 +9,12 @@ from cairn.services.boxes import (
     get_box,
     get_box_entry,
     get_display_names_for_tunes,
+    get_transposes_for_tunes,
     list_boxes,
     remove_tune,
     set_display_alias,
     set_preferred_setting,
+    set_transpose,
 )
 from cairn.services.tunes import add_alias, create_tune
 
@@ -233,6 +235,100 @@ async def test_get_display_names_for_tunes_empty_tune_ids(db: AsyncSession) -> N
     u = await _user(db)
     box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
     assert await get_display_names_for_tunes(db, box.id, set()) == {}
+
+
+# ── transpose (#158) ─────────────────────────────────────────────────────────
+
+
+async def test_set_transpose_updates_entry(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+    entry = await add_tune(db, box.id, t.id)
+    assert entry.transpose_key_root is None
+    assert entry.transpose_octave == 0
+
+    updated = await set_transpose(db, box.id, t.id, KeyRoot.E, 1)
+    assert updated.transpose_key_root == KeyRoot.E
+    assert updated.transpose_octave == 1
+    assert updated.id == entry.id
+
+
+async def test_set_transpose_can_clear_back_to_default(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+    await add_tune(db, box.id, t.id)
+    await set_transpose(db, box.id, t.id, KeyRoot.E, 1)
+
+    cleared = await set_transpose(db, box.id, t.id, None, 0)
+    assert cleared.transpose_key_root is None
+    assert cleared.transpose_octave == 0
+
+
+async def test_get_transposes_for_tunes_only_includes_entries_with_transpose_set(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t1 = await _tune(db, "Tune A")
+    t2 = await _tune(db, "Tune B")
+    await add_tune(db, box.id, t1.id)
+    await add_tune(db, box.id, t2.id)
+    await set_transpose(db, box.id, t1.id, KeyRoot.E, 0)
+
+    transposes = await get_transposes_for_tunes(db, box.id, {t1.id, t2.id})
+    assert transposes == {t1.id: (KeyRoot.E, 0)}
+
+
+async def test_get_transposes_for_tunes_octave_only_counts_as_set(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+    await add_tune(db, box.id, t.id)
+    await set_transpose(db, box.id, t.id, None, 1)
+
+    transposes = await get_transposes_for_tunes(db, box.id, {t.id})
+    assert transposes == {t.id: (None, 1)}
+
+
+async def test_get_transposes_for_tunes_empty_tune_ids(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    assert await get_transposes_for_tunes(db, box.id, set()) == {}
+
+
+async def test_get_transposes_for_tunes_list_overrides_box(db: AsyncSession) -> None:
+    from cairn.models import PracticeListType
+    from cairn.services.lists import add_tune_to_list, create_list, update_list_entry_transpose
+
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+    await add_tune(db, box.id, t.id)
+    await set_transpose(db, box.id, t.id, KeyRoot.E, 0)
+
+    practice_list = await create_list(db, u.id, box.id, "Session List", PracticeListType.repertoire)
+    await add_tune_to_list(db, practice_list.id, t.id)
+    await update_list_entry_transpose(db, practice_list.id, t.id, KeyRoot.G, 1)
+
+    transposes = await get_transposes_for_tunes(db, box.id, {t.id}, list_id=practice_list.id)
+    assert transposes == {t.id: (KeyRoot.G, 1)}
+
+
+async def test_get_transposes_for_tunes_list_entry_without_transpose_leaves_box_value(db: AsyncSession) -> None:
+    from cairn.models import PracticeListType
+    from cairn.services.lists import add_tune_to_list, create_list
+
+    u = await _user(db)
+    box = await create_box(db, u.id, "Fiddle Box", [Instrument.fiddle])
+    t = await _tune(db)
+    await add_tune(db, box.id, t.id)
+    await set_transpose(db, box.id, t.id, KeyRoot.E, 0)
+
+    practice_list = await create_list(db, u.id, box.id, "Session List", PracticeListType.repertoire)
+    await add_tune_to_list(db, practice_list.id, t.id)
+
+    transposes = await get_transposes_for_tunes(db, box.id, {t.id}, list_id=practice_list.id)
+    assert transposes == {t.id: (KeyRoot.E, 0)}
 
 
 # ── remove_tune ───────────────────────────────────────────────────────────────
