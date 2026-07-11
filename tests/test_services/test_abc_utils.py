@@ -1,5 +1,12 @@
 from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneSetting, TuneType
-from cairn.services.abc_utils import build_abc, parse_key, truncate_to_bars
+from cairn.services.abc_utils import (
+    _signature_for,
+    build_abc,
+    parse_key,
+    shortest_semitones_to_root,
+    transpose_abc,
+    truncate_to_bars,
+)
 
 MUSIC = "|:DEFG ABcd|efge dcAG:|\n"
 
@@ -335,3 +342,172 @@ def test_parse_key_unrecognized_mode_returns_none() -> None:
 
 def test_parse_key_unparseable_returns_none() -> None:
     assert parse_key("nonsense") is None
+
+
+# ── transpose_abc (#122) ───────────────────────────────────────────────────────
+
+
+def _abc(key: str, body: str, extra_headers: str = "") -> str:
+    return f"X:1\nT:Test\nL:1/8\n{extra_headers}K:{key}\n{body}\n"
+
+
+def test_transpose_zero_is_identity() -> None:
+    abc = _abc("D", "DEFG ABcd")
+    assert transpose_abc(abc, 0) == abc
+
+
+def test_transpose_updates_key_header() -> None:
+    result = transpose_abc(_abc("D", "DEFG"), 2)
+    assert "K:E\n" in result
+
+
+def test_transpose_shifts_note_letters_up_a_tone() -> None:
+    result = transpose_abc(_abc("D", "DEFG ABcd"), 2)
+    body = result.splitlines()[-1]
+    assert body == "EFGA Bcde"
+
+
+def test_transpose_shifts_note_letters_down() -> None:
+    result = transpose_abc(_abc("D", "DEFG ABcd"), -2)
+    body = result.splitlines()[-1]
+    assert body == "CDEF GABc"
+
+
+def test_transpose_adds_z_header_when_absent() -> None:
+    result = transpose_abc(_abc("D", "DEFG"), 1)
+    lines = result.splitlines()
+    z_lines = [l for l in lines if l.startswith("Z:")]
+    assert len(z_lines) == 1
+    assert "transposed +1 semitone)" in z_lines[0]
+
+
+def test_transpose_appends_to_existing_z_header() -> None:
+    result = transpose_abc(_abc("D", "DEFG", extra_headers="Z:Collected from Joe Blow\n"), 1)
+    lines = result.splitlines()
+    z_lines = [l for l in lines if l.startswith("Z:")]
+    assert len(z_lines) == 1
+    assert z_lines[0].startswith("Z:Collected from Joe Blow")
+    assert "transposed +1 semitone)" in z_lines[0]
+
+
+def test_transpose_negative_note_says_semitones_plural() -> None:
+    result = transpose_abc(_abc("D", "DEFG"), -3)
+    assert "transposed -3 semitones)" in result
+
+
+def test_transpose_octave_up_preserves_letters_exactly() -> None:
+    body = "B=c|:B2EF G2AG|F2EF D2B,A,|B,EEF GABc|d2cB ABcd:|"
+    result = transpose_abc(_abc("D", body), 12)
+    result_body = result.splitlines()[-1]
+    # Every letter should be one case-step higher (or gain an apostrophe/lose
+    # a comma) but the underlying note-name sequence must be identical.
+    assert result_body.replace("'", "").lower().replace(",", "") == body.lower().replace(",", "").replace("'", "")
+
+
+def test_transpose_natural_preferred_over_enharmonic_sharp() -> None:
+    # Bb in C major, up a fifth (+7) lands on pitch class 5 in G major, which
+    # has two valid single-accidental spellings: "=F" (cancelling G major's
+    # own F# signature) or the enharmonic "^E". "=F" is the far more expected
+    # one, since it's the same letter the source note was already using.
+    result = transpose_abc(_abc("C", "_BCDE"), 7)
+    body = result.splitlines()[-1]
+    assert "=f" in body
+    assert "^e" not in body
+
+
+def test_transpose_bar_scoped_accidental_carries_within_bar() -> None:
+    # An implicit repeat of a flatted note within the same bar (no explicit
+    # accidental the second time) must carry the same flat as the first.
+    result = transpose_abc(_abc("C", "_BCDB"), 7)
+    body = result.splitlines()[-1]
+    assert body.count("=f") == 2
+
+
+def test_transpose_accidental_does_not_carry_across_bar_line() -> None:
+    # The same note in a new bar, with no explicit accidental, must fall back
+    # to the source key's own signature default rather than the previous
+    # bar's carried flat.
+    result = transpose_abc(_abc("C", "_BCD|B"), 7)
+    bar1, bar2 = result.splitlines()[-1].split("|")
+    assert "=f" in bar1
+    assert bar2 == "f"
+
+
+def test_transpose_chord_symbol_untouched() -> None:
+    result = transpose_abc(_abc("D", '"G"DEFG "Em"ABcd'), 2)
+    body = result.splitlines()[-1]
+    assert '"G"' in body
+    assert '"Em"' in body
+
+
+def test_transpose_bang_decoration_untouched() -> None:
+    result = transpose_abc(_abc("D", "!fermata!DEFG"), 2)
+    body = result.splitlines()[-1]
+    assert "!fermata!" in body
+
+
+def test_transpose_preserves_dorian_mode() -> None:
+    result = transpose_abc(_abc("Ador", "ABcd"), 2)
+    assert "K:Bdor\n" in result
+
+
+def test_transpose_preserves_minor_mode() -> None:
+    result = transpose_abc(_abc("Am", "ABcd"), 2)
+    assert "K:Bm\n" in result
+
+
+def test_transpose_no_key_header_returns_unchanged() -> None:
+    abc = "X:1\nT:No Key\nL:1/8\nDEFG\n"
+    assert transpose_abc(abc, 2) == abc
+
+
+def test_transpose_tritone_from_c_major_uses_sharp_bias() -> None:
+    result = transpose_abc(_abc("C", "C"), 6)
+    assert "K:F#\n" in result
+
+
+def test_signature_for_modes_share_relative_major() -> None:
+    # D dorian, A minor, and G mixolydian are all "white notes" (0 sharps/flats),
+    # matching C major's signature.
+    assert _signature_for("D", "dorian") == 0
+    assert _signature_for("A", "minor") == 0
+    assert _signature_for("G", "mixolydian") == 0
+    assert _signature_for("F", "lydian") == 0
+
+
+def test_transpose_round_trip_up_then_down_restores_key_and_notes() -> None:
+    # Transposing up then back down by the same amount must restore the
+    # original key and (for a body with no accidentals to complicate things)
+    # the exact note sequence.
+    abc = _abc("D", "DEFG ABcd|efga bagf")
+    up = transpose_abc(abc, 3)
+    back = transpose_abc(up, -3)
+    assert "K:D\n" in back
+    assert back.splitlines()[-1] == abc.splitlines()[-1]
+
+
+# ── shortest_semitones_to_root (#122) ───────────────────────────────────────────
+
+
+def test_shortest_semitones_to_root_picks_down_when_shorter() -> None:
+    assert shortest_semitones_to_root(KeyRoot.E, KeyRoot.D) == -2
+
+
+def test_shortest_semitones_to_root_picks_up_when_shorter() -> None:
+    assert shortest_semitones_to_root(KeyRoot.D, KeyRoot.E) == 2
+
+
+def test_shortest_semitones_to_root_tritone_defaults_up() -> None:
+    assert shortest_semitones_to_root(KeyRoot.C, KeyRoot.F_sharp) == 6
+
+
+def test_shortest_semitones_to_root_same_root_is_zero() -> None:
+    assert shortest_semitones_to_root(KeyRoot.C, KeyRoot.C) == 0
+
+
+def test_shortest_semitones_to_root_single_step_down() -> None:
+    assert shortest_semitones_to_root(KeyRoot.C, KeyRoot.B) == -1
+
+
+def test_shortest_semitones_to_root_single_step_up() -> None:
+    assert shortest_semitones_to_root(KeyRoot.B, KeyRoot.C) == 1

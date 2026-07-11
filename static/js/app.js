@@ -211,6 +211,37 @@
     }
   }
 
+  // Anchors the two octave-nudge hitboxes (#122) to the clef of the first
+  // rendered staff line, since ABCJS's title/rhythm text block above the
+  // staff varies in height per tune — a fixed top offset would drift off
+  // the staff for tunes with e.g. a composer line. "Down" only widens
+  // leftward from the clef (toward the always note-free margin before it);
+  // "up" widens generously both ways since a note high enough to collide is
+  // effectively never used in practice (see template comment).
+  function positionOctaveOverlays() {
+    var upLink = document.getElementById("octave-up-link");
+    var downLink = document.getElementById("octave-down-link");
+    if (!upLink || !downLink) return;
+    var container = upLink.offsetParent;
+    var clef = document.querySelector("#abc-render .abcjs-clef");
+    if (!container || !clef) return;
+    var containerBox = container.getBoundingClientRect();
+    var clefBox = clef.getBoundingClientRect();
+    var left = clefBox.left - containerBox.left;
+    var top = clefBox.top - containerBox.top;
+    var bottom = clefBox.bottom - containerBox.top;
+
+    upLink.style.left = (left - 60) + "px";
+    upLink.style.top = (top - 22) + "px";
+    upLink.style.width = "220px";
+    upLink.style.height = "24px";
+
+    downLink.style.left = (left - 60) + "px";
+    downLink.style.top = bottom + "px";
+    downLink.style.width = "60px";
+    downLink.style.height = "24px";
+  }
+
   function render(abcString) {
     currentAbcString = abcString;
     updateDroneDisplay();
@@ -222,6 +253,7 @@
     // Global flag: a combined set ABC concatenates one Q: line per member tune.
     var displayAbc = abcString.replace(/^Q:[^\n]*\n?/gm, "");
     visualObj = ABCJS.renderAbc("abc-render", displayAbc, RENDER_OPTS);
+    positionOctaveOverlays();
     if (visualObj && visualObj[0]) {
       charMap = buildCharMap(visualObj[0], "abc-render");
       // ABCJS responsive:"resize" fires a ResizeObserver callback after layout,
@@ -229,6 +261,7 @@
       // the next paint to capture the final DOM elements.
       rebuildMapTimer = setTimeout(function () {
         charMap = buildCharMap(visualObj[0], "abc-render");
+        positionOctaveOverlays();
         rebuildMapTimer = null;
       }, 150);
     }
