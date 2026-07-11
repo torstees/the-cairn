@@ -5,6 +5,7 @@ from cairn.services.abc_utils import (
     parse_key,
     shortest_semitones_to_root,
     transpose_abc,
+    transpose_semitones_for,
     truncate_to_bars,
 )
 
@@ -511,3 +512,28 @@ def test_shortest_semitones_to_root_single_step_down() -> None:
 
 def test_shortest_semitones_to_root_single_step_up() -> None:
     assert shortest_semitones_to_root(KeyRoot.B, KeyRoot.C) == 1
+
+
+# ── transpose_semitones_for (#158) ──────────────────────────────────────────────
+
+
+def test_transpose_semitones_for_no_key_no_octave_is_zero() -> None:
+    assert transpose_semitones_for(KeyRoot.D, None, 0) == 0
+
+
+def test_transpose_semitones_for_key_only() -> None:
+    assert transpose_semitones_for(KeyRoot.D, KeyRoot.E, 0) == 2
+
+
+def test_transpose_semitones_for_octave_only() -> None:
+    assert transpose_semitones_for(KeyRoot.D, None, 1) == 12
+    assert transpose_semitones_for(KeyRoot.D, None, -1) == -12
+
+
+def test_transpose_semitones_for_key_and_octave_combine() -> None:
+    assert transpose_semitones_for(KeyRoot.D, KeyRoot.E, 1) == 14
+
+
+def test_transpose_semitones_for_octave_clamped() -> None:
+    assert transpose_semitones_for(KeyRoot.D, None, 5) == 12
+    assert transpose_semitones_for(KeyRoot.D, None, -5) == -12

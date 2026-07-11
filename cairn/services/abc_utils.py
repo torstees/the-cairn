@@ -89,6 +89,15 @@ _PC_TO_ROOT: dict[int, str] = {
 }  # fmt: skip
 
 
+def transpose_semitones_for(tune_key_root: KeyRoot, target_key_root: KeyRoot | None, octave: int) -> int:
+    """Combine a target-key shift (via shortest_semitones_to_root(), or 0 if
+    target_key_root is None) with a +/-1-octave nudge, clamped the same way
+    the view-time transpose control (#159) clamps its own `octave` query
+    param — shared so callers never re-derive this arithmetic themselves."""
+    key_shift = shortest_semitones_to_root(tune_key_root, target_key_root) if target_key_root else 0
+    return key_shift + max(-1, min(1, octave)) * 12
+
+
 def shortest_semitones_to_root(current_root: KeyRoot, target_root: KeyRoot) -> int:
     """Signed semitone count from current_root to target_root, choosing
     whichever direction (up or down) has the smaller absolute distance —

@@ -1,13 +1,14 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import Instrument, TuneType
+from cairn.models import Instrument, KeyRoot, TuneType
+from cairn.services.abc_utils import transpose_abc, transpose_semitones_for
 from cairn.services.boxes import (
     add_tune,
     create_box,
@@ -18,6 +19,7 @@ from cairn.services.boxes import (
     remove_tune,
     set_display_alias,
     set_preferred_setting,
+    set_transpose,
 )
 from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting
 from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes, preview_abc
@@ -30,21 +32,48 @@ router = APIRouter(prefix="/boxes", tags=["boxes"])
 _STUB_USER_ID = 1
 _INSTRUMENTS = list(Instrument)
 _TUNE_TYPES = list(TuneType)
+_KEY_ROOTS = list(KeyRoot)
 _FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FAMILIES.items() for t in types}
+
+
+def _transpose_popup_ctx(entry, key_root: KeyRoot | None, octave: int, action_url: str, modal_id: str) -> dict:
+    tune = entry.tune
+    display_name = entry.display_alias.name if entry.display_alias else None
+    preview = preview_abc(tune, entry.setting, display_name=display_name)
+    semitones = transpose_semitones_for(tune.key_root, key_root, octave)
+    if preview is not None and semitones:
+        preview = transpose_abc(preview, semitones)
+    return {
+        "tune": tune,
+        "entry": entry,
+        "key_options": [
+            (root.value, f"{root.label} {tune.key_mode.label}")
+            for root in reversed(_KEY_ROOTS)
+            if root != tune.key_root
+        ],
+        "selected_key": key_root.value if key_root else "",
+        "octave": octave,
+        "preview_abc": preview,
+        "action_url": action_url,
+        "modal_id": modal_id,
+        "row_target_id": f"box-tune-{entry.tune_id}",
+    }
 
 
 def _entry_previews(entries) -> dict[int, str]:
     """Map tune id -> ABC preview for box entries, preferring each entry's chosen setting.
 
     Uses the entry's own display alias (if any) for the preview's T: header,
-    matching the name the row itself shows (#119).
+    matching the name the row itself shows (#119). Applies the entry's saved
+    transpose (#158), if any, so the preview matches what practice will show.
     """
     previews: dict[int, str] = {}
     for entry in entries:
         display_name = entry.display_alias.name if entry.display_alias else None
         abc = preview_abc(entry.tune, entry.setting, display_name=display_name)
         if abc is not None:
-            previews[entry.tune_id] = abc
+            semitones = transpose_semitones_for(entry.tune.key_root, entry.transpose_key_root, entry.transpose_octave)
+            previews[entry.tune_id] = transpose_abc(abc, semitones) if semitones else abc
     return previews
 
 
@@ -226,6 +255,55 @@ async def box_set_display_alias(
         request,
         "boxes/partials/_tune_row.html",
         {"entry": entry, "box_id": box_id, "tune_previews": _entry_previews([entry])},
+    )
+
+
+@router.get("/{box_id}/tunes/{tune_id}/transpose")
+async def box_transpose_popup(
+    request: Request,
+    box_id: int,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    key_root: str | None = Query(default=None),
+    octave: str | None = Query(default=None),
+) -> Response:
+    entry = await get_box_entry(db, box_id, tune_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Tune not in box")
+
+    if key_root is None and octave is None:
+        pending_key, pending_octave = entry.transpose_key_root, entry.transpose_octave
+    else:
+        pending_key = KeyRoot(key_root) if key_root else None
+        pending_octave = int(octave) if octave else 0
+
+    ctx = _transpose_popup_ctx(
+        entry, pending_key, pending_octave, f"/boxes/{box_id}/tunes/{tune_id}/transpose", "box-transpose-modal"
+    )
+    return templates.TemplateResponse(request, "components/_transpose_popup.html", ctx)
+
+
+@router.post("/{box_id}/tunes/{tune_id}/transpose")
+async def box_set_transpose(
+    request: Request,
+    box_id: int,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    key_root: str = Form(default=""),
+    octave: str = Form(default="0"),
+) -> Response:
+    if await get_box_entry(db, box_id, tune_id) is None:
+        raise HTTPException(status_code=404, detail="Tune not in box")
+
+    kr = KeyRoot(key_root) if key_root else None
+    oc = int(octave) if octave else 0
+    await set_transpose(db, box_id, tune_id, kr, oc)
+    entry = await get_box_entry(db, box_id, tune_id)
+    row_html = templates.env.get_template("boxes/partials/_tune_row.html").render(
+        {"entry": entry, "box_id": box_id, "tune_previews": _entry_previews([entry])}
+    )
+    return Response(
+        content=row_html + '<div id="box-transpose-modal" hx-swap-oob="true"></div>', media_type="text/html"
     )
 
 

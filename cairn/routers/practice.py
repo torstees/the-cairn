@@ -7,9 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import ProgressStatus, TempoRecord
-from cairn.services.abc_utils import build_abc, truncate_to_bars
-from cairn.services.boxes import get_display_names_for_tunes, list_boxes
+from cairn.models import KeyRoot, ProgressStatus, TempoRecord
+from cairn.services.abc_utils import build_abc, transpose_abc, transpose_semitones_for, truncate_to_bars
+from cairn.services.boxes import get_display_names_for_tunes, get_transposes_for_tunes, list_boxes
 from cairn.services.lists import activate_list, deactivate_list, get_active_list, list_lists
 from cairn.services.session_plan import (
     _load_progress_map,
@@ -39,7 +39,10 @@ _CHEAT_LEVELS: dict[int | None, list[int | None]] = {
 
 
 def _build_item_display(
-    items, progress_map: dict[int, ProgressStatus], display_names: dict[int, str] | None = None
+    items,
+    progress_map: dict[int, ProgressStatus],
+    display_names: dict[int, str] | None = None,
+    transposes: dict[int, tuple[KeyRoot | None, int]] | None = None,
 ) -> dict[int, dict]:
     """Build per-item display data (ABC variants + cheat levels) for tune items.
 
@@ -47,8 +50,14 @@ def _build_item_display(
     for tunes that have one — used for the ABC's T: header and the session
     item's own title, so a tune's alias follows it into the active practice
     session the same way it already shows in that box's own tune list.
+
+    transposes is tune_id -> (transpose_key_root, transpose_octave) (#158),
+    applied to abc_full before truncating to abc_4/abc_8 so both variants —
+    and the displayed key_label — reflect the entry's saved transpose the
+    same way box/list row previews do.
     """
     display_names = display_names or {}
+    transposes = transposes or {}
     display: dict[int, dict] = {}
     for item in items:
         if item.tune is None:
@@ -64,10 +73,14 @@ def _build_item_display(
 
         display_name = display_names.get(tune.id, tune.title)
         abc_full = build_abc(tune, core, display_name=display_name)
+        transpose_key_root, transpose_octave = transposes.get(tune.id, (None, 0))
+        semitones = transpose_semitones_for(tune.key_root, transpose_key_root, transpose_octave)
+        if semitones:
+            abc_full = transpose_abc(abc_full, semitones)
         abc_4 = truncate_to_bars(abc_full, 4) if 4 in levels else None
         abc_8 = truncate_to_bars(abc_full, 8) if 8 in levels else None
 
-        key_label = f"{tune.key_root.value} {tune.key_mode.label}"
+        key_label = f"{(transpose_key_root or tune.key_root).value} {tune.key_mode.label}"
         display[item.id] = {
             "levels": levels,  # Python list (not JSON string)
             "abc_full": abc_full,
@@ -131,14 +144,19 @@ async def session_detail(
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    active_list = await get_active_list(db, _STUB_USER_ID)
+
     tune_ids = {item.tune_id for item in session.items if item.tune_id}
     progress_map: dict[int, ProgressStatus] = {}
     display_names: dict[int, str] = {}
+    transposes: dict[int, tuple[KeyRoot | None, int]] = {}
     if tune_ids and session.box_id:
         progress_map = await _load_progress_map(db, _STUB_USER_ID, session.box_id, tune_ids)
         display_names = await get_display_names_for_tunes(db, session.box_id, tune_ids)
+        list_id = active_list.id if active_list and active_list.box_id == session.box_id else None
+        transposes = await get_transposes_for_tunes(db, session.box_id, tune_ids, list_id=list_id)
 
-    item_display = _build_item_display(session.items, progress_map, display_names)
+    item_display = _build_item_display(session.items, progress_map, display_names, transposes)
 
     # Batch-fetch last recorded tempo for each tune in this session.
     last_tempo_map: dict[int, int] = {}
@@ -211,7 +229,6 @@ async def session_detail(
                 }
             )
 
-    active_list = await get_active_list(db, _STUB_USER_ID)
     return templates.TemplateResponse(
         request,
         "practice/session.html",
