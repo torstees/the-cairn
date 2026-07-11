@@ -240,9 +240,7 @@ async def test_tune_detail_list_setting_outranks_box_setting(client: AsyncClient
 
 async def test_tune_detail_key_shifts_to_shortest_route(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)  # D major
-    # octave=0 pins the octave explicitly so this test isolates the raw
-    # key-shift computation from the auto-default octave behavior below.
-    resp = await client.get(f"/tunes/{tune.id}", params={"key": "E", "octave": 0})
+    resp = await client.get(f"/tunes/{tune.id}", params={"key": "E"})
     assert resp.status_code == 200
     assert "K:E" in resp.text
     assert "EFGB" in resp.text  # D transposed +2 -> E, per the source's "DEFA" opening
@@ -251,7 +249,7 @@ async def test_tune_detail_key_shifts_to_shortest_route(client: AsyncClient, db:
 
 async def test_tune_detail_key_picks_down_when_shorter(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)  # D major
-    resp = await client.get(f"/tunes/{tune.id}", params={"key": "B", "octave": 0})
+    resp = await client.get(f"/tunes/{tune.id}", params={"key": "B"})
     assert resp.status_code == 200
     assert "K:B" in resp.text
     assert "transposed -3 semitones" in resp.text  # D -> B is shorter down (-3) than up (+9)
@@ -272,34 +270,13 @@ async def test_tune_detail_selecting_own_key_is_untransposed(client: AsyncClient
     assert "transposed" not in resp.text
 
 
-async def test_tune_detail_octave_auto_defaults_up_when_key_shift_is_downward(
-    client: AsyncClient, db: AsyncSession
-) -> None:
-    # No explicit octave: D -> B is a shortest-route shift down (-3), so the
-    # octave should auto-default to +1 to land near the original register
-    # instead of drifting further down (-3 + 12 = +9).
-    tune = await _seed_tune(db)  # D major
-    resp = await client.get(f"/tunes/{tune.id}", params={"key": "B"})
+async def test_tune_detail_key_options_list_highest_root_first(client: AsyncClient, db: AsyncSession) -> None:
+    # Scrolling toward the top of the dropdown should move to higher keys —
+    # B (highest of the 14 roots) listed before C (lowest).
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}")
     assert resp.status_code == 200
-    assert "transposed +9 semitones" in resp.text
-
-
-async def test_tune_detail_octave_auto_defaults_down_when_key_shift_is_upward(
-    client: AsyncClient, db: AsyncSession
-) -> None:
-    # No explicit octave: D -> E is a shortest-route shift up (+2), so the
-    # octave should auto-default to -1 (2 - 12 = -10).
-    tune = await _seed_tune(db)  # D major
-    resp = await client.get(f"/tunes/{tune.id}", params={"key": "E"})
-    assert resp.status_code == 200
-    assert "transposed -10 semitones" in resp.text
-
-
-async def test_tune_detail_explicit_octave_overrides_auto_default(client: AsyncClient, db: AsyncSession) -> None:
-    tune = await _seed_tune(db)  # D major
-    resp = await client.get(f"/tunes/{tune.id}", params={"key": "E", "octave": 0})
-    assert resp.status_code == 200
-    assert "transposed +2 semitones" in resp.text
+    assert resp.text.index("key=B&amp;octave=0") < resp.text.index("key=C&amp;octave=0")
 
 
 async def test_tune_detail_octave_up_shifts_a_full_octave_same_key(client: AsyncClient, db: AsyncSession) -> None:
@@ -352,10 +329,7 @@ async def test_tune_detail_key_options_preserve_box_and_list_context(client: Asy
 
     resp = await client.get(f"/tunes/{tune.id}", params={"box_id": box.id, "list_id": practice_list.id, "octave": 1})
     assert resp.status_code == 200
-    # key_options deliberately omit octave (each key gets a fresh auto-default
-    # for its own shift direction) — match up to the closing quote so this
-    # doesn't false-positive against a neighboring option like "key=Eb".
-    assert f'box_id={box.id}&amp;list_id={practice_list.id}&amp;key=E"' in resp.text
+    assert f"box_id={box.id}&amp;list_id={practice_list.id}&amp;key=E&amp;octave=1" in resp.text
 
 
 async def test_tune_add_to_box(client: AsyncClient, db: AsyncSession) -> None:

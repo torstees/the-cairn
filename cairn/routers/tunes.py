@@ -127,15 +127,7 @@ async def tune_detail(
     # depending on direction — see shortest_semitones_to_root().
     target_root = KEY_ROOT_MAP.get(key.lower()) if key else None
     key_shift = shortest_semitones_to_root(tune.key_root, target_root) if target_root else 0
-    # When the caller hasn't explicitly picked an octave, default it to the
-    # opposite sign of the key shift — e.g. A dorian -> G is a shortest-route
-    # shift down a tone, so the octave defaults up, landing near the tune's
-    # original register instead of drifting further down. An explicit octave
-    # (from a manual toggle click, or Reset's octave=0) always wins.
-    if octave is None:
-        octave = -1 if key_shift > 0 else (1 if key_shift < 0 else 0)
-    else:
-        octave = max(-1, min(1, octave))
+    octave = max(-1, min(1, octave or 0))
     transpose = key_shift + octave * 12
 
     box = None
@@ -181,11 +173,11 @@ async def tune_detail(
 
     selected_key = target_root.value if target_root else tune.key_root.value
     key_param = f"key={selected_key}&" if key_shift else ""
-    # No octave param here (deliberately) — picking a different key always
-    # gets a fresh auto-defaulted octave for *that* key's shift direction,
-    # rather than carrying over a manual override made for a different key.
+    # Listed highest root first (descending) so scrolling toward the top of
+    # the dropdown moves to higher keys, matching the score's up/down sense.
     key_options = [
-        (root.value, f"{root.label} {tune.key_mode.label}", f"?{base_qs_prefix}key={root.value}") for root in _KEY_ROOTS
+        (root.value, f"{root.label} {tune.key_mode.label}", f"?{base_qs_prefix}key={root.value}&octave={octave}")
+        for root in reversed(_KEY_ROOTS)
     ]
     octave_up_href = f"?{base_qs_prefix}{key_param}octave={0 if octave == 1 else 1}"
     octave_down_href = f"?{base_qs_prefix}{key_param}octave={0 if octave == -1 else -1}"
