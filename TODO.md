@@ -1237,7 +1237,7 @@ correctly on a GCE VM with no changes.
   - Workload Identity Provider:
     `projects/325835760854/locations/global/workloadIdentityPools/github-pool/providers/github-provider`
 
-- [ ] **10.4 — GitHub Actions deploy workflow**
+- [x] **10.4 — GitHub Actions deploy workflow**
   New `.github/workflows/deploy.yml`, separate from the existing `ci.yml`.
   - Trigger: `release: types: [published]` — an explicit "Publish
     release" action is the deploy trigger, giving a manual gate even if
@@ -1251,6 +1251,34 @@ correctly on a GCE VM with no changes.
   - Rollback is manual on a single-VM setup (no blue/green) — document the
     rollback steps (checkout previous tag, `uv sync --locked`, `systemctl
     restart`) in the workflow file's comments rather than automating it.
+
+  Done. Connects via `gcloud compute ssh --tunnel-through-iap` (plain
+  `gcloud`, not a third-party SSH action) and runs the new
+  `deploy/run-deploy.sh <tag>` script on the VM, which does the
+  fetch/checkout/sync/migrate/restart/health-check sequence as root via
+  OS Login sudo, `sudo -u cairn` for the app-owned steps. Rollback
+  documented in `deploy.yml`'s own comments per the plan above.
+
+  **Two things needed before this actually works, beyond what 10.3
+  covered:**
+  1. Grant `github-deploy@the-cairn.iam.gserviceaccount.com` the
+     `roles/compute.osAdminLogin` role (project-level IAM, same place as
+     the earlier `iap.tunnelResourceAccessor` grant) and enable OS Login
+     on the VM (instance metadata `enable-oslogin=TRUE`) — needed so the
+     workflow's ephemeral SSH session gets passwordless sudo via GCE's
+     `google-sudoers` mechanism, without granting the service account any
+     broader Compute Engine permissions.
+  2. Set two GitHub Actions repo variables (Settings → Secrets and
+     variables → Actions → Variables — not secrets, these aren't
+     sensitive): `CAIRN_VM_NAME` and `CAIRN_VM_ZONE`, matching the actual
+     VM.
+  3. SSH into the VM once (Console's SSH button, which already uses IAP)
+     and run `deploy/provision.sh` — it was never actually run against
+     the real VM during 10.3, which only covered IAM/networking, so
+     `/opt/cairn` doesn't exist yet. Do this *after* this PR merges to
+     main, so the initial clone already includes `deploy/run-deploy.sh`
+     (needed for the very first automated deploy — it can't fetch itself
+     into existence).
 
 - [ ] **10.5 — Backup the SQLite file**
   The VM's disk is the only copy of the user's tune library and progress
