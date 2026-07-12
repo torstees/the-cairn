@@ -1146,19 +1146,124 @@ compilations, singles, and session-video-only references, not just albums.
 
 ---
 
+### 10. GCP Deployment (Solo Ops)
+
+Gets the app running on GCP for real, single-user use — no dev/QA
+environment (that's handled locally), deployed via GitHub Actions on tag/
+release.
+
+**Compute target — Compute Engine VM, not Cloud Run.** The app is
+SQLite-backed (`cairn/database.py`), and Cloud Run's filesystem is
+ephemeral/networked — SQLite's file-locking model doesn't tolerate that
+well, and moving off SQLite to Cloud SQL is a bigger lift than this
+warrants for one user. A small always-on VM (e2-micro, free-tier eligible)
+with SQLite on the local persistent disk works exactly like local dev — no
+DB-layer code changes needed beyond making the connection string
+overridable. `cairn/logging_config.py`'s `is_cloud()` already detects
+`GOOGLE_CLOUD_PROJECT`/`GAE_APPLICATION` alongside the Cloud Run-specific
+`K_SERVICE`/`K_REVISION` vars, so structured JSON logging already activates
+correctly on a GCE VM with no changes.
+
+- [ ] **10.1 — Externalize the database URL**
+  `cairn/database.py` currently hardcodes `DATABASE_URL = "sqlite+aiosqlite:///./cairn.db"`.
+  Change to read from a `DATABASE_URL` env var, falling back to that same
+  literal for local dev (no `.env` file needed yet — no other secrets exist
+  in the app since there's no auth). Keep this minimal; don't introduce a
+  settings/config framework for one variable.
+
+- [ ] **10.2 — systemd service + provisioning script**
+  No Docker — a plain `uv`-managed checkout on the VM, matching how it
+  already runs locally.
+  - `deploy/cairn.service` — systemd unit. `ExecStart` runs
+    `uv run uvicorn cairn.main:app --host 0.0.0.0 --port 8000` from the
+    repo's `WorkingDirectory`; `Restart=always`; `EnvironmentFile` for
+    `DATABASE_URL` / `CAIRN_LOG_LEVEL` overrides.
+  - `deploy/provision.sh` — one-time (idempotent, safe to re-run) VM setup:
+    installs `uv`, clones the repo, installs the systemd unit, enables it.
+  - **Decided: `the-cairn.app` (registered via Cloudflare), fronted by
+    Caddy** for automatic Let's Encrypt TLS — no longer optional, since
+    `.app` is on the browser HSTS preload list and plain HTTP to it is
+    refused outright, not just discouraged. `deploy/Caddyfile`:
+    ```
+    the-cairn.app {
+        reverse_proxy localhost:8000
+    }
+    ```
+    Install Caddy in `provision.sh` alongside the systemd unit; open 443
+    (and 80, needed for the ACME HTTP challenge) in the VM firewall (10.3).
+
+- [ ] **10.3 — One-time GCP project setup**
+  Manual (not part of the automated deploy) — document the steps rather
+  than scripting them, since this runs once:
+  - Enable the Compute Engine API; create the e2-micro VM in a free-tier
+    region (`us-west1`, `us-central1`, or `us-east1`), sized persistent
+    disk, firewall rules opening 80 and 443 (10.2's Caddy needs both — 80
+    for the ACME HTTP challenge, 443 for the app itself).
+  - Reserve the VM's external IP as **static** (GCP's default is
+    ephemeral — it changes on VM stop/restart, which would silently break
+    DNS). Once reserved, the user adds an **A record** for `the-cairn.app`
+    pointing at that IP in Cloudflare's DNS tab, with the proxy status set
+    to **DNS only** (grey cloud, not orange) — Caddy needs to see the real
+    client connection directly to complete the Let's Encrypt HTTP
+    challenge; Cloudflare's proxy would intercept it (fixable later by
+    switching to a DNS-01 challenge or Cloudflare Origin CA certs, but
+    not worth the complexity for a first pass). This is a manual, one-time
+    step on the user's side — can't be scripted since it lives in their
+    Cloudflare account.
+  - Prefer IAP-tunneled SSH (`roles/iap.tunnelResourceAccessor`) over
+    exposing port 22 publicly, if GitHub Actions can reach it that way
+    (see 10.4) — otherwise a normal SSH firewall rule scoped to GitHub's
+    published IP ranges.
+  - Create a dedicated, least-privilege service account for GitHub
+    Actions' deploy step and set up Workload Identity Federation between
+    GitHub's OIDC provider and that service account — no long-lived JSON
+    key stored in GitHub secrets.
+
+- [ ] **10.4 — GitHub Actions deploy workflow**
+  New `.github/workflows/deploy.yml`, separate from the existing `ci.yml`.
+  - Trigger: `release: types: [published]` — an explicit "Publish
+    release" action is the deploy trigger, giving a manual gate even if
+    tagging itself is automated.
+  - Auth via `google-github-actions/auth@v2` using the WIF setup from
+    10.3 (no static credentials).
+  - Steps: connect to the VM (SSH or IAP tunnel) → `git fetch --tags &&
+    git checkout <released tag>` → `uv sync --locked` → `alembic upgrade
+    head` → `sudo systemctl restart cairn` → health check (`curl` the
+    app's root, expect 200) before declaring success.
+  - Rollback is manual on a single-VM setup (no blue/green) — document the
+    rollback steps (checkout previous tag, `uv sync --locked`, `systemctl
+    restart`) in the workflow file's comments rather than automating it.
+
+- [ ] **10.5 — Backup the SQLite file**
+  The VM's disk is the only copy of the user's tune library and progress
+  data. **Decided: SQLite's own `.backup` command, not whole-disk
+  snapshots** — the DB file is the only irreplaceable thing on the VM (the
+  code lives in git, the VM setup is 10.2's provisioning script), and
+  `.backup` produces a safe, consistent copy even while the app is
+  running (unlike a plain `cp`, which can grab a half-written page
+  mid-transaction).
+  - A nightly `cron` job on the VM runs
+    `sqlite3 cairn.db ".backup /tmp/cairn-$(date +%F).db"` and uploads the
+    result to a GCS bucket (`gcloud storage cp` / `gsutil cp`).
+  - Retention is enforced by a GCS lifecycle rule on that bucket (delete
+    objects older than 14 days) — configured once, no manual pruning
+    script to maintain.
+
+---
+
 ### Phase 1 Complete Checklist
 
 Before closing Phase 1:
 
-- [ ] All migrations applied cleanly to a fresh database
-- [ ] `make test` passes with no failures
-- [ ] Dashboard loads and reflects real data
-- [ ] A tune can be created with ABC notation and rendered in the browser
-- [ ] A TuneBox can be created and tunes added to it with a preferred setting
-- [ ] A PracticeList can be created, activated, and tunes tagged to it
-- [ ] A practice session can be planned (with active box and optional list), worked through, and finished
+- [x] All migrations applied cleanly to a fresh database
+- [x] `make test` passes with no failures
+- [x] Dashboard loads and reflects real data
+- [x] A tune can be created with ABC notation and rendered in the browser
+- [x] A TuneBox can be created and tunes added to it with a preferred setting
+- [x] A PracticeList can be created, activated, and tunes tagged to it
+- [x] A practice session can be planned (with active box and optional list), worked through, and finished
 - [ ] Progress can be manually updated and affects the next session plan
-- [ ] No business logic lives in any route handler
+- [x] No business logic lives in any route handler
 
 ---
 
@@ -1184,7 +1289,7 @@ Before closing Phase 1:
 - ABC transformation layer
 - Linking ornaments to specific positions in a tune with explanations
 - Presenting ornamentation as independent study items
-- [ ] **Transposition** — allow ABC notation to be rendered in any key,
+- [x] **Transposition** — allow ABC notation to be rendered in any key,
       particularly useful for players on different instruments or tunings
       (e.g. Bb piper seeing D flute notation transposed to their fingering).
       Implementation notes:
