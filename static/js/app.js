@@ -1516,13 +1516,15 @@
     var canvas = null;
     var renderCache = {};
     var activeTrigger = null;
+    var hoverTimer = null;
+    var pendingTrigger = null;
 
     function ensurePopover() {
       if (popover) return popover;
       popover = document.createElement("div");
       popover.id = "tune-hover-popover";
       popover.style.cssText =
-        "position:fixed; z-index:60; width:220px; max-height:70vh; overflow-y:auto; display:none; pointer-events:none;";
+        "position:fixed; z-index:60; width:300px; max-height:70vh; overflow-y:auto; display:none; pointer-events:none;";
       popover.className = "bg-white border border-stone-200 rounded-lg shadow-lg p-2";
       canvas = document.createElement("div");
       canvas.id = "tune-hover-abc-canvas";
@@ -1573,15 +1575,31 @@
       if (popover) popover.style.display = "none";
     }
 
+    // data-abc-preview-delay opts a trigger into a delayed show (#164's
+    // column-preview cells, so a quick mouse pass over the tune table
+    // doesn't pop up a full-tune render for every row) — defaults to 0
+    // (instant, today's behavior) for every other existing trigger.
     document.addEventListener("mouseover", function (e) {
       var trigger = e.target.closest("[data-abc-preview-id]");
-      if (!trigger || trigger === activeTrigger) return;
-      show(trigger);
+      if (!trigger || trigger === activeTrigger || trigger === pendingTrigger) return;
+      var delay = parseInt(trigger.dataset.abcPreviewDelay || "0", 10);
+      clearTimeout(hoverTimer);
+      if (delay > 0) {
+        pendingTrigger = trigger;
+        hoverTimer = setTimeout(function () {
+          pendingTrigger = null;
+          show(trigger);
+        }, delay);
+      } else {
+        show(trigger);
+      }
     });
 
     document.addEventListener("mouseout", function (e) {
       var trigger = e.target.closest("[data-abc-preview-id]");
       if (!trigger || (e.relatedTarget && trigger.contains(e.relatedTarget))) return;
+      clearTimeout(hoverTimer);
+      pendingTrigger = null;
       hide();
     });
 
@@ -1639,9 +1657,107 @@
     if (!tmpl || !canvas) return;
     try {
       ABCJS.renderAbc(canvas.id, tmpl.content.textContent, TRANSPOSE_PREVIEW_OPTS);
+      // Same fix as _renderColumnPreview() below: ABCJS's SVG has no
+      // viewBox, so the CSS max-width:100% rule (_transpose_popup.html)
+      // only resizes the SVG's own box, not the drawing inside it — a
+      // viewBox gives it a coordinate system to actually scale against.
+      var svg = canvas.querySelector("svg");
+      if (svg && !svg.hasAttribute("viewBox")) {
+        var w = svg.getAttribute("width");
+        var h = svg.getAttribute("height");
+        if (w && h) svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      }
     } catch (e) {
       // Malformed/unrenderable ABC — leave the canvas empty rather than crash.
     }
+  }
+
+  // ── Box/list row preview column (#164) ──────────────────────────────────────
+  // Each row's small always-visible ~2-bar preview is rendered lazily via
+  // IntersectionObserver — only when scrolled into view — rather than eagerly
+  // for every row on page load, since a box/list can hold dozens of tunes and
+  // each render is a real ABCJS cost. Fixed staffwidth (not responsive:resize)
+  // for the same reason as TRANSPOSE_PREVIEW_OPTS above — these canvases can
+  // be replaced wholesale by an HTMX swap (setting/alias/transpose change),
+  // not resized in place, so there's nothing for a ResizeObserver to usefully
+  // track. 240 renders reliably wider than the column box regardless of tune
+  // content, so the CSS max-width:100% scale-down rule (.cairn-col-preview in
+  // base.html) always shrinks it to fit rather than sometimes doing nothing —
+  // scaling to fit, not overflow:hidden cropping, is what keeps the full 2
+  // bars visible instead of being cut off part-way through.
+  var COLUMN_PREVIEW_OPTS = { add_classes: true, staffwidth: 240 };
+  var _columnPreviewObserver = null;
+
+  function _renderColumnPreview(el) {
+    var tmpl = document.getElementById("tune-abc-col-" + el.dataset.abcColumnPreviewId);
+    if (!tmpl) return;
+    try {
+      ABCJS.renderAbc(el.id, tmpl.content.textContent, COLUMN_PREVIEW_OPTS);
+      // ABCJS sets an inline height on its target element sized to the
+      // *unscaled* rendered SVG (e.g. "height: 99.87px") — that inline style
+      // wins over the .cairn-col-preview box's own fixed height class
+      // regardless of CSS specificity, silently making every row a different
+      // height depending on each tune's content. Clear it so the class's
+      // fixed height governs, keeping every row's preview cell a consistent
+      // size.
+      el.style.removeProperty("height");
+      // ABCJS's output SVG has no viewBox — only width/height attributes
+      // holding its native, unscaled pixel size. Without a viewBox, CSS
+      // max-width/height:auto (.cairn-col-preview svg in base.html) resizes
+      // only the SVG's own layout box; the drawing inside keeps its native
+      // absolute coordinates and simply gets clipped by the smaller box
+      // instead of scaling down — cropping off most of the 2nd bar rather
+      // than shrinking both bars to fit. Adding a viewBox derived from the
+      // SVG's own width/height gives the browser a coordinate system to
+      // scale against, so the CSS rule actually shrinks the whole drawing
+      // proportionally instead of just resizing an empty viewport onto it.
+      var svg = el.querySelector("svg");
+      if (svg && !svg.hasAttribute("viewBox")) {
+        var w = svg.getAttribute("width");
+        var h = svg.getAttribute("height");
+        if (w && h) svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      }
+    } catch (e) {
+      // Malformed/unrenderable ABC — leave the canvas empty rather than crash.
+    }
+    el.dataset.abcColumnRendered = "1";
+  }
+
+  // Re-run after every HTMX swap so a freshly-added or replaced row (add
+  // tune, setting/alias/transpose change — all outerHTML-swap the whole row)
+  // gets observed; already-rendered rows are skipped via the rendered flag,
+  // so re-scanning the whole document each time is cheap. Deliberately not
+  // scoped to htmx:afterSwap's event.detail.target: that only reliably
+  // covers content still inside the swap target for an innerHTML-style
+  // swap (like renderMarkdownAbcBlocks() above uses it) — for an outerHTML
+  // swap, which is what replaces a whole row here, the target element
+  // itself is what got replaced, so scoping the re-scan to it silently
+  // misses the very row that just changed. An element already on-screen at
+  // swap time still renders immediately since IntersectionObserver.observe()
+  // fires its callback on next check regardless of prior visibility.
+  function observeColumnPreviews() {
+    if (!_columnPreviewObserver) return;
+    document.querySelectorAll("[data-abc-column-preview-id]:not([data-abc-column-rendered])").forEach(function (el) {
+      _columnPreviewObserver.observe(el);
+    });
+  }
+
+  function initColumnPreviewObserver() {
+    if (!("IntersectionObserver" in window)) {
+      document.querySelectorAll("[data-abc-column-preview-id]").forEach(_renderColumnPreview);
+      return;
+    }
+    _columnPreviewObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          _renderColumnPreview(entry.target);
+          _columnPreviewObserver.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "200px" }
+    );
+    observeColumnPreviews();
   }
 
   // ── init ───────────────────────────────────────────────────────────────────
@@ -1659,6 +1775,9 @@
     renderTransposePreview();
     document.addEventListener("htmx:afterSwap", renderTransposePreview);
 
+    initColumnPreviewObserver();
+    document.addEventListener("htmx:afterSwap", observeColumnPreviews);
+
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { clearCairnModal(); closeTheSessionWizard(); }
     });
@@ -1667,10 +1786,11 @@
       var btn = e.target.closest("[data-propagate-url]");
       if (!btn) return;
       var url = btn.dataset.propagateUrl;
-      // Collect data from the button and from checkboxes by class.
-      // We cannot rely on form traversal because HTMX parses the combined
-      // <tr>+<div> response in a table context, which can displace the modal's
-      // DOM subtree via HTML foster-parenting, breaking ancestor/descendant queries.
+      // Collect data from the button and from checkboxes by class, not form
+      // traversal — the response that inserts this modal is a row partial
+      // plus this modal's own markup concatenated together (two root
+      // elements from one HTMX swap), so this button and the checkboxes
+      // it needs aren't reliably within a single common form ancestor.
       var params = new URLSearchParams();
       params.append("setting_id", btn.dataset.settingId || "");
       document.querySelectorAll(".cairn-propagate-list:checked").forEach(function (cb) {

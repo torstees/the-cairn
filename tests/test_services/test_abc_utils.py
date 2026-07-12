@@ -4,6 +4,8 @@ from cairn.services.abc_utils import (
     build_abc,
     parse_key,
     shortest_semitones_to_root,
+    strip_chord_symbols,
+    strip_decorative_headers,
     transpose_abc,
     transpose_semitones_for,
     truncate_to_bars,
@@ -537,3 +539,74 @@ def test_transpose_semitones_for_key_and_octave_combine() -> None:
 def test_transpose_semitones_for_octave_clamped() -> None:
     assert transpose_semitones_for(KeyRoot.D, None, 5) == 12
     assert transpose_semitones_for(KeyRoot.D, None, -5) == -12
+
+
+# ── strip_decorative_headers (#164) ─────────────────────────────────────────────
+
+
+def test_strip_decorative_headers_drops_decorative_keeps_structural() -> None:
+    tune = _tune(composer="Ed Reavy", origin="Ireland", region="Donegal", notes="A favourite")
+    setting = _setting(source="Tommy Peoples")
+    abc = build_abc(tune, setting)
+    stripped = strip_decorative_headers(abc)
+    header_letters = {l[0].upper() for l in _headers(stripped)}
+    # Q: (tempo) is a separate concern (preview_abc()'s own _TEMPO_HEADER_RE
+    # strip) — build_abc() adds a type-default Q: that this function doesn't
+    # touch, so it's expected to still be present here.
+    assert header_letters == {"X", "Q", "M", "K"}
+    assert {"T", "C", "O", "A", "R", "S", "N", "Z"}.isdisjoint(header_letters)
+
+
+def test_strip_decorative_headers_strips_source_notes_z_line() -> None:
+    tune = _tune()
+    setting = _setting(source_notes="as played by so-and-so")
+    abc = build_abc(tune, setting)
+    assert "Z:as played by so-and-so" in abc
+    stripped = strip_decorative_headers(abc)
+    assert "Z:" not in stripped
+
+
+def test_strip_decorative_headers_keeps_user_supplied_header() -> None:
+    tune = _tune()
+    setting = _setting(abc_notation="L:1/8\n" + MUSIC)
+    abc = build_abc(tune, setting)
+    stripped = strip_decorative_headers(abc)
+    assert any(l.startswith("L:") for l in _headers(stripped))
+
+
+def test_strip_decorative_headers_preserves_music_body() -> None:
+    tune = _tune(composer="Ed Reavy")
+    setting = _setting()
+    abc = build_abc(tune, setting)
+    stripped = strip_decorative_headers(abc)
+    assert MUSIC.strip() in stripped
+
+
+def test_strip_chord_symbols_removes_quoted_chords_from_body() -> None:
+    setting = _setting(abc_notation='|:"G"DEFG "D"ABcd|efge dcAG:|\n')
+    abc = build_abc(_tune(), setting)
+    stripped = strip_chord_symbols(abc)
+    assert '"G"' not in stripped
+    assert '"D"' not in stripped
+    assert "DEFG" in stripped
+    assert "ABcd" in stripped
+
+
+def test_strip_chord_symbols_leaves_headers_untouched() -> None:
+    tune = _tune(origin="O'Neill's \"1001\"")
+    abc = build_abc(tune, _setting())
+    stripped = strip_chord_symbols(abc)
+    assert "O'Neill's \"1001\"" in stripped
+
+
+def test_transpose_abc_after_strip_adds_clean_note_no_source_notes_leak() -> None:
+    tune = _tune()
+    setting = _setting(source_notes="as played by so-and-so")
+    abc = build_abc(tune, setting)
+    stripped = strip_decorative_headers(abc)
+
+    transposed = transpose_abc(stripped, 2)
+    z_lines = [l for l in _headers(transposed) if l.startswith("Z:")]
+    assert len(z_lines) == 1
+    assert "as played by so-and-so" not in z_lines[0]
+    assert "transposed" in z_lines[0]

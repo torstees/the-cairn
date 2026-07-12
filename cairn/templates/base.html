@@ -23,6 +23,26 @@
     }
     [x-cloak]{display:none!important}
     .smufl { font-family: 'Bravura Text', serif; }
+    /* Shared column layout for the box/list tune tables (#164) — a CSS Grid
+       row (not a <table>) so column widths are the declared fractions, not
+       stretched to the widest cell across every row like default table
+       layout. Kept as one class so the header row and every body row partial
+       (four templates total) can't drift apart. min-width:0 on every cell
+       overrides grid's default min-width:auto, which otherwise refuses to
+       shrink a cell below its content's intrinsic size (a <select> in
+       particular) and can push later columns (the "⋮" menu) out of place at
+       narrower widths. */
+    .cairn-row-grid { display: grid; grid-template-columns: 2fr 180px 1.1fr 1.2fr 76px; align-items: center; column-gap: 8px; }
+    .cairn-row-grid > * { min-width: 0; }
+    /* The row preview column (#164) renders at a fixed staffwidth (same
+       reasoning as the transpose-popup preview: a fixed width sidesteps
+       ABCJS's responsive:resize re-render bug — see renderTransposePreview()
+       below), then scales down via CSS to fit the smaller column box. Scaling
+       rather than clipping with overflow:hidden guarantees the full 2-bar
+       snippet is always visible instead of being cropped part-way through —
+       and sidesteps a cross-browser inconsistency where the clipped portion
+       was bleeding past the box boundary in some browsers.  */
+    .cairn-col-preview svg { max-width: 100%; height: auto; }
     .abcjs-cursor-active path,
     .abcjs-cursor-active rect,
     .abcjs-cursor-active polygon,
@@ -57,7 +77,7 @@
     </main>
   </div>
 
-  <script src="/static/js/app.js?v=27"></script>
+  <script src="/static/js/app.js?v=31"></script>
   {% block scripts %}{% endblock %}
 
   <!-- Tuner drawer — fixed panel, no backdrop so page content stays readable -->

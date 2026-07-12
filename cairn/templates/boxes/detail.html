@@ -2,7 +2,7 @@
 {% block title %}{{ box.name }} — The Cairn{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
+<div class="max-w-6xl mx-auto">
 
   <div class="flex items-start justify-between mb-6 gap-4">
     <div>
@@ -60,38 +60,33 @@
       </h2>
 
       {% if box.entries %}
-      <div class="bg-white rounded-lg shadow-sm">
-        <table class="w-full text-sm">
-          <thead class="bg-stone-50 border-b border-stone-200 rounded-t-lg">
-            <tr>
-              <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
-                <button onclick="sortBoxTable('title')" class="flex items-center gap-1 hover:text-stone-700">
-                  Tune <span id="sort-icon-title" class="text-stone-300">↕</span>
-                </button>
-              </th>
-              <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
-                <button onclick="sortBoxTable('type')" class="flex items-center gap-1 hover:text-stone-700">
-                  Type <span id="sort-icon-type" class="text-stone-300">↕</span>
-                </button>
-              </th>
-              <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Name</th>
-              <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Setting</th>
-              <th class="py-2 px-4 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">Transpose</th>
-              <th class="py-2 px-4"></th>
-            </tr>
-          </thead>
-          <tbody id="box-tunes-body">
-            {% for entry in box.entries %}
-            {% set box_id = box.id %}
-            {% include "boxes/partials/_tune_row.html" %}
-            {% endfor %}
-          </tbody>
-        </table>
+      <div class="bg-white rounded-lg shadow-sm text-sm" role="table" aria-label="Tunes in this box">
+        <div role="rowgroup">
+          <div role="row" class="cairn-row-grid bg-stone-50 border-b border-stone-200 rounded-t-lg">
+            <div role="columnheader" class="py-2 px-4 text-xs font-medium text-stone-500 uppercase tracking-wide">
+              <button onclick="sortBoxTable('title')" class="hover:text-stone-700">
+                Tune <span id="sort-icon-title" class="text-stone-300">↕</span>
+              </button>
+              <span class="text-stone-300 mx-0.5">&middot;</span>
+              <button onclick="sortBoxTable('type')" class="font-normal normal-case text-stone-400 hover:text-stone-700">
+                Type <span id="sort-icon-type" class="text-stone-300">↕</span>
+              </button>
+            </div>
+            <div role="columnheader" class="py-2 px-4 text-xs font-medium text-stone-500 uppercase tracking-wide">Preview</div>
+            <div role="columnheader" class="py-2 px-4 text-xs font-medium text-stone-500 uppercase tracking-wide">Name</div>
+            <div role="columnheader" class="py-2 px-4 text-xs font-medium text-stone-500 uppercase tracking-wide">Setting</div>
+            <div role="columnheader" class="py-2 px-4" aria-label="Row actions"></div>
+          </div>
+        </div>
+        <div role="rowgroup" id="box-tunes-body">
+          {% for entry in box.entries %}
+          {% set box_id = box.id %}
+          {% include "boxes/partials/_tune_row.html" %}
+          {% endfor %}
+        </div>
       </div>
       {% else %}
-      <div id="box-tunes-body">
-        <table class="w-full text-sm hidden"><tbody></tbody></table>
-      </div>
+      <div id="box-tunes-body" class="hidden" role="rowgroup"></div>
       <p class="text-stone-400 text-sm py-4">No tunes in this box yet.</p>
       {% endif %}
     </section>
@@ -166,7 +161,7 @@
 
   function filterBoxTable(family) {
     var fm = window.__cairnFamilyForType || {};
-    document.querySelectorAll('#box-tunes-body tr').forEach(function(r) {
+    document.querySelectorAll('#box-tunes-body .cairn-row').forEach(function(r) {
       r.style.display = (!family || fm[r.dataset.type] === family) ? '' : 'none';
     });
   }
@@ -174,15 +169,15 @@
   var _boxSortKey = null, _boxSortDir = 1;
   function sortBoxTable(key) {
     if (_boxSortKey === key) { _boxSortDir *= -1; } else { _boxSortKey = key; _boxSortDir = 1; }
-    var tbody = document.getElementById('box-tunes-body');
-    if (!tbody) return;
-    var rows = Array.from(tbody.querySelectorAll('tr'));
+    var rowgroup = document.getElementById('box-tunes-body');
+    if (!rowgroup) return;
+    var rows = Array.from(rowgroup.querySelectorAll('.cairn-row'));
     rows.sort(function(a, b) {
       var av = (a.dataset[key] || '').toLowerCase();
       var bv = (b.dataset[key] || '').toLowerCase();
       return av < bv ? -_boxSortDir : av > bv ? _boxSortDir : 0;
     });
-    rows.forEach(function(r) { tbody.appendChild(r); });
+    rows.forEach(function(r) { rowgroup.appendChild(r); });
     ['title', 'type'].forEach(function(k) {
       var el = document.getElementById('sort-icon-' + k);
       if (el) el.textContent = k === key ? (_boxSortDir > 0 ? '↑' : '↓') : '↕';

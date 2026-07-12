@@ -7,7 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
 from cairn.models import KeyRoot, PracticeListType, ProgressStatus
-from cairn.services.abc_utils import transpose_abc, transpose_semitones_for
+from cairn.services.abc_utils import (
+    strip_chord_symbols,
+    strip_decorative_headers,
+    transpose_abc,
+    transpose_semitones_for,
+    truncate_to_bars,
+)
 from cairn.services.boxes import get_box_detail, list_boxes
 from cairn.services.lists import (
     activate_list,
@@ -24,7 +30,15 @@ from cairn.services.lists import (
     update_list_entry_setting,
     update_list_entry_transpose,
 )
-from cairn.services.tunes import FAMILY_LABELS, TUNE_FAMILIES, list_tunes, preview_abc
+from cairn.services.tunes import (
+    COLUMN_PREVIEW_N_BARS,
+    FAMILY_LABELS,
+    POPUP_PREVIEW_N_BARS,
+    TUNE_FAMILIES,
+    TunePreview,
+    list_tunes,
+    preview_abc,
+)
 from cairn.templating import templates
 
 router = APIRouter(prefix="/lists", tags=["lists"])
@@ -36,20 +50,36 @@ _KEY_ROOTS = list(KeyRoot)
 _FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FAMILIES.items() for t in types}
 
 
-def _entry_previews(entries) -> dict[int, str]:
-    """Map tune id -> ABC preview for list entries, preferring each entry's chosen setting.
+def _entry_previews(entries) -> dict[int, TunePreview]:
+    """Map tune id -> (column snippet, popup preview) for list entries, preferring
+    each entry's chosen setting (#164 — replaces the single 4-bar preview).
 
-    Uses the entry's own display alias (if any) for the preview's T: header,
-    matching the name the row itself shows (#119). Applies the entry's saved
-    transpose (#158), if any, so the preview matches what practice will show.
+    Both previews are notes-only (#164) — no T: header, so unlike the row's
+    own title the entry's display alias (#119) has no effect here. Applies
+    the entry's saved transpose (#158), if any, so the preview matches what
+    practice will show.
+
+    Both also drop transpose_abc()'s own "(transposed +N semitones)" Z:
+    annotation — the row already shows the transposed key next to the title,
+    so the text annotation is redundant in either preview. transpose_abc()
+    runs after the initial notes_only strip inside preview_abc() (it needs
+    the untransposed ABC as input), so it's stripped again here to catch the
+    Z: line transpose_abc() itself adds.
+
+    The column snippet additionally strips quoted chord symbols ("G", "Am",
+    etc.) from the music body — ABCJS renders those well above the staff,
+    which reads as a disconnected floating letter in a box this small. The
+    popup keeps them; there's enough room there for them to read normally.
     """
-    previews: dict[int, str] = {}
+    previews: dict[int, TunePreview] = {}
     for entry in entries:
-        display_name = entry.display_alias.name if entry.display_alias else None
-        abc = preview_abc(entry.tune, entry.setting, display_name=display_name)
-        if abc is not None:
+        popup = preview_abc(entry.tune, entry.setting, n_bars=POPUP_PREVIEW_N_BARS, notes_only=True)
+        if popup is not None:
             semitones = transpose_semitones_for(entry.tune.key_root, entry.transpose_key_root, entry.transpose_octave)
-            previews[entry.tune_id] = transpose_abc(abc, semitones) if semitones else abc
+            if semitones:
+                popup = strip_decorative_headers(transpose_abc(popup, semitones))
+            column = strip_chord_symbols(truncate_to_bars(popup, COLUMN_PREVIEW_N_BARS))
+            previews[entry.tune_id] = TunePreview(column=column, popup=popup)
     return previews
 
 

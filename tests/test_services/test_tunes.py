@@ -444,6 +444,48 @@ async def test_preview_abc_display_name_overrides_title(db: AsyncSession) -> Non
     assert "T:Test" not in preview
 
 
+async def test_preview_abc_n_bars_none_returns_full_tune(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation="X:1\nT:x\nM:4/4\nK:D\n|:DEFG|ABcd|efga|bagf:|\n")
+    tune = await get_tune(db, created.id)
+    assert tune is not None
+    preview = preview_abc(tune, n_bars=None)
+    assert preview is not None
+    assert "bagf" in preview
+
+
+async def test_preview_abc_notes_only_strips_decorative_headers(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(composer="Ed Reavy", origin="Ireland"), abc_notation=ABC)
+    tune = await get_tune(db, created.id)
+    assert tune is not None
+    preview = preview_abc(tune, notes_only=True)
+    assert preview is not None
+    assert "T:" not in preview
+    assert "C:" not in preview
+    assert "O:" not in preview
+    assert "K:" in preview
+    assert "M:" in preview
+
+
+async def test_preview_abc_notes_only_strips_source_notes(db: AsyncSession) -> None:
+    created = await create_tune(db, _tune_create(), abc_notation=ABC)
+    alt = await create_setting(
+        db,
+        created.id,
+        TuneSettingCreate(
+            tune_id=created.id,
+            label="Alternate",
+            abc_notation="X:1\nT:x\nK:D\n|:GABc|dcBA:|\n",
+            source_notes="as played by so-and-so",
+        ),
+    )
+    assert alt is not None
+    tune = await get_tune(db, created.id)
+    assert tune is not None
+    preview = preview_abc(tune, setting=alt, notes_only=True)
+    assert preview is not None
+    assert "Z:" not in preview
+
+
 def test_preview_abc_returns_none_without_a_core_setting() -> None:
     from cairn.models import Tune
 
