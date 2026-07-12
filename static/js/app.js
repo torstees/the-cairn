@@ -1524,7 +1524,7 @@
       popover = document.createElement("div");
       popover.id = "tune-hover-popover";
       popover.style.cssText =
-        "position:fixed; z-index:60; width:220px; max-height:70vh; overflow-y:auto; display:none; pointer-events:none;";
+        "position:fixed; z-index:60; width:300px; max-height:70vh; overflow-y:auto; display:none; pointer-events:none;";
       popover.className = "bg-white border border-stone-200 rounded-lg shadow-lg p-2";
       canvas = document.createElement("div");
       canvas.id = "tune-hover-abc-canvas";
