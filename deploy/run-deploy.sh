@@ -27,11 +27,17 @@ sudo -u "$APP_USER" bash -c "
 "
 
 systemctl restart cairn
-sleep 2
 
-if ! curl -fsS http://localhost:8000/ > /dev/null; then
-  echo "Health check failed after deploying $TAG" >&2
-  exit 1
-fi
+# e2-micro is a burstable, shared-core instance — a cold uvicorn start
+# after a restart can take longer than a couple seconds, so poll instead
+# of a single fixed sleep.
+for _ in $(seq 1 15); do
+  if curl -fsS http://localhost:8000/ > /dev/null 2>&1; then
+    echo "Deployed $TAG successfully."
+    exit 0
+  fi
+  sleep 1
+done
 
-echo "Deployed $TAG successfully."
+echo "Health check failed after deploying $TAG" >&2
+exit 1
