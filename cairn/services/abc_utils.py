@@ -509,3 +509,74 @@ def truncate_to_bars(abc: str, n_bars: int) -> str:
             if pipe_count >= n_bars:
                 return header + body[: i + 1].rstrip() + "\n"
     return abc
+
+
+_DECORATIVE_HEADERS = frozenset("TCOARSNZ")
+
+
+def strip_decorative_headers(abc: str) -> str:
+    """Drop title/composer/origin/region/rhythm-type/source/notes/annotation
+    header lines (T C O A R S N Z) from an assembled ABC string, keeping X
+    (required by ABCJS), K (key), M (meter — affects the rendered time
+    signature, not just decorative text), and any other header letter (e.g.
+    a user-supplied L:) untouched. Used for compact notes-only previews
+    (#164) where only the notation itself should show, not surrounding
+    metadata.
+
+    Z: is deliberately included in the strip set even though transpose_abc()
+    also writes a Z: line for its "(transposed +N semitones)" note — this
+    function is only ever called *before* transpose_abc() in the preview
+    pipeline, so the only Z: content it can ever see here is a setting's own
+    source_notes (build_abc()'s other use of that header letter), which is
+    citation text like S:, not the transpose annotation. Stripping it first
+    means transpose_abc() always adds a clean, standalone note afterward
+    rather than risking it getting appended onto leftover source-notes text.
+
+    Only scans the header block (lines from the top matching ^[A-Z]: up to
+    the first non-header line), matching _parse_abc_notation()'s convention
+    — build_abc() always emits headers together before the music body.
+    """
+    lines = abc.splitlines()
+    out: list[str] = []
+    in_header = True
+    for line in lines:
+        if in_header:
+            s = line.strip()
+            if len(s) >= 2 and s[1] == ":" and s[0].isalpha():
+                if s[0].upper() in _DECORATIVE_HEADERS:
+                    continue
+            else:
+                in_header = False
+        out.append(line)
+    return "\n".join(out)
+
+
+_CHORD_SYMBOL_RE = re.compile(r'"[^"]*"')
+
+
+def strip_chord_symbols(abc: str) -> str:
+    """Remove quoted chord/annotation strings (e.g. "G", "Am7", positioned
+    text like "rit.") from an ABC string's music body, leaving headers and
+    the notes themselves untouched. ABCJS renders these well above the
+    staff, adding real vertical height that's fine in a full-size render but
+    in a tiny fixed-height box (#164's row Preview column) reads as a
+    seemingly disconnected floating letter with no room around it. Only
+    meant for the column preview — the popup has enough room for them to
+    read normally as intended.
+
+    Scans the header block the same way strip_decorative_headers() does
+    (chord symbols only ever appear in the music body, never in a header
+    line, so headers are always passed through untouched).
+    """
+    lines = abc.splitlines()
+    out: list[str] = []
+    in_header = True
+    for line in lines:
+        if in_header:
+            s = line.strip()
+            if len(s) >= 2 and s[1] == ":" and s[0].isalpha():
+                out.append(line)
+                continue
+            in_header = False
+        out.append(_CHORD_SYMBOL_RE.sub("", line))
+    return "\n".join(out)

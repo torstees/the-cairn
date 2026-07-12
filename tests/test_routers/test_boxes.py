@@ -42,16 +42,22 @@ async def test_box_detail_includes_abc_hover_preview(client: AsyncClient, db: As
     assert f'<template id="tune-abc-preview-{tune.id}">' in resp.text
 
 
-async def test_box_detail_hover_preview_trigger_is_row_not_title(client: AsyncClient, db: AsyncSession) -> None:
+async def test_box_detail_hover_preview_trigger_is_preview_cell_not_row_or_title(
+    client: AsyncClient, db: AsyncSession
+) -> None:
     box, tune = await _seed(db)
     resp = await client.get(f"/boxes/{box.id}")
     assert resp.status_code == 200
 
-    tr_open = resp.text.split(f'<tr id="box-tune-{tune.id}"', 1)[1].split(">", 1)[0]
-    assert f'data-abc-preview-id="{tune.id}"' in tr_open
+    row_open = resp.text.split(f'id="box-tune-{tune.id}"', 1)[1].split(">", 1)[0]
+    assert "data-abc-preview-id" not in row_open
 
     a_open = resp.text.split(f'<a href="/tunes/{tune.id}?box_id={box.id}"', 1)[1].split(">", 1)[0]
     assert "data-abc-preview-id" not in a_open
+
+    canvas_open = resp.text.split(f'id="tune-abc-col-canvas-{tune.id}"', 1)[1].split(">", 1)[0]
+    assert f'data-abc-preview-id="{tune.id}"' in canvas_open
+    assert 'data-abc-preview-delay="300"' in canvas_open
 
 
 async def test_box_detail_shows_tune_aliases(client: AsyncClient, db: AsyncSession) -> None:
@@ -145,7 +151,9 @@ async def test_box_row_data_title_follows_display_alias(client: AsyncClient, db:
     assert 'data-title="the morning dew"' not in resp.text
 
 
-async def test_box_hover_preview_uses_display_alias_in_title(client: AsyncClient, db: AsyncSession) -> None:
+async def test_box_hover_preview_is_notes_only_regardless_of_display_alias(
+    client: AsyncClient, db: AsyncSession
+) -> None:
     box, tune = await _seed(db)
     alias = await add_alias(db, tune.id, "Sunrise Reel")
     await set_display_alias(db, box.id, tune.id, alias.id)
@@ -154,7 +162,10 @@ async def test_box_hover_preview_uses_display_alias_in_title(client: AsyncClient
     assert resp.status_code == 200
     marker = f'<template id="tune-abc-preview-{tune.id}">'
     preview = resp.text.split(marker, 1)[1].split("</template>", 1)[0]
-    assert "T:Sunrise Reel" in preview
+    assert "T:" not in preview
+
+    a_open_to_close = resp.text.split(f'<a href="/tunes/{tune.id}?box_id={box.id}"', 1)[1].split("</a>", 1)[0]
+    assert "Sunrise Reel" in a_open_to_close
 
 
 async def test_box_preview_uses_preferred_setting_not_core(client: AsyncClient, db: AsyncSession) -> None:
@@ -268,3 +279,64 @@ async def test_box_hover_preview_reflects_saved_transpose(client: AsyncClient, d
     marker = f'<template id="tune-abc-preview-{tune.id}">'
     preview = resp.text.split(marker, 1)[1].split("</template>", 1)[0]
     assert "K:E" in preview
+
+
+# ── tunes-table redesign (#164) ─────────────────────────────────────────────
+
+
+async def test_box_row_shows_type_badge(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+    assert "Reel" in resp.text
+
+
+async def test_box_column_preview_is_shorter_than_popup_preview(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+
+    col_marker = f'<template id="tune-abc-col-{tune.id}">'
+    col = resp.text.split(col_marker, 1)[1].split("</template>", 1)[0]
+    popup_marker = f'<template id="tune-abc-preview-{tune.id}">'
+    popup = resp.text.split(popup_marker, 1)[1].split("</template>", 1)[0]
+
+    assert col != popup
+    assert len(col) < len(popup)
+    assert "DEFA BAFA:|" in popup
+    assert "DEFA BAFA:|" not in col
+
+
+async def test_box_row_has_overflow_menu_with_transpose_and_remove(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+    assert 'role="menu"' in resp.text
+    assert f'hx-get="/boxes/{box.id}/tunes/{tune.id}/transpose"' in resp.text
+    assert f'hx-delete="/boxes/{box.id}/tunes/{tune.id}"' in resp.text
+
+
+async def test_box_row_has_cairn_row_class(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+    row_open = resp.text.split(f'id="box-tune-{tune.id}"', 1)[1].split(">", 1)[0]
+    assert "cairn-row" in row_open
+
+
+async def test_box_header_keeps_type_sort_control(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+    assert "sortBoxTable('type')" in resp.text
+
+
+async def test_box_row_shows_transposed_key_with_tooltip(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    await set_transpose(db, box.id, tune.id, KeyRoot.E, 1)
+
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+    assert "E Major, +8ve" in resp.text
+    assert "own key" in resp.text
+    assert "D Major" in resp.text

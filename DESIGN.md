@@ -240,6 +240,53 @@ The JSON is serialized in the route with `json.dumps` (not Jinja's `tojson`)
 so it is correctly escaped. The `| safe` filter prevents double-escaping.
 Alpine reads these globals in its `x-data` initializer.
 
+### CSS Grid as a Table (`role="table"`)
+
+Introduced by #164 for the box/list tune tables. A `<table>`'s default
+column-layout algorithm sizes every column to its widest cell across *all*
+rows, which stretches narrow `<select>`s to match the longest option text
+anywhere in the column. Using `display:grid` divs instead sizes columns by
+declared fractions (`grid-template-columns`), independent of cell content.
+
+Table semantics are preserved via explicit ARIA roles — `role="table"` /
+`role="rowgroup"` / `role="row"` / `role="columnheader"` / `role="cell"` —
+**not** `role="grid"`/`gridcell`, which implies a roving-tabindex
+arrow-key-navigable widget; assigning it without implementing that
+navigation is worse for screen readers than no role at all.
+
+The column-width declaration itself lives in one shared CSS class
+(`.cairn-row-grid` in `base.html`) reused by the header row and every body
+row, so the two can't drift out of alignment. Row-targeting JS (sort/filter)
+selects on a dedicated class (`.cairn-row`), not the ARIA role — keeping
+accessibility markup and behavioral hooks decoupled.
+
+### Per-Row Dropdown Menu (Alpine `@click.outside`)
+
+Introduced by #164 for the box/list row overflow ("⋮") menu. Each row owns
+its own `x-data="{ menuOpen: false }"` — no shared/store state is needed for
+"only one menu open at a time": a row's `@click.outside="menuOpen=false"`
+fires when *any other* row's button is clicked, closing it independently of
+that row's own click handler opening its own menu.
+
+```html
+<div x-data="{ menuOpen: false }" @click.outside="menuOpen = false" @keydown.escape="menuOpen = false">
+  <button @click="menuOpen = !menuOpen" aria-haspopup="menu" :aria-expanded="menuOpen">&#8942;</button>
+  <div x-show="menuOpen" x-cloak role="menu">...</div>
+</div>
+```
+
+### Lazy ABC Rendering (`IntersectionObserver`)
+
+Introduced by #164 for the box/list row preview column. Rendering an ABCJS
+score for every row on page load is a real per-row cost that adds up for a
+box/list with many tunes; `IntersectionObserver` (`static/js/app.js`'s
+`initColumnPreviewObserver`) renders each one only once it scrolls into
+view, then unobserves it (render-once, not continuous tracking). A
+`data-*-rendered` flag plus `:not([data-*-rendered])` in the re-scan
+selector lets the same `htmx:afterSwap`-driven re-observe pattern used
+elsewhere in `app.js` skip already-rendered rows while still picking up
+freshly swapped-in ones.
+
 ### ABC Assembly (`build_abc`)
 
 `cairn/services/abc_utils.py` contains the single function `build_abc(tune, setting, x=1) -> str`.

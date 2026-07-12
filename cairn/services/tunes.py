@@ -1,5 +1,6 @@
 import re
 from collections.abc import Iterable
+from typing import NamedTuple
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,10 +19,15 @@ from cairn.models import (
     TuneType,
 )
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
-from cairn.services.abc_utils import build_abc, truncate_to_bars
+from cairn.services.abc_utils import build_abc, strip_decorative_headers, truncate_to_bars
 
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
 _TEMPO_HEADER_RE = re.compile(r"^Q:[^\n]*\n?", re.MULTILINE)
+
+# Row-preview sizing (#164) — named so the popup's bar limit is easy to
+# change if a full untransposed tune proves too large for the hover popup.
+COLUMN_PREVIEW_N_BARS: int = 2
+POPUP_PREVIEW_N_BARS: int | None = None  # None = full tune, no truncation
 
 
 def sort_key(title: str) -> str:
@@ -102,10 +108,26 @@ def existing_alias_names(tune: Tune) -> set[str]:
     return {a.name.strip().lower() for a in tune.aliases}
 
 
+class TunePreview(NamedTuple):
+    """Two ABC renderings for the same entry (#164): a short always-visible
+    column snippet, and a fuller one for the on-hover popup. column is a
+    prefix-truncation of popup, guaranteeing they never drift apart."""
+
+    column: str
+    popup: str
+
+
 def preview_abc(
-    tune: Tune, setting: TuneSetting | None = None, n_bars: int = 4, display_name: str | None = None
+    tune: Tune,
+    setting: TuneSetting | None = None,
+    n_bars: int | None = 4,
+    display_name: str | None = None,
+    notes_only: bool = False,
 ) -> str | None:
     """Return an ABC preview (opening bars) for tune, preferring `setting` over the core setting.
+
+    n_bars=None returns the full tune, untruncated (same convention as
+    build_set_abc()'s n_bars param in abc_utils.py).
 
     Strips the Q: tempo header — like the main score view's client-side
     stripping (app.js' render()), a tempo marking on a static preview is
@@ -115,12 +137,21 @@ def preview_abc(
     display_name overrides the T: header, matching whatever name (tune title
     or box/list display alias, #119) the row this preview pops up from is
     itself showing.
+
+    notes_only additionally strips title/composer/origin/region/rhythm-type/
+    source/notes headers via strip_decorative_headers() (#164), for compact
+    previews where only the notation itself should show.
     """
     setting = setting or core_setting(tune)
     if setting is None:
         return None
-    abc = truncate_to_bars(build_abc(tune, setting, display_name=display_name), n_bars)
-    return _TEMPO_HEADER_RE.sub("", abc, count=1)
+    abc = build_abc(tune, setting, display_name=display_name)
+    if n_bars is not None:
+        abc = truncate_to_bars(abc, n_bars)
+    abc = _TEMPO_HEADER_RE.sub("", abc, count=1)
+    if notes_only:
+        abc = strip_decorative_headers(abc)
+    return abc
 
 
 def build_tune_previews(tunes: Iterable[Tune], n_bars: int = 4) -> dict[int, str]:

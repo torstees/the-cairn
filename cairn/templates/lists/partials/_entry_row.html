@@ -1,42 +1,67 @@
 {% from "components/_alias_summary.html" import alias_summary %}
-<tr id="entry-row-{{ entry.tune_id }}"
-    data-title="{{ (entry.display_alias.name if entry.display_alias else entry.tune.title) | lower }}"
-    data-type="{{ entry.tune.tune_type.label | lower }}"
-    data-tune-label="{{ entry.tune.title }} — {{ entry.tune.tune_type.label }} · {{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}"
-    data-tune-type="{{ entry.tune.tune_type.value }}"
-    x-data="{
-      remove() {
-        const title = $el.querySelector('a').textContent;
-        if (!confirm('Remove ' + title + ' from this list?')) return;
-        window.dispatchEvent(new CustomEvent('cairn-tune-removed', {detail: {
-          id: {{ entry.tune_id }},
-          label: $el.dataset.tuneLabel,
-          type: $el.dataset.tuneType,
-        }}));
-        htmx.ajax('DELETE', '/lists/{{ list_id }}/tunes/{{ entry.tune_id }}', {target: $el, swap: 'delete'});
-      }
-    }"
-    class="border-b border-stone-100 hover:bg-stone-50"
-    {% if entry.tune.id in tune_previews %}data-abc-preview-id="{{ entry.tune.id }}"{% endif %}>
-  <td class="py-3 px-4 text-stone-800">
-    <a href="/tunes/{{ entry.tune.id }}?list_id={{ list_id }}" class="font-medium hover:underline">{{ entry.display_alias.name if entry.display_alias else entry.tune.title }}</a>
-    {% if entry.tune.id in tune_previews %}
-    <template id="tune-abc-preview-{{ entry.tune.id }}">{{ tune_previews[entry.tune.id] }}</template>
-    {% endif %}
+<div id="entry-row-{{ entry.tune_id }}" role="row" class="cairn-row cairn-row-grid border-b border-stone-100 hover:bg-stone-50"
+     data-title="{{ (entry.display_alias.name if entry.display_alias else entry.tune.title) | lower }}"
+     data-type="{{ entry.tune.tune_type.label | lower }}"
+     data-tune-label="{{ entry.tune.title }} — {{ entry.tune.tune_type.label }} · {{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}"
+     data-tune-type="{{ entry.tune.tune_type.value }}"
+     x-data="{
+       menuOpen: false,
+       remove() {
+         const title = $el.querySelector('a').textContent;
+         if (!confirm('Remove ' + title + ' from this list?')) return;
+         window.dispatchEvent(new CustomEvent('cairn-tune-removed', {detail: {
+           id: {{ entry.tune_id }},
+           label: $el.dataset.tuneLabel,
+           type: $el.dataset.tuneType,
+         }}));
+         htmx.ajax('DELETE', '/lists/{{ list_id }}/tunes/{{ entry.tune_id }}', {target: $el, swap: 'delete'});
+       }
+     }"
+     @click.outside="menuOpen = false"
+     @keydown.escape="menuOpen = false">
+  <div role="cell" class="py-3 px-4">
+    <div class="flex items-center gap-2 flex-wrap">
+      <a href="/tunes/{{ entry.tune.id }}?list_id={{ list_id }}" class="font-medium text-stone-800 hover:text-stone-600">
+        {{ entry.display_alias.name if entry.display_alias else entry.tune.title }}
+      </a>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">
+        {{ entry.tune.tune_type.label }}
+      </span>
+    </div>
+    {% if entry.transpose_key_root or entry.transpose_octave %}
+    <p class="text-xs text-teal-700 italic mt-0.5 relative inline-block group">
+      {{ entry.transpose_key_root.label if entry.transpose_key_root else entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}{% if entry.transpose_octave == 1 %}, +8ve{% elif entry.transpose_octave == -1 %}, -8ve{% endif %}
+      <span class="hidden group-hover:block absolute z-20 left-0 top-full w-52 bg-white border border-stone-200 rounded-lg shadow-lg p-2 text-xs text-stone-600 leading-relaxed normal-case not-italic">
+        Tune&rsquo;s own key: {{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}
+      </span>
+    </p>
+    {% else %}
     <p class="text-xs text-stone-400 mt-0.5">{{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}</p>
-    {% if entry.tune.aliases %}
-    <div class="mt-0.5">{{ alias_summary(entry.tune.aliases) }}</div>
     {% endif %}
-  </td>
-  <td class="py-3 px-4 text-sm text-stone-500 whitespace-nowrap">{{ entry.tune.tune_type.label }}</td>
-  <td class="py-3 px-4">
+    {% if entry.tune.aliases %}
+    <div class="mt-0.5">{{ alias_summary(entry.tune.aliases, max_shown=1) }}</div>
+    {% endif %}
+  </div>
+  <div role="cell" class="py-3 px-4">
+    {% if entry.tune.id in tune_previews %}
+    {% set p = tune_previews[entry.tune.id] %}
+    <div id="tune-abc-col-canvas-{{ entry.tune.id }}"
+         class="cairn-col-preview w-[170px] h-16 overflow-hidden"
+         data-abc-column-preview-id="{{ entry.tune.id }}"
+         data-abc-preview-id="{{ entry.tune.id }}"
+         data-abc-preview-delay="300"></div>
+    <template id="tune-abc-col-{{ entry.tune.id }}">{{ p.column }}</template>
+    <template id="tune-abc-preview-{{ entry.tune.id }}">{{ p.popup }}</template>
+    {% endif %}
+  </div>
+  <div role="cell" class="py-3 px-4">
     {% if entry.tune.aliases %}
     <select name="display_alias_id"
             hx-post="/lists/{{ list_id }}/tunes/{{ entry.tune_id }}/display-alias"
             hx-target="#entry-row-{{ entry.tune_id }}"
             hx-swap="outerHTML"
             hx-trigger="change"
-            class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+            class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400 max-w-[200px] w-full truncate">
       <option value="">{{ entry.tune.title }}</option>
       {% for alias in entry.tune.aliases %}
       <option value="{{ alias.id }}" {% if entry.display_alias_id == alias.id %}selected{% endif %}>
@@ -47,8 +72,8 @@
     {% else %}
     <span class="text-xs text-stone-400">&mdash;</span>
     {% endif %}
-  </td>
-  <td class="py-3 px-4">
+  </div>
+  <div role="cell" class="py-3 px-4">
     {% set non_core = entry.tune.settings | selectattr('is_core', 'false') | list %}
     {% if non_core %}
     <select name="setting_id"
@@ -56,7 +81,7 @@
             hx-target="#entry-row-{{ entry.tune_id }}"
             hx-swap="outerHTML"
             hx-trigger="change"
-            class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400">
+            class="text-sm border border-stone-200 rounded px-2 py-1 bg-white text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400 max-w-[240px] w-full truncate">
       <option value="">Core setting</option>
       {% for s in entry.tune.settings %}
       {% if not s.is_core %}
@@ -69,23 +94,23 @@
     {% else %}
     <span class="text-xs text-stone-400">—</span>
     {% endif %}
-  </td>
-  <td class="py-3 px-4">
-    <button hx-get="/lists/{{ list_id }}/tunes/{{ entry.tune_id }}/transpose"
-            hx-target="#list-transpose-modal"
-            hx-swap="innerHTML"
-            class="text-xs border border-stone-200 rounded px-2 py-1 text-stone-500 hover:bg-stone-50 whitespace-nowrap">
-      {% if entry.transpose_key_root or entry.transpose_octave %}
-      {{ entry.transpose_key_root.label if entry.transpose_key_root else "Same key" }} {{ entry.tune.key_mode.label if entry.transpose_key_root }}{% if entry.transpose_octave == 1 %}, +8ve{% elif entry.transpose_octave == -1 %}, -8ve{% endif %}
-      {% else %}
-      Transpose
-      {% endif %}
-    </button>
-  </td>
-  <td class="py-3 px-4 text-right">
-    <button @click="remove()"
-            class="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-50">
-      Remove
-    </button>
-  </td>
-</tr>
+  </div>
+  <div role="cell" class="relative text-right py-3 px-4">
+    <button type="button" @click="menuOpen = !menuOpen" aria-haspopup="menu" :aria-expanded="menuOpen"
+            class="w-8 h-8 border border-stone-200 rounded text-stone-500 hover:bg-stone-50">&#8942;</button>
+    <div x-show="menuOpen" x-cloak role="menu"
+         class="absolute right-0 top-full mt-1 bg-white border border-stone-200 rounded-lg shadow-lg min-w-[140px] z-10 overflow-hidden">
+      <button type="button" role="menuitem" @click="menuOpen = false"
+              hx-get="/lists/{{ list_id }}/tunes/{{ entry.tune_id }}/transpose"
+              hx-target="#list-transpose-modal"
+              hx-swap="innerHTML"
+              class="block w-full text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
+        Transpose
+      </button>
+      <button type="button" role="menuitem" @click="menuOpen = false; remove()"
+              class="block w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-stone-100">
+        Remove
+      </button>
+    </div>
+  </div>
+</div>
