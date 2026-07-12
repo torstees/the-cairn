@@ -1,10 +1,11 @@
+import os
 from datetime import datetime
 
 from sqlalchemy import DateTime, func
 from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-DATABASE_URL = "sqlite+aiosqlite:///./cairn.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///./cairn.db")
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 
