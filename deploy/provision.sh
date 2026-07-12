@@ -37,6 +37,23 @@ if ! command -v git >/dev/null 2>&1; then
   apt-get install -y git
 fi
 
+# --- sqlite3 CLI + Google Cloud CLI (needed for the nightly backup, 10.5) ---
+if ! command -v sqlite3 >/dev/null 2>&1; then
+  apt-get update
+  apt-get install -y sqlite3
+fi
+
+if ! command -v gcloud >/dev/null 2>&1; then
+  apt-get update
+  apt-get install -y apt-transport-https ca-certificates gnupg curl
+  curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+    | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+  echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+    | tee /etc/apt/sources.list.d/google-cloud-sdk.list
+  apt-get update
+  apt-get install -y google-cloud-cli
+fi
+
 # --- app checkout -----------------------------------------------------------
 # Only clones if missing — a re-run must not disturb whatever released tag
 # the deploy workflow (10.4) last checked out.
@@ -52,10 +69,16 @@ sudo -u "$APP_USER" bash -c "cd '$APP_DIR' && uv sync --locked"
 mkdir -p /etc/cairn
 if [[ ! -f /etc/cairn/cairn.env ]]; then
   cat > /etc/cairn/cairn.env <<'EOF'
-# Overrides for The Cairn's systemd service (deploy/cairn.service).
-# Provisioning creates this once and never overwrites it afterward.
+# Overrides for The Cairn's systemd service (deploy/cairn.service) and
+# deploy/backup.sh. Provisioning creates this once and never overwrites
+# it afterward.
 CAIRN_LOG_LEVEL=INFO
 # DATABASE_URL=sqlite+aiosqlite:///./cairn.db   # default; uncomment to override
+
+# Required for the nightly backup (10.5) — set this to the GCS bucket
+# created for backups (see TODO.md 10.5), then re-run provision.sh (or
+# just leave it, the cron job reads this file fresh every night).
+# CAIRN_BACKUP_BUCKET=the-cairn-backups-<your-project-number>
 EOF
 fi
 chown root:root /etc/cairn/cairn.env
@@ -89,5 +112,16 @@ fi
 install -m 644 "$APP_DIR/deploy/Caddyfile" /etc/caddy/Caddyfile
 systemctl enable caddy
 systemctl restart caddy
+
+# --- nightly backup cron (10.5) -----------------------------------------------
+# Requires CAIRN_BACKUP_BUCKET to be set in /etc/cairn/cairn.env (see above)
+# and the VM's own service account to have write access to that bucket —
+# both are one-time manual GCP steps documented in TODO.md 10.5.
+if [[ ! -f /etc/cron.d/cairn-backup ]]; then
+  cat > /etc/cron.d/cairn-backup <<EOF
+0 3 * * * $APP_USER bash $APP_DIR/deploy/backup.sh >> /var/log/cairn-backup.log 2>&1
+EOF
+  chmod 644 /etc/cron.d/cairn-backup
+fi
 
 echo "Provisioning complete. cairn: $(systemctl is-active cairn), caddy: $(systemctl is-active caddy)"

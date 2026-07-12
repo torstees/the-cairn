@@ -1280,7 +1280,7 @@ correctly on a GCE VM with no changes.
      (needed for the very first automated deploy — it can't fetch itself
      into existence).
 
-- [ ] **10.5 — Backup the SQLite file**
+- [x] **10.5 — Backup the SQLite file**
   The VM's disk is the only copy of the user's tune library and progress
   data. **Decided: SQLite's own `.backup` command, not whole-disk
   snapshots** — the DB file is the only irreplaceable thing on the VM (the
@@ -1294,6 +1294,30 @@ correctly on a GCE VM with no changes.
   - Retention is enforced by a GCS lifecycle rule on that bucket (delete
     objects older than 14 days) — configured once, no manual pruning
     script to maintain.
+
+  Done: `deploy/backup.sh` + a `/etc/cron.d/cairn-backup` entry installed
+  by `provision.sh` (nightly at 3am), which also now installs the
+  `sqlite3` and `gcloud` CLIs (neither was present on the base image).
+
+  **Manual GCP steps needed before backups actually run** (same spirit
+  as 10.3 — one-time, done via Console):
+  1. Create a GCS bucket for backups (name must be globally unique —
+     something like `the-cairn-backups-325835760854` works).
+  2. On that bucket, add a **Lifecycle rule**: delete objects older than
+     14 days.
+  3. Grant the VM's own attached service account (the same
+     `PROJECT_NUMBER-compute@developer.gserviceaccount.com` granted
+     `iam.serviceAccountUser` during 10.4) the **Storage Object Admin**
+     role, scoped to just this bucket (bucket → Permissions → Grant
+     Access) — not project-wide.
+  4. Check the VM's **Access scopes** (Compute Engine → VM instances →
+     the instance → Edit — requires the VM to be *stopped* to change).
+     If it's set to the default limited scope rather than "Allow full
+     access to all Cloud APIs," Storage writes will fail even with
+     correct IAM. Needs read/write Storage access at minimum.
+  5. Set `CAIRN_BACKUP_BUCKET=<bucket-name>` in `/etc/cairn/cairn.env` on
+     the VM (uncomment the line provisioning already added) — the cron
+     job reads this fresh every run, no restart needed.
 
 ---
 
