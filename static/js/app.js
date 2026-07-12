@@ -1657,6 +1657,16 @@
     if (!tmpl || !canvas) return;
     try {
       ABCJS.renderAbc(canvas.id, tmpl.content.textContent, TRANSPOSE_PREVIEW_OPTS);
+      // Same fix as _renderColumnPreview() below: ABCJS's SVG has no
+      // viewBox, so the CSS max-width:100% rule (_transpose_popup.html)
+      // only resizes the SVG's own box, not the drawing inside it — a
+      // viewBox gives it a coordinate system to actually scale against.
+      var svg = canvas.querySelector("svg");
+      if (svg && !svg.hasAttribute("viewBox")) {
+        var w = svg.getAttribute("width");
+        var h = svg.getAttribute("height");
+        if (w && h) svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      }
     } catch (e) {
       // Malformed/unrenderable ABC — leave the canvas empty rather than crash.
     }
@@ -1688,9 +1698,25 @@
       // wins over the .cairn-col-preview box's own fixed height class
       // regardless of CSS specificity, silently making every row a different
       // height depending on each tune's content. Clear it so the class's
-      // fixed height (and the CSS max-width scale-down on the svg itself)
-      // governs, keeping every row's preview cell a consistent size.
+      // fixed height governs, keeping every row's preview cell a consistent
+      // size.
       el.style.removeProperty("height");
+      // ABCJS's output SVG has no viewBox — only width/height attributes
+      // holding its native, unscaled pixel size. Without a viewBox, CSS
+      // max-width/height:auto (.cairn-col-preview svg in base.html) resizes
+      // only the SVG's own layout box; the drawing inside keeps its native
+      // absolute coordinates and simply gets clipped by the smaller box
+      // instead of scaling down — cropping off most of the 2nd bar rather
+      // than shrinking both bars to fit. Adding a viewBox derived from the
+      // SVG's own width/height gives the browser a coordinate system to
+      // scale against, so the CSS rule actually shrinks the whole drawing
+      // proportionally instead of just resizing an empty viewport onto it.
+      var svg = el.querySelector("svg");
+      if (svg && !svg.hasAttribute("viewBox")) {
+        var w = svg.getAttribute("width");
+        var h = svg.getAttribute("height");
+        if (w && h) svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      }
     } catch (e) {
       // Malformed/unrenderable ABC — leave the canvas empty rather than crash.
     }
