@@ -1,0 +1,40 @@
+name: Deploy
+
+# Publishing a GitHub release is the deploy trigger — an explicit manual
+# gate even if tagging itself is automated.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # required for Workload Identity Federation
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/325835760854/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deploy@the-cairn.iam.gserviceaccount.com
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy released tag over IAP-tunneled SSH
+        run: |
+          gcloud compute ssh "${{ vars.CAIRN_VM_NAME }}" \
+            --zone="${{ vars.CAIRN_VM_ZONE }}" \
+            --project=the-cairn \
+            --tunnel-through-iap \
+            --command="sudo /opt/cairn/deploy/run-deploy.sh '${{ github.event.release.tag_name }}'"
+
+      # Rollback is manual on this single-VM setup (no blue/green):
+      #   gcloud compute ssh <vm-name> --zone=<zone> --project=the-cairn \
+      #     --tunnel-through-iap \
+      #     --command="sudo /opt/cairn/deploy/run-deploy.sh '<previous-tag>'"
+      # deploy/run-deploy.sh is safe to re-run with any earlier tag: it
+      # checks that tag back out, re-syncs deps, re-runs migrations (a
+      # no-op if already applied), and restarts the service.
