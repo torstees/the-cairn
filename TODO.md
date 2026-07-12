@@ -1174,7 +1174,7 @@ correctly on a GCE VM with no changes.
   so `alembic upgrade head` always targets the same database the app
   connects to.
 
-- [ ] **10.2 — systemd service + provisioning script**
+- [x] **10.2 — systemd service + provisioning script**
   No Docker — a plain `uv`-managed checkout on the VM, matching how it
   already runs locally.
   - `deploy/cairn.service` — systemd unit. `ExecStart` runs
@@ -1183,6 +1183,9 @@ correctly on a GCE VM with no changes.
     `DATABASE_URL` / `CAIRN_LOG_LEVEL` overrides.
   - `deploy/provision.sh` — one-time (idempotent, safe to re-run) VM setup:
     installs `uv`, clones the repo, installs the systemd unit, enables it.
+    Also runs `uv sync --locked` and `alembic upgrade head`, and installs +
+    configures Caddy. Creates a dedicated `cairn` system user and
+    `/etc/cairn/cairn.env` (created once, never overwritten by re-runs).
   - **Decided: `the-cairn.app` (registered via Cloudflare), fronted by
     Caddy** for automatic Let's Encrypt TLS — no longer optional, since
     `.app` is on the browser HSTS preload list and plain HTTP to it is
