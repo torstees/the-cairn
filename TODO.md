@@ -1199,9 +1199,13 @@ correctly on a GCE VM with no changes.
   Manual (not part of the automated deploy) — document the steps rather
   than scripting them, since this runs once:
   - Enable the Compute Engine API; create the e2-micro VM in a free-tier
-    region (`us-west1`, `us-central1`, or `us-east1`), sized persistent
-    disk, firewall rules opening 80 and 443 (10.2's Caddy needs both — 80
-    for the ACME HTTP challenge, 443 for the app itself).
+    region (`us-west1`, `us-central1`, or `us-east1`). Disk: explicitly pick
+    **Standard persistent disk** (`pd-standard`) — the Console's default is
+    often "Balanced" (`pd-balanced`), which is *not* covered by the Always
+    Free tier. Only `pd-standard` up to 30GB-months is free, so size it
+    20–30GB (no cost difference from 10GB, just headroom). Firewall rules
+    opening 80 and 443 (10.2's Caddy needs both — 80 for the ACME HTTP
+    challenge, 443 for the app itself).
   - Reserve the VM's external IP as **static** (GCP's default is
     ephemeral — it changes on VM stop/restart, which would silently break
     DNS). Once reserved, the user adds an **A record** for `the-cairn.app`
