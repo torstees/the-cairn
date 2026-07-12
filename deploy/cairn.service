@@ -1,0 +1,16 @@
+[Unit]
+Description=The Cairn — tune practice tracker
+After=network.target
+
+[Service]
+Type=simple
+User=cairn
+Group=cairn
+WorkingDirectory=/opt/cairn
+EnvironmentFile=-/etc/cairn/cairn.env
+ExecStart=/usr/local/bin/uv run uvicorn cairn.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

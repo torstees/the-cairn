@@ -1,0 +1,3 @@
+the-cairn.app {
+    reverse_proxy localhost:8000
+}
