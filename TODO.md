@@ -1198,7 +1198,7 @@ correctly on a GCE VM with no changes.
     Install Caddy in `provision.sh` alongside the systemd unit; open 443
     (and 80, needed for the ACME HTTP challenge) in the VM firewall (10.3).
 
-- [ ] **10.3 — One-time GCP project setup**
+- [x] **10.3 — One-time GCP project setup**
   Manual (not part of the automated deploy) — document the steps rather
   than scripting them, since this runs once:
   - Enable the Compute Engine API; create the e2-micro VM in a free-tier
@@ -1228,6 +1228,14 @@ correctly on a GCE VM with no changes.
     Actions' deploy step and set up Workload Identity Federation between
     GitHub's OIDC provider and that service account — no long-lived JSON
     key stored in GitHub secrets.
+
+  Done. All of the above was completed via the GCP Console (Cloud Shell's
+  `gcloud` hit a persistent "Gaia id not found" error unrelated to this
+  project's config — worked around entirely through the Console UI). For
+  10.4's workflow, the two values it needs:
+  - Service account: `github-deploy@the-cairn.iam.gserviceaccount.com`
+  - Workload Identity Provider:
+    `projects/325835760854/locations/global/workloadIdentityPools/github-pool/providers/github-provider`
 
 - [ ] **10.4 — GitHub Actions deploy workflow**
   New `.github/workflows/deploy.yml`, separate from the existing `ci.yml`.
