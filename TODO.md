@@ -1164,12 +1164,15 @@ overridable. `cairn/logging_config.py`'s `is_cloud()` already detects
 `K_SERVICE`/`K_REVISION` vars, so structured JSON logging already activates
 correctly on a GCE VM with no changes.
 
-- [ ] **10.1 — Externalize the database URL**
+- [x] **10.1 — Externalize the database URL**
   `cairn/database.py` currently hardcodes `DATABASE_URL = "sqlite+aiosqlite:///./cairn.db"`.
   Change to read from a `DATABASE_URL` env var, falling back to that same
   literal for local dev (no `.env` file needed yet — no other secrets exist
   in the app since there's no auth). Keep this minimal; don't introduce a
   settings/config framework for one variable.
+  Also updated `alembic/env.py` to honor the same `DATABASE_URL` override,
+  so `alembic upgrade head` always targets the same database the app
+  connects to.
 
 - [ ] **10.2 — systemd service + provisioning script**
   No Docker — a plain `uv`-managed checkout on the VM, matching how it
