@@ -31,6 +31,12 @@ if ! command -v uv >/dev/null 2>&1; then
   curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
 fi
 
+# --- git (not present on the base Debian GCE image) -------------------------
+if ! command -v git >/dev/null 2>&1; then
+  apt-get update
+  apt-get install -y git
+fi
+
 # --- app checkout -----------------------------------------------------------
 # Only clones if missing — a re-run must not disturb whatever released tag
 # the deploy workflow (10.4) last checked out.
