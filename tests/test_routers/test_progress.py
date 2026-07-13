@@ -121,16 +121,36 @@ async def test_progress_index_includes_abc_hover_preview(client: AsyncClient, db
     assert f'<template id="tune-abc-preview-{t.id}">' in resp.text
 
 
-async def test_progress_index_hover_preview_trigger_is_card_not_title(client: AsyncClient, db: AsyncSession) -> None:
+async def test_progress_index_hover_preview_trigger_is_preview_cell_not_card_or_title(
+    client: AsyncClient, db: AsyncSession
+) -> None:
     _, t = await _seed(db)
     resp = await client.get("/progress/")
     assert resp.status_code == 200
 
     card_open = resp.text.split(f'<div id="progress-card-{t.id}"', 1)[1].split(">", 1)[0]
-    assert f'data-abc-preview-id="{t.id}"' in card_open
+    assert "data-abc-preview-id" not in card_open
 
     a_open = resp.text.split(f'<a href="/tunes/{t.id}?from=progress"', 1)[1].split(">", 1)[0]
     assert "data-abc-preview-id" not in a_open
+
+    canvas_open = resp.text.split(f'id="tune-abc-col-canvas-{t.id}"', 1)[1].split(">", 1)[0]
+    assert f'data-abc-preview-id="{t.id}"' in canvas_open
+    assert 'data-abc-preview-delay="300"' in canvas_open
+
+
+async def test_progress_column_preview_is_shorter_than_popup_preview(client: AsyncClient, db: AsyncSession) -> None:
+    _, t = await _seed(db)
+    resp = await client.get("/progress/")
+    assert resp.status_code == 200
+
+    col_marker = f'<template id="tune-abc-col-{t.id}">'
+    col = resp.text.split(col_marker, 1)[1].split("</template>", 1)[0]
+    popup_marker = f'<template id="tune-abc-preview-{t.id}">'
+    popup = resp.text.split(popup_marker, 1)[1].split("</template>", 1)[0]
+
+    assert col != popup
+    assert len(col) < len(popup)
 
 
 async def test_progress_record_response_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:
