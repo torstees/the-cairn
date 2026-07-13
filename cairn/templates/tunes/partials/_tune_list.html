@@ -37,16 +37,13 @@
 <ul class="space-y-3" id="tune-list-ul">
   {% for tune in tunes %}
   <li data-search="{{ tune.title }}{% for a in tune.aliases %} {{ a.name }}{% endfor %}"
-      class="flex items-center justify-between bg-white rounded-lg shadow-sm px-5 py-4 gap-4"
-      {% if tune.id in tune_previews %}data-abc-preview-id="{{ tune.id }}"{% endif %}>
+      class="grid grid-cols-[minmax(0,1fr)_180px_56px] items-center bg-white rounded-lg shadow-sm px-5 py-4 gap-4"
+      x-data="{ menuOpen: false }" @click.outside="menuOpen = false" @keydown.escape="menuOpen = false">
     <div class="min-w-0">
       <a href="/tunes/{{ tune.id }}"
          class="text-lg font-semibold text-stone-800 hover:text-stone-600 hover:underline">
         {{ tune.title }}
       </a>
-      {% if tune.id in tune_previews %}
-      <template id="tune-abc-preview-{{ tune.id }}">{{ tune_previews[tune.id] }}</template>
-      {% endif %}
       <span class="ml-3 text-sm text-stone-500">
         {{ tune.tune_type.label }} &middot; {{ tune.key_root.label }} {{ tune.key_mode.label }}
       </span>
@@ -54,17 +51,36 @@
       <div class="mt-0.5">{{ alias_summary(tune.aliases) }}</div>
       {% endif %}
     </div>
-    <div class="flex items-center gap-3 shrink-0">
-      <a href="/tunes/{{ tune.id }}/edit"
-         class="text-sm text-stone-500 hover:text-stone-700">Edit</a>
-      <button
-        hx-delete="/tunes/{{ tune.id }}"
-        hx-target="closest li"
-        hx-swap="outerHTML swap:300ms"
-        hx-confirm="Delete &ldquo;{{ tune.title }}&rdquo;?"
-        class="text-sm text-red-500 hover:text-red-700">
-        Delete
-      </button>
+    <div class="w-[170px] h-16 overflow-hidden">
+      {% if tune.id in tune_previews %}
+      {% set p = tune_previews[tune.id] %}
+      <div id="tune-abc-col-canvas-{{ tune.id }}"
+           class="cairn-col-preview w-full h-full"
+           data-abc-column-preview-id="{{ tune.id }}"
+           data-abc-preview-id="{{ tune.id }}"
+           data-abc-preview-delay="300"></div>
+      <template id="tune-abc-col-{{ tune.id }}">{{ p.column }}</template>
+      <template id="tune-abc-preview-{{ tune.id }}">{{ p.popup }}</template>
+      {% endif %}
+    </div>
+    <div class="relative">
+      <button type="button" @click="menuOpen = !menuOpen" aria-haspopup="menu" :aria-expanded="menuOpen"
+              class="w-8 h-8 border border-stone-200 rounded text-stone-500 hover:bg-stone-50">&#8942;</button>
+      <div x-show="menuOpen" x-cloak role="menu"
+           class="absolute right-0 top-full mt-1 bg-white border border-stone-200 rounded-lg shadow-lg min-w-[140px] z-10 overflow-hidden">
+        <a href="/tunes/{{ tune.id }}/edit" role="menuitem" @click="menuOpen = false"
+           class="block w-full text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
+          Edit
+        </a>
+        <button type="button" role="menuitem" @click="menuOpen = false"
+                hx-delete="/tunes/{{ tune.id }}"
+                hx-target="closest li"
+                hx-swap="outerHTML swap:300ms"
+                hx-confirm="Delete &ldquo;{{ tune.title }}&rdquo;?"
+                class="block w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-stone-100">
+          Delete
+        </button>
+      </div>
     </div>
   </li>
   {% endfor %}

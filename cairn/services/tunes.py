@@ -19,7 +19,7 @@ from cairn.models import (
     TuneType,
 )
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
-from cairn.services.abc_utils import build_abc, strip_decorative_headers, truncate_to_bars
+from cairn.services.abc_utils import build_abc, strip_chord_symbols, strip_decorative_headers, truncate_to_bars
 
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
 _TEMPO_HEADER_RE = re.compile(r"^Q:[^\n]*\n?", re.MULTILINE)
@@ -154,13 +154,14 @@ def preview_abc(
     return abc
 
 
-def build_tune_previews(tunes: Iterable[Tune], n_bars: int = 4) -> dict[int, str]:
-    """Map tune id -> ABC preview (opening bars of the core setting) for tunes that have one."""
-    previews: dict[int, str] = {}
+def build_tune_previews(tunes: Iterable[Tune]) -> dict[int, TunePreview]:
+    """Map tune id -> two-bar column + full popup preview (#179), for tunes that have a core setting."""
+    previews: dict[int, TunePreview] = {}
     for tune in tunes:
-        abc = preview_abc(tune, n_bars=n_bars)
-        if abc is not None:
-            previews[tune.id] = abc
+        popup = preview_abc(tune, n_bars=POPUP_PREVIEW_N_BARS, notes_only=True)
+        if popup is not None:
+            column = strip_chord_symbols(truncate_to_bars(popup, COLUMN_PREVIEW_N_BARS))
+            previews[tune.id] = TunePreview(column=column, popup=popup)
     return previews
 
 

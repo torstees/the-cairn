@@ -4,20 +4,16 @@
 #}
 {% from "components/_alias_summary.html" import alias_summary %}
 {% set is_due = progress and progress.next_suggested and progress.next_suggested <= now %}
-<div id="progress-card-{{ tune.id }}" class="bg-white rounded-lg shadow-sm px-5 py-4"
-     {% if tune.id in tune_previews %}data-abc-preview-id="{{ tune.id }}"{% endif %}>
+<div id="progress-card-{{ tune.id }}" class="bg-white rounded-lg shadow-sm px-5 py-4">
 
-  {# Header row: title + status controls #}
-  <div class="flex items-start justify-between gap-4 flex-wrap">
+  {# Header row: title + preview + status controls #}
+  <div class="grid grid-cols-[minmax(0,1fr)_180px_200px] items-start gap-4">
     <div class="min-w-0">
       <div class="flex items-center gap-2">
         <a href="/tunes/{{ tune.id }}?from=progress"
            class="font-medium text-stone-800 hover:text-stone-600 hover:underline">
           {{ tune.title }}
         </a>
-        {% if tune.id in tune_previews %}
-        <template id="tune-abc-preview-{{ tune.id }}">{{ tune_previews[tune.id] }}</template>
-        {% endif %}
         {% if is_due %}
         <span class="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">Due</span>
         {% endif %}
@@ -28,7 +24,20 @@
       {% endif %}
     </div>
 
-    <div class="flex items-center gap-3 shrink-0 flex-wrap">
+    <div class="w-[170px] h-16 overflow-hidden">
+      {% if tune.id in tune_previews %}
+      {% set p = tune_previews[tune.id] %}
+      <div id="tune-abc-col-canvas-{{ tune.id }}"
+           class="cairn-col-preview w-full h-full"
+           data-abc-column-preview-id="{{ tune.id }}"
+           data-abc-preview-id="{{ tune.id }}"
+           data-abc-preview-delay="300"></div>
+      <template id="tune-abc-col-{{ tune.id }}">{{ p.column }}</template>
+      <template id="tune-abc-preview-{{ tune.id }}">{{ p.popup }}</template>
+      {% endif %}
+    </div>
+
+    <div class="flex items-center gap-3 flex-wrap">
       {% include "components/_progress_badge.html" %}
 
       {# Inline status selector — HTMX updates the badge above on change #}

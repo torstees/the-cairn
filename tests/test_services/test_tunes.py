@@ -507,7 +507,13 @@ async def test_build_tune_previews_maps_tune_id_to_abc(db: AsyncSession) -> None
     assert tune is not None
     previews = build_tune_previews([tune])
     assert tune.id in previews
-    assert "Q:" not in previews[tune.id]
+    preview = previews[tune.id]
+    assert "Q:" not in preview.column
+    assert "Q:" not in preview.popup
+    # This fixture's tune is exactly 2 bars, so column == popup here; the
+    # column-is-a-shorter-prefix behavior for longer tunes is covered by
+    # tests/test_routers/test_tunes.py::test_tune_column_preview_is_shorter_than_popup_preview.
+    assert len(preview.column) <= len(preview.popup)
 
 
 # ── resolve_display_context ───────────────────────────────────────────────────
