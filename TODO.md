@@ -1321,6 +1321,138 @@ correctly on a GCE VM with no changes.
 
 ---
 
+### 11. Authentication & Multi-User Enforcement
+
+The app is now live in production. It has been single-user since Phase 1,
+standing in a hardcoded `_STUB_USER_ID = 1` throughout `main.py` and seven
+routers (`_STUB_`-prefixed per `DESIGN.md`'s own "easy to find and replace
+in Phase 2" convention). Real per-account isolation is the prerequisite for
+opening the app to other musicians. The schema already anticipated
+multi-user (`User`/`Role`/`ContentVisibility` from Phase 1 tasks 1.5/1.5b);
+what's missing is entirely the auth *behavior*, plus closing a real gap:
+several detail/mutation routes (`box_detail`, `box_add_tune`, `list_edit`,
+and others) don't check ownership at all today — harmless with one stub
+user, a real cross-account data leak with two.
+
+Decided: **Google OAuth** ("Sign in with Google"), not password auth (the
+existing `hashed_password` column is unused — no signup ever wrote to it)
+and not magic-link (would require standing up email-sending infrastructure
+from scratch). Tune/setting sharing model: a shared core catalog plus
+optionally-private custom tunes/settings. Teacher/student privacy:
+roster-based, with link-sharing as an explicit alternative a teacher can
+use instead of a formal roster.
+
+- [ ] **11.1 — Dependencies + config module**
+  Add `authlib` (OAuth client — handles CSRF state/nonce and OIDC ID-token
+  verification, not worth hand-rolling) and `itsdangerous` (required by
+  Starlette's `SessionMiddleware`). New `cairn/config.py`, matching the
+  existing minimal `os.environ.get(...)` style of `database.py`/
+  `logging_config.py` (no `pydantic-settings`): `GOOGLE_CLIENT_ID`,
+  `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET_KEY`. Fail loudly at import time
+  if empty outside a test context.
+
+- [ ] **11.2 — Schema migration**
+  Chains off current head `7ae690dc49a9`.
+  - `User`: add `google_sub` (String, unique, indexed, NOT NULL). Drop
+    `hashed_password` entirely — confirm production has zero `User` rows
+    first (no seed file creates one).
+  - `Tune` + `TuneSetting`: add `visibility` (reuse the existing
+    `ContentVisibility` enum — `public`/`private` used this round,
+    `enrolled` reserved for 11.9), server-default `'public'`.
+  - New `Enrollment` table: `id`, `teacher_id`/`student_id` (FK→users.id),
+    `status` (new enum: pending/active), `TimestampMixin`,
+    `UniqueConstraint(teacher_id, student_id)`.
+  - New `ShareLink` table: `id`, `token` (unique, indexed,
+    `secrets.token_urlsafe`), `tune_id`/`setting_id` (nullable FKs, exactly
+    one set), `created_by` (FK→users.id), `TimestampMixin`.
+
+- [ ] **11.3 — Google OAuth login/logout**
+  New `cairn/routers/auth.py` (the file `AGENTS.md`'s own target tree
+  already names). `GET /auth/login` → Google consent screen via authlib.
+  `GET /auth/callback` → exchange code, verify ID token, look up `User` by
+  `google_sub`; auto-provision on first login (no separate signup form) from
+  the Google profile, default `role=student`; store `user_id` in session,
+  redirect to `next` (or `/`). `POST /auth/logout` → clear session, redirect
+  to login. `cairn/dependencies.py` gains `get_current_user`, raising a
+  `NotAuthenticatedError` on no/invalid session; `main.py` registers an
+  `@app.exception_handler` for it that redirects to
+  `/auth/login?next=...` rather than a bare 401 — the standard FastAPI
+  pattern for a server-rendered app. `SessionMiddleware` added in
+  `main.py`; every `include_router(...)` except `auth_router` gets
+  `dependencies=[Depends(get_current_user)]` — everything requires login in
+  this round, no public unauthenticated browsing yet.
+
+- [ ] **11.4 — Replace `_STUB_USER_ID`, close the ownership gap**
+  Delete the module-level `_STUB_USER_ID = 1` from `main.py` and all seven
+  routers (`boxes.py`, `lists.py`, `tune_sets.py`, `warmups.py`,
+  `practice.py`, `tunes.py`, `progress.py`); add
+  `user: User = Depends(get_current_user)` to every handler; replace
+  `_STUB_USER_ID` → `user.id` (thread through helper functions too, e.g.
+  `practice.py`'s `_load_progress_map`, not just top-level routes). Then
+  close the real gap: add an ownership-checked fetch
+  (`_get_owned_box`/`_get_owned_list` — extending the pattern
+  `services/lists.py`'s `activate_list` already uses) to every currently
+  unchecked detail/mutation route (`box_detail`, `box_add_tune`,
+  `box_remove_tune`, `box_set_setting`, `box_set_display_alias`, box
+  transpose routes, `list_edit`, `list_update`, `list_deactivate`,
+  `list_add_tune`, list entry setting/alias/transpose routes, `list_delete`,
+  `list_remove_tune`) — 404 (not 403) on a missing row or an owner
+  mismatch, so another user's resource's existence isn't revealed.
+
+- [ ] **11.5 — Nav: logged-in state**
+  `cairn/templating.py` currently has no context-processor hook and
+  `base.html`'s nav is hardcoded with no per-page override point. Add a
+  thin `TemplateResponse`-shaped wrapper that merges in
+  `request.state.user` (set once in `get_current_user`) before delegating
+  to the real `Jinja2Templates` — swap the import in every router (a
+  mechanical rename, not a per-call-site edit) rather than touching dozens
+  of `TemplateResponse(...)` calls. Add username + a logout form to
+  `base.html`'s nav, left of the existing Tuner button (same `ml-auto`
+  group).
+
+- [ ] **11.6 — Test suite**
+  Add a `user` fixture to `tests/test_routers/conftest.py` that creates a
+  `User` row and overrides `get_current_user` via
+  `app.dependency_overrides` (same mechanism already used for `get_db`) —
+  replaces the copy-pasted `_seed()`-style helpers currently asserting
+  `u.id == _STUB_USER_ID` across `test_dashboard.py`, `test_lists.py`,
+  `test_practice.py`, `test_thesession_link.py`, `test_progress.py`,
+  `test_tunes.py`, `test_boxes.py` (all of which break once that constant
+  is deleted). Add: a second-user cross-account-404 test per router on the
+  previously-unchecked routes (the actual regression test for 11.4's fix),
+  and an unauthenticated-request redirect-to-login test.
+
+- [ ] **11.7 — Manual setup**
+  Same spirit as 10.3/10.4 — one-time, via Console:
+  1. Register an OAuth consent screen + OAuth client in Google Cloud
+     Console; authorized redirect URI
+     `https://the-cairn.app/auth/callback` (plus a `localhost` one for
+     local dev/testing).
+  2. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a generated
+     `SESSION_SECRET_KEY` in `/etc/cairn/cairn.env` on the VM — same
+     established override mechanism, no new plumbing needed.
+
+**Follow-up, not built this round** (schema from 11.2 already supports
+these; no routes/UI yet):
+
+- [ ] **11.8 — Tune/setting visibility enforcement**
+  Filter `/tunes` listing and search to
+  `visibility == public OR created_by == current_user`; a "make private"
+  toggle in the tune/setting edit UI.
+
+- [ ] **11.9 — Enrollment (teacher/student roster) UI**
+  Teacher-facing "invite a student" flow (email-address-based invite →
+  accept screen) and a student-facing pending-invitations view;
+  `enrolled`-visibility content filtered to the enrolled roster.
+
+- [ ] **11.10 — ShareLink UI**
+  A "get a shareable link" action on a private tune/setting, and a public
+  (unauthenticated) `/shared/{token}` view route — the one deliberate
+  exception to "everything requires auth" from 11.3, scoped narrowly to
+  exactly the shared item.
+
+---
+
 ### Phase 1 Complete Checklist
 
 Before closing Phase 1:
