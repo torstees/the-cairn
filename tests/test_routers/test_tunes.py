@@ -554,3 +554,58 @@ async def test_tune_add_to_box_explicit_core_overrides_auto_pick(client: AsyncCl
     entry = await get_box_entry(db, box.id, tune.id)
     assert entry is not None
     assert entry.setting_id is None
+
+
+async def test_tune_detail_aliases_render_as_badges_with_delete_button(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert "Sunrise Reel" in resp.text
+    assert f'hx-delete="/tunes/{tune.id}/aliases/{alias.id}"' in resp.text
+    assert 'hx-target="#aliases-section"' in resp.text
+
+
+async def test_tune_detail_alias_with_notes_shows_tooltip(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await add_alias(db, tune.id, "Sunrise Reel", "Known by this name in Clare")
+
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert "Known by this name in Clare" in resp.text
+
+
+async def test_tune_detail_alias_without_notes_has_no_tooltip_markup(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await add_alias(db, tune.id, "Sunrise Reel")
+
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    chip = resp.text.split("Sunrise Reel", 1)[1].split("</span>", 1)[0]
+    assert "group-hover:block" not in chip
+
+
+async def test_tune_detail_shows_add_alias_control(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert 'aria-label="Add alternate name"' in resp.text
+    assert f'hx-post="/tunes/{tune.id}/aliases"' in resp.text
+
+
+async def test_alias_add_route_returns_updated_badges(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.post(f"/tunes/{tune.id}/aliases", data={"name": "Sunrise Reel"})
+    assert resp.status_code == 200
+    assert "Sunrise Reel" in resp.text
+    assert 'id="aliases-section"' in resp.text
+
+
+async def test_alias_remove_route_returns_updated_badges(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    alias = await add_alias(db, tune.id, "Sunrise Reel")
+    resp = await client.delete(f"/tunes/{tune.id}/aliases/{alias.id}")
+    assert resp.status_code == 200
+    assert "Sunrise Reel" not in resp.text
+    assert 'id="aliases-section"' in resp.text

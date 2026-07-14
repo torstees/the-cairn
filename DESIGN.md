@@ -275,6 +275,31 @@ that row's own click handler opening its own menu.
 </div>
 ```
 
+### Badge Chip with Embedded Delete
+
+Introduced by #180 for the tune detail page's alias list. A pill (the same
+neutral `bg-stone-100`/`rounded-full` styling already used for display-only
+badges elsewhere) with a small `×` button embedded at its trailing edge,
+rather than a separate row with a text "Remove" action:
+
+```html
+<span class="group relative inline-flex items-center gap-1.5 bg-stone-100 text-stone-700 text-sm pl-3 pr-1.5 py-1 rounded-full">
+  {{ item.name }}
+  <button type="button" hx-delete="..." hx-target="#section-id" hx-swap="outerHTML"
+          class="shrink-0 w-4 h-4 flex items-center justify-center rounded-full text-stone-400 hover:text-red-600 hover:bg-red-50 leading-none">
+    &times;
+  </button>
+</span>
+```
+
+Any per-item detail that doesn't fit in the compact pill (e.g. alias
+`notes`) goes in the same custom hover-tooltip pattern used elsewhere in the
+app (`hidden group-hover:block absolute ...`), not a native `title=`
+attribute. The "add new" control is a small round dashed-border `+` button
+sitting inline in the same flex-wrap row as the chips, reusing the existing
+`x-data="{ open: false }"` reveal-a-form pattern (see `_difficulty.html`/
+`_settings.html`) for the form itself.
+
 ### Lazy ABC Rendering (`IntersectionObserver`)
 
 Introduced by #164 for the box/list row preview column. Rendering an ABCJS

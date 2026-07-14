@@ -1,67 +1,69 @@
-<section id="aliases-section" class="mb-8">
-  <h2 class="text-xl font-semibold text-stone-700 mb-3">Alternate Names</h2>
+<section id="aliases-section" class="mb-8" x-data="{ open: false }">
+  <div class="flex items-center gap-2 mb-3">
+    <h2 class="text-xl font-semibold text-stone-700">Alternate Names</h2>
+    <button type="button" x-show="!open" @click="open = true"
+            aria-label="Add alternate name"
+            class="inline-flex items-center justify-center w-6 h-6 rounded-full border border-dashed border-stone-300 text-stone-500 hover:bg-stone-50 hover:border-stone-400">
+      +
+    </button>
+  </div>
 
-  {% if tune.aliases %}
-  <ul class="bg-white rounded-lg shadow-sm divide-y divide-stone-100 mb-4">
+  <div class="flex flex-wrap items-center gap-2 mb-4">
     {% for alias in tune.aliases %}
-    <li class="flex items-start justify-between px-5 py-3 gap-4">
-      <div>
-        <span class="font-medium text-stone-800">{{ alias.name }}</span>
-        {% if alias.notes %}
-        <p class="text-xs text-stone-400 mt-0.5">{{ alias.notes }}</p>
-        {% endif %}
-      </div>
-      <button hx-delete="/tunes/{{ tune.id }}/aliases/{{ alias.id }}"
+    <span class="group relative inline-flex items-center gap-1.5 bg-stone-100 text-stone-700 text-sm pl-3 pr-1.5 py-1 rounded-full">
+      {{ alias.name }}
+      {% if alias.notes %}
+      <span class="hidden group-hover:block absolute z-20 left-0 top-full mt-1 w-52 bg-white border border-stone-200 rounded-lg shadow-lg p-2 text-xs text-stone-600 leading-relaxed normal-case font-normal">
+        {{ alias.notes }}
+      </span>
+      {% endif %}
+      <button type="button"
+              hx-delete="/tunes/{{ tune.id }}/aliases/{{ alias.id }}"
               hx-target="#aliases-section"
               hx-swap="outerHTML"
-              hx-confirm="Remove alias "{{ alias.name }}"?"
-              class="shrink-0 text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-50">
-        Remove
+              hx-confirm='Remove alias "{{ alias.name }}"?'
+              aria-label="Remove {{ alias.name }}"
+              class="shrink-0 w-4 h-4 flex items-center justify-center rounded-full text-stone-400 hover:text-red-600 hover:bg-red-50 leading-none">
+        &times;
       </button>
-    </li>
+    </span>
     {% endfor %}
-  </ul>
-  {% else %}
-  <p class="text-stone-500 text-sm mb-4">No alternate names recorded.</p>
-  {% endif %}
 
-  <div x-data="{ open: false }">
-    <button x-show="!open" @click="open = true"
-            class="text-sm border border-stone-300 text-stone-600 hover:bg-stone-50 px-3 py-1.5 rounded-lg">
-      + Add Alias
-    </button>
+    {% if not tune.aliases %}
+    <span class="text-stone-400 text-sm">No alternate names yet</span>
+    {% endif %}
+  </div>
 
-    <div x-show="open" x-cloak class="bg-white rounded-lg shadow-sm p-4 mt-3">
-      <form hx-post="/tunes/{{ tune.id }}/aliases"
-            hx-target="#aliases-section"
-            hx-swap="outerHTML"
-            @htmx:after-request="if($event.detail.successful) { open = false; $el.reset(); }"
-            class="space-y-3">
-        <div>
-          <label class="block text-sm font-medium text-stone-700 mb-1" for="alias-name">Name</label>
-          <input id="alias-name" name="name" type="text" required
-                 placeholder="e.g. Rosie Anderson"
-                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-stone-700 mb-1" for="alias-notes">
-            Notes <span class="text-stone-400 font-normal">(optional)</span>
-          </label>
-          <input id="alias-notes" name="notes" type="text"
-                 placeholder="e.g. Known by this name in Clare"
-                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
-        </div>
-        <div class="flex gap-2 pt-1">
-          <button type="submit"
-                  class="bg-stone-700 hover:bg-stone-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
-            Add
-          </button>
-          <button type="button" @click="open = false"
-                  class="px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 text-sm font-medium">
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
+  <div x-show="open" x-cloak class="bg-white rounded-lg shadow-sm p-4">
+    <form hx-post="/tunes/{{ tune.id }}/aliases"
+          hx-target="#aliases-section"
+          hx-swap="outerHTML"
+          @htmx:after-request="if($event.detail.successful) { open = false; $el.reset(); }"
+          class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1" for="alias-name">Name</label>
+        <input id="alias-name" name="name" type="text" required
+               placeholder="e.g. Rosie Anderson"
+               class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1" for="alias-notes">
+          Notes <span class="text-stone-400 font-normal">(optional)</span>
+        </label>
+        <input id="alias-notes" name="notes" type="text"
+               placeholder="e.g. Known by this name in Clare"
+               class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit"
+                class="bg-stone-700 hover:bg-stone-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
+          Add
+        </button>
+        <button type="button" @click="open = false"
+                class="px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 text-sm font-medium">
+          Cancel
+        </button>
+      </div>
+    </form>
   </div>
 </section>
