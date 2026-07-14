@@ -382,6 +382,25 @@ class TuneSetTempo(TimestampMixin, Base):
     tempo: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
+class TuneBoxSetDifficulty(TimestampMixin, Base):
+    """A user's override of a TuneSet's computed default difficulty, scoped to one box.
+
+    A row only exists once a user has explicitly overridden the default
+    (the hardest TuneDifficulty rating among the set's member tunes, for the
+    box's own instrument(s), computed fresh — see
+    services/tune_sets.py::compute_default_set_difficulty). Absence of a row
+    means "use the computed default."
+    """
+
+    __tablename__ = "tune_box_set_difficulties"
+
+    box_id: Mapped[int] = mapped_column(ForeignKey("tune_boxes.id"), primary_key=True)
+    set_id: Mapped[int] = mapped_column(ForeignKey("tune_sets.id"), primary_key=True)
+    difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_tune_box_set_difficulty_range"),)
+
+
 class PracticeList(TimestampMixin, Base):
     __tablename__ = "practice_lists"
 

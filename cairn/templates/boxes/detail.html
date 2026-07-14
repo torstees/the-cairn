@@ -148,6 +148,77 @@
 
   </div>{# end Alpine scope #}
 
+  {# ── Sets — separate Alpine scope, no family/type filter needed ──────────── #}
+  <div x-data="{
+         sets: window.__cairnAddableSets || [],
+         query: '',
+         selectedId: null,
+         open: false,
+         get filtered() {
+           const q = this.query.toLowerCase();
+           return (q ? this.sets.filter(s => s.label.toLowerCase().includes(q)) : this.sets).slice(0, 50);
+         },
+         pick(s) { this.selectedId = s.id; this.query = s.label; this.open = false; },
+       }"
+       @cairn-set-added.window="sets=sets.filter(s=>s.id!==$event.detail.id); query=''; selectedId=null; open=false">
+
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold text-stone-700 mb-3">
+        Sets <span class="text-stone-400 font-normal text-base">({{ box_sets | length }})</span>
+      </h2>
+
+      <ul class="space-y-3 mb-4" id="box-sets-body">
+        {% for entry in box_sets %}
+        {% set box_id = box.id %}
+        {% include "boxes/partials/_set_row.html" %}
+        {% endfor %}
+      </ul>
+      {% if not box_sets %}
+      <p class="text-stone-400 text-sm py-4 mb-4">No sets in this box yet.</p>
+      {% endif %}
+
+      {% if addable_sets %}
+      <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+        <form hx-post="/boxes/{{ box.id }}/sets"
+              hx-target="#box-sets-body"
+              hx-swap="beforeend"
+              hx-on::after-request="if(event.detail.successful){var n=this.querySelector('[name=set_id]');if(n&&n.value)window.dispatchEvent(new CustomEvent('cairn-set-added',{detail:{id:parseInt(n.value)}}));}"
+              class="flex gap-3 items-end flex-wrap">
+          <div class="flex-1 min-w-48 relative" @click.outside="open=false">
+            <label class="block text-xs font-medium text-stone-500 mb-1">Set</label>
+            <input type="text"
+                   x-model="query"
+                   @focus="open=true"
+                   @input="open=true; selectedId=null"
+                   @keydown.enter.prevent="open && filtered.length && pick(filtered[0])"
+                   @keydown.escape="open=false"
+                   autocomplete="off"
+                   placeholder="Search sets…"
+                   class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400">
+            <input type="hidden" name="set_id" :value="selectedId ?? ''">
+            <ul x-show="open && filtered.length > 0"
+                x-cloak
+                class="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+              <template x-for="s in filtered" :key="s.id">
+                <li @click="pick(s)"
+                    class="px-3 py-2 text-sm text-stone-800 hover:bg-stone-100 cursor-pointer"
+                    x-text="s.label"></li>
+              </template>
+            </ul>
+          </div>
+          <button type="submit"
+                  :disabled="!selectedId"
+                  class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+            Add
+          </button>
+        </form>
+      </div>
+      {% else %}
+      <p class="text-stone-400 text-sm">All sets in the library are already in this box.</p>
+      {% endif %}
+    </section>
+  </div>{# end sets Alpine scope #}
+
 </div>
 
 <div id="box-setting-modal"></div>
@@ -158,6 +229,7 @@
 <script>
   window.__cairnAddableTunes  = {{ addable_tunes_json | safe }};
   window.__cairnFamilyForType = {{ family_for_type | tojson }};
+  window.__cairnAddableSets   = {{ addable_sets_json | safe }};
 
   function filterBoxTable(family) {
     var fm = window.__cairnFamilyForType || {};

@@ -28,6 +28,16 @@ from cairn.services.boxes import (
     set_transpose,
 )
 from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting
+from cairn.services.tune_sets import (
+    add_box_set,
+    clear_box_set_difficulty,
+    compute_default_set_difficulty,
+    get_set_difficulty_override,
+    list_box_sets,
+    list_sets,
+    remove_box_set,
+    set_box_set_difficulty,
+)
 from cairn.services.tunes import (
     COLUMN_PREVIEW_N_BARS,
     FAMILY_LABELS,
@@ -107,6 +117,24 @@ def _entry_previews(entries) -> dict[int, TunePreview]:
     return previews
 
 
+async def _set_difficulties(db: AsyncSession, box, box_sets) -> dict[int, tuple[int | None, bool]]:
+    """Map set id -> (effective difficulty, is_override) for a box's linked sets.
+
+    Effective difficulty is the user's override if one exists, otherwise the
+    computed default (see compute_default_set_difficulty) — recomputed fresh
+    each time rather than cached, so it can't go stale if a member tune's own
+    difficulty rating changes later.
+    """
+    result: dict[int, tuple[int | None, bool]] = {}
+    for entry in box_sets:
+        override = await get_set_difficulty_override(db, box.id, entry.set_id)
+        if override is not None:
+            result[entry.set_id] = (override, True)
+        else:
+            result[entry.set_id] = (compute_default_set_difficulty(box, entry.tune_set), False)
+    return result
+
+
 @router.get("/")
 async def box_index(
     request: Request,
@@ -173,6 +201,14 @@ async def box_detail(
         ]
     )
     tune_previews = _entry_previews(box.entries)
+
+    box_sets = await list_box_sets(db, box_id)
+    linked_set_ids = {e.set_id for e in box_sets}
+    all_sets = await list_sets(db)
+    addable_sets = [s for s in all_sets if s.id not in linked_set_ids]
+    addable_sets_json = json.dumps([{"id": s.id, "label": f"{s.title} ({len(s.members)} tunes)"} for s in addable_sets])
+    set_difficulties = await _set_difficulties(db, box, box_sets)
+
     return templates.TemplateResponse(
         request,
         "boxes/detail.html",
@@ -184,6 +220,10 @@ async def box_detail(
             "tune_types": _TUNE_TYPES,
             "family_for_type": _FAMILY_FOR_TYPE,
             "tune_previews": tune_previews,
+            "box_sets": box_sets,
+            "addable_sets": addable_sets,
+            "addable_sets_json": addable_sets_json,
+            "set_difficulties": set_difficulties,
         },
     )
 
@@ -220,6 +260,84 @@ async def box_remove_tune(
     if not removed:
         raise HTTPException(status_code=404, detail="Tune not in box")
     return Response(status_code=200)
+
+
+@router.post("/{box_id}/sets")
+async def box_add_set(
+    request: Request,
+    box_id: int,
+    db: AsyncSession = Depends(get_db),
+    set_id: int = Form(...),
+) -> Response:
+    box = await get_box_detail(db, box_id)
+    if box is None:
+        raise HTTPException(status_code=404, detail="Box not found")
+    try:
+        await add_box_set(db, box_id, set_id)
+    except IntegrityError as exc:
+        raise HTTPException(status_code=409, detail="Set already in box") from exc
+    box_sets = await list_box_sets(db, box_id)
+    entry = next(e for e in box_sets if e.set_id == set_id)
+    set_difficulties = await _set_difficulties(db, box, [entry])
+    return templates.TemplateResponse(
+        request,
+        "boxes/partials/_set_row.html",
+        {"box_id": box_id, "entry": entry, "set_difficulties": set_difficulties},
+    )
+
+
+@router.delete("/{box_id}/sets/{set_id}")
+async def box_remove_set(
+    box_id: int,
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    removed = await remove_box_set(db, box_id, set_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Set not in box")
+    return Response(status_code=200)
+
+
+@router.post("/{box_id}/sets/{set_id}/difficulty")
+async def box_set_set_difficulty(
+    request: Request,
+    box_id: int,
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+    difficulty: int = Form(...),
+) -> Response:
+    box = await get_box_detail(db, box_id)
+    if box is None:
+        raise HTTPException(status_code=404, detail="Box not found")
+    await set_box_set_difficulty(db, box_id, set_id, difficulty)
+    return templates.TemplateResponse(
+        request,
+        "boxes/partials/_set_difficulty.html",
+        {"box_id": box_id, "set_id": set_id, "difficulty": difficulty, "is_override": True},
+    )
+
+
+@router.post("/{box_id}/sets/{set_id}/difficulty/reset")
+async def box_reset_set_difficulty(
+    request: Request,
+    box_id: int,
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    box = await get_box_detail(db, box_id)
+    if box is None:
+        raise HTTPException(status_code=404, detail="Box not found")
+    box_sets = await list_box_sets(db, box_id)
+    entry = next((e for e in box_sets if e.set_id == set_id), None)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Set not in box")
+    await clear_box_set_difficulty(db, box_id, set_id)
+    difficulty = compute_default_set_difficulty(box, entry.tune_set)
+    return templates.TemplateResponse(
+        request,
+        "boxes/partials/_set_difficulty.html",
+        {"box_id": box_id, "set_id": set_id, "difficulty": difficulty, "is_override": False},
+    )
 
 
 @router.post("/{box_id}/tunes/{tune_id}/setting")

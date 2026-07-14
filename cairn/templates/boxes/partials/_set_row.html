@@ -1,0 +1,22 @@
+{#
+  Required context: box_id, entry (TuneBoxSetEntry with tune_set + tune_set.members eager-loaded), set_difficulties
+#}
+<li id="box-set-{{ entry.set_id }}" class="flex items-center justify-between bg-white rounded-lg shadow-sm px-5 py-4 gap-4">
+  <div class="min-w-0">
+    <a href="/sets/{{ entry.tune_set.id }}" class="font-medium text-stone-800 hover:text-stone-600 hover:underline">
+      {{ entry.tune_set.title }}
+    </a>
+    <span class="ml-2 text-xs text-stone-400">{{ entry.tune_set.members | length }} tunes</span>
+  </div>
+  {% set set_id = entry.set_id %}
+  {% set difficulty, is_override = set_difficulties[entry.set_id] %}
+  {% include "boxes/partials/_set_difficulty.html" %}
+  <button type="button"
+          hx-delete="/boxes/{{ box_id }}/sets/{{ entry.set_id }}"
+          hx-target="closest li"
+          hx-swap="outerHTML swap:300ms"
+          hx-confirm="Remove &ldquo;{{ entry.tune_set.title }}&rdquo; from this box?"
+          class="shrink-0 text-sm text-red-500 hover:text-red-700">
+    Remove
+  </button>
+</li>

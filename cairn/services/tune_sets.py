@@ -3,7 +3,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Tune, TuneBoxSetEntry, TuneSet, TuneSetMember, TuneSetTempo
+from cairn.models import Tune, TuneBox, TuneBoxSetDifficulty, TuneBoxSetEntry, TuneSet, TuneSetMember, TuneSetTempo
 
 
 def _deep_load():
@@ -158,5 +158,72 @@ async def remove_box_set(db: AsyncSession, box_id: int, set_id: int) -> bool:
     if entry is None:
         return False
     await db.delete(entry)
+    await db.commit()
+    return True
+
+
+async def list_box_sets(db: AsyncSession, box_id: int) -> list[TuneBoxSetEntry]:
+    result = await db.execute(
+        select(TuneBoxSetEntry)
+        .where(TuneBoxSetEntry.box_id == box_id)
+        .options(
+            selectinload(TuneBoxSetEntry.tune_set)
+            .selectinload(TuneSet.members)
+            .selectinload(TuneSetMember.tune)
+            .selectinload(Tune.difficulties)
+        )
+        .join(TuneSet, TuneBoxSetEntry.set_id == TuneSet.id)
+        .order_by(TuneSet.title)
+    )
+    return list(result.scalars().all())
+
+
+def compute_default_set_difficulty(box: TuneBox, tune_set: TuneSet) -> int | None:
+    """The hardest TuneDifficulty rating among the set's member tunes, for the box's own instrument(s).
+
+    Ignores member tunes with no rating for any instrument the box supports.
+    Returns None if no member has a relevant rating at all.
+    """
+    box_instruments = {bi.instrument for bi in box.instruments}
+    ratings = [
+        d.difficulty for member in tune_set.members for d in member.tune.difficulties if d.instrument in box_instruments
+    ]
+    return max(ratings) if ratings else None
+
+
+async def get_set_difficulty_override(db: AsyncSession, box_id: int, set_id: int) -> int | None:
+    result = await db.execute(
+        select(TuneBoxSetDifficulty.difficulty).where(
+            TuneBoxSetDifficulty.box_id == box_id,
+            TuneBoxSetDifficulty.set_id == set_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def set_box_set_difficulty(db: AsyncSession, box_id: int, set_id: int, difficulty: int) -> None:
+    stmt = (
+        sqlite_insert(TuneBoxSetDifficulty)
+        .values(box_id=box_id, set_id=set_id, difficulty=difficulty)
+        .on_conflict_do_update(
+            index_elements=["box_id", "set_id"],
+            set_={"difficulty": difficulty},
+        )
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+
+async def clear_box_set_difficulty(db: AsyncSession, box_id: int, set_id: int) -> bool:
+    result = await db.execute(
+        select(TuneBoxSetDifficulty).where(
+            TuneBoxSetDifficulty.box_id == box_id,
+            TuneBoxSetDifficulty.set_id == set_id,
+        )
+    )
+    override = result.scalar_one_or_none()
+    if override is None:
+        return False
+    await db.delete(override)
     await db.commit()
     return True
