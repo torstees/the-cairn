@@ -3,9 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import Instrument, KeyMode, KeyRoot, Role, TuneType, User
 from cairn.routers.boxes import _STUB_USER_ID
-from cairn.schemas import TuneCreate, TuneSettingCreate
+from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate
 from cairn.services.boxes import add_tune, create_box, set_display_alias, set_preferred_setting, set_transpose
-from cairn.services.tunes import add_alias, create_setting, create_tune
+from cairn.services.tune_sets import add_box_set, create_set, set_members
+from cairn.services.tunes import add_alias, create_setting, create_tune, set_difficulty
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
 _ALT_ABC = "X:1\nT:x\nK:D\n|:GABc defg|GABc defg|GABc defg|GABc defg|GABc defg|GABc defg:|"
@@ -340,3 +341,106 @@ async def test_box_row_shows_transposed_key_with_tooltip(client: AsyncClient, db
     assert "E Major, +8ve" in resp.text
     assert "own key" in resp.text
     assert "D Major" in resp.text
+
+
+async def test_box_detail_shows_sets_section_and_addable_sets(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    box_id, tune_id = box.id, tune.id
+    tune_set = await create_set(db, title="Morning Medley")
+    set_id = tune_set.id
+    await set_members(db, set_id, [{"tune_id": tune_id}])
+
+    resp = await client.get(f"/boxes/{box_id}")
+    assert resp.status_code == 200
+    assert "Sets" in resp.text
+    assert "Morning Medley" in resp.text  # in the addable-sets combobox data
+
+
+async def test_box_add_set(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    box_id, tune_id = box.id, tune.id
+    tune_set = await create_set(db, title="Morning Medley")
+    set_id = tune_set.id
+    await set_members(db, set_id, [{"tune_id": tune_id}])
+
+    resp = await client.post(f"/boxes/{box_id}/sets", data={"set_id": str(set_id)})
+    assert resp.status_code == 200
+    assert "Morning Medley" in resp.text
+    assert f'id="box-set-{set_id}"' in resp.text
+
+
+async def test_box_add_set_duplicate_conflicts(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    box_id, tune_id = box.id, tune.id
+    tune_set = await create_set(db, title="Morning Medley")
+    set_id = tune_set.id
+    await set_members(db, set_id, [{"tune_id": tune_id}])
+    await add_box_set(db, box_id, set_id)
+
+    resp = await client.post(f"/boxes/{box_id}/sets", data={"set_id": str(set_id)})
+    assert resp.status_code == 409
+
+
+async def test_box_remove_set(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    box_id, tune_id = box.id, tune.id
+    tune_set = await create_set(db, title="Morning Medley")
+    set_id = tune_set.id
+    await set_members(db, set_id, [{"tune_id": tune_id}])
+    await add_box_set(db, box_id, set_id)
+
+    resp = await client.delete(f"/boxes/{box_id}/sets/{set_id}")
+    assert resp.status_code == 200
+
+    resp = await client.get(f"/boxes/{box_id}")
+    assert f'id="box-set-{set_id}"' not in resp.text
+
+
+async def test_box_set_difficulty_shows_computed_default(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    box_id, tune_id = box.id, tune.id
+    await set_difficulty(db, tune_id, TuneDifficultyCreate(tune_id=tune_id, instrument=Instrument.fiddle, difficulty=3))
+    tune_set = await create_set(db, title="Morning Medley")
+    set_id = tune_set.id
+    await set_members(db, set_id, [{"tune_id": tune_id}])
+    await add_box_set(db, box_id, set_id)
+
+    resp = await client.get(f"/boxes/{box_id}")
+    assert resp.status_code == 200
+    assert "3/5" in resp.text
+    assert "(default)" in resp.text
+
+
+async def test_box_set_difficulty_override_persists_and_replaces_default(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    box_id, tune_id = box.id, tune.id
+    await set_difficulty(db, tune_id, TuneDifficultyCreate(tune_id=tune_id, instrument=Instrument.fiddle, difficulty=3))
+    tune_set = await create_set(db, title="Morning Medley")
+    set_id = tune_set.id
+    await set_members(db, set_id, [{"tune_id": tune_id}])
+    await add_box_set(db, box_id, set_id)
+
+    resp = await client.post(f"/boxes/{box_id}/sets/{set_id}/difficulty", data={"difficulty": "5"})
+    assert resp.status_code == 200
+    assert "5/5" in resp.text
+    assert "(default)" not in resp.text
+
+    # persists across a fresh page load, not just the immediate response
+    resp = await client.get(f"/boxes/{box_id}")
+    assert "5/5" in resp.text
+
+
+async def test_box_set_difficulty_reset_reverts_to_default(client: AsyncClient, db: AsyncSession) -> None:
+    box, tune = await _seed(db)
+    box_id, tune_id = box.id, tune.id
+    await set_difficulty(db, tune_id, TuneDifficultyCreate(tune_id=tune_id, instrument=Instrument.fiddle, difficulty=3))
+    tune_set = await create_set(db, title="Morning Medley")
+    set_id = tune_set.id
+    await set_members(db, set_id, [{"tune_id": tune_id}])
+    await add_box_set(db, box_id, set_id)
+    await client.post(f"/boxes/{box_id}/sets/{set_id}/difficulty", data={"difficulty": "5"})
+
+    resp = await client.post(f"/boxes/{box_id}/sets/{set_id}/difficulty/reset")
+    assert resp.status_code == 200
+    assert "3/5" in resp.text
+    assert "(default)" in resp.text

@@ -11,20 +11,25 @@ from cairn.models import (
     TuneType,
     User,
 )
-from cairn.schemas import TuneCreate
+from cairn.schemas import TuneCreate, TuneDifficultyCreate
 from cairn.services.abc_utils import build_set_abc
-from cairn.services.boxes import create_box
+from cairn.services.boxes import create_box, get_box_detail
 from cairn.services.tune_sets import (
     add_box_set,
+    clear_box_set_difficulty,
+    compute_default_set_difficulty,
     create_set,
     delete_set,
     get_set,
+    get_set_difficulty_override,
+    list_box_sets,
     list_sets,
     remove_box_set,
+    set_box_set_difficulty,
     set_members,
     update_set,
 )
-from cairn.services.tunes import create_tune
+from cairn.services.tunes import create_tune, set_difficulty
 
 _ABC = "|:DEFA BAFA|DEFA BAFA:|\n"
 _ABC2 = "|:GBdB GBAG|FAdA FAdf:|\n"
@@ -215,6 +220,101 @@ async def test_add_and_remove_box_set(db: AsyncSession) -> None:
 
     assert await remove_box_set(db, box_id=box.id, set_id=s.id) is True
     assert await remove_box_set(db, box_id=box.id, set_id=s.id) is False
+
+
+# ── list_box_sets ────────────────────────────────────────────────────────────
+
+
+async def test_list_box_sets_eager_loads_members_and_difficulties(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    box_id = box.id
+    tune = await _tune(db)
+    await set_difficulty(db, tune.id, TuneDifficultyCreate(tune_id=tune.id, instrument=Instrument.flute, difficulty=4))
+    s = await _set(db)
+    set_id = s.id
+    await set_members(db, set_id, [{"tune_id": tune.id}])
+    await add_box_set(db, box_id=box_id, set_id=set_id)
+
+    entries = await list_box_sets(db, box_id)
+    assert len(entries) == 1
+    assert entries[0].tune_set.title == "Morning Set"
+    assert entries[0].tune_set.members[0].tune.difficulties[0].difficulty == 4
+
+
+# ── compute_default_set_difficulty ──────────────────────────────────────────
+
+
+async def test_compute_default_set_difficulty_takes_max_across_members(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    box_id = box.id
+    t1 = await _tune(db, title="Tune One")
+    t2 = await _tune(db, title="Tune Two", abc=_ABC2)
+    await set_difficulty(db, t1.id, TuneDifficultyCreate(tune_id=t1.id, instrument=Instrument.flute, difficulty=2))
+    await set_difficulty(db, t2.id, TuneDifficultyCreate(tune_id=t2.id, instrument=Instrument.flute, difficulty=5))
+    s = await _set(db)
+    set_id = s.id
+    await set_members(db, set_id, [{"tune_id": t1.id}, {"tune_id": t2.id}])
+    await add_box_set(db, box_id=box_id, set_id=set_id)
+
+    box_detail = await get_box_detail(db, box_id)
+    entries = await list_box_sets(db, box_id)
+    assert compute_default_set_difficulty(box_detail, entries[0].tune_set) == 5
+
+
+async def test_compute_default_set_difficulty_ignores_other_instruments(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    box_id = box.id
+    tune = await _tune(db)
+    await set_difficulty(db, tune.id, TuneDifficultyCreate(tune_id=tune.id, instrument=Instrument.fiddle, difficulty=5))
+    s = await _set(db)
+    set_id = s.id
+    await set_members(db, set_id, [{"tune_id": tune.id}])
+    await add_box_set(db, box_id=box_id, set_id=set_id)
+
+    box_detail = await get_box_detail(db, box_id)
+    entries = await list_box_sets(db, box_id)
+    assert compute_default_set_difficulty(box_detail, entries[0].tune_set) is None
+
+
+async def test_compute_default_set_difficulty_none_when_no_ratings(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    box_id = box.id
+    tune = await _tune(db)
+    s = await _set(db)
+    set_id = s.id
+    await set_members(db, set_id, [{"tune_id": tune.id}])
+    await add_box_set(db, box_id=box_id, set_id=set_id)
+
+    box_detail = await get_box_detail(db, box_id)
+    entries = await list_box_sets(db, box_id)
+    assert compute_default_set_difficulty(box_detail, entries[0].tune_set) is None
+
+
+# ── box-set difficulty override ─────────────────────────────────────────────
+
+
+async def test_set_get_and_clear_box_set_difficulty_override(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    s = await _set(db)
+    await add_box_set(db, box_id=box.id, set_id=s.id)
+
+    assert await get_set_difficulty_override(db, box.id, s.id) is None
+
+    await set_box_set_difficulty(db, box.id, s.id, 4)
+    assert await get_set_difficulty_override(db, box.id, s.id) == 4
+
+    # upsert — setting again updates rather than conflicting
+    await set_box_set_difficulty(db, box.id, s.id, 2)
+    assert await get_set_difficulty_override(db, box.id, s.id) == 2
+
+    assert await clear_box_set_difficulty(db, box.id, s.id) is True
+    assert await get_set_difficulty_override(db, box.id, s.id) is None
+    assert await clear_box_set_difficulty(db, box.id, s.id) is False
 
 
 # ── build_set_abc ─────────────────────────────────────────────────────────────
