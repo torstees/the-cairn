@@ -1,5 +1,12 @@
 <section id="aliases-section" class="mb-8" x-data="{ open: false }">
-  <h2 class="text-xl font-semibold text-stone-700 mb-3">Alternate Names</h2>
+  <div class="flex items-center gap-2 mb-3">
+    <h2 class="text-xl font-semibold text-stone-700">Alternate Names</h2>
+    <button type="button" x-show="!open" @click="open = true"
+            aria-label="Add alternate name"
+            class="inline-flex items-center justify-center w-6 h-6 rounded-full border border-dashed border-stone-300 text-stone-500 hover:bg-stone-50 hover:border-stone-400">
+      +
+    </button>
+  </div>
 
   <div class="flex flex-wrap items-center gap-2 mb-4">
     {% for alias in tune.aliases %}
@@ -25,12 +32,6 @@
     {% if not tune.aliases %}
     <span class="text-stone-400 text-sm">No alternate names yet</span>
     {% endif %}
-
-    <button type="button" x-show="!open" @click="open = true"
-            aria-label="Add alternate name"
-            class="inline-flex items-center justify-center w-7 h-7 rounded-full border border-dashed border-stone-300 text-stone-500 hover:bg-stone-50 hover:border-stone-400">
-      +
-    </button>
   </div>
 
   <div x-show="open" x-cloak class="bg-white rounded-lg shadow-sm p-4">
