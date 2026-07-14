@@ -1,12 +1,15 @@
 # The Cairn
 
 [![CI](https://github.com/torstees/the-cairn/actions/workflows/ci.yml/badge.svg)](https://github.com/torstees/the-cairn/actions/workflows/ci.yml)
+[![the-cairn.app](https://img.shields.io/website?url=https%3A%2F%2Fthe-cairn.app&label=the-cairn.app)](https://the-cairn.app)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A web app for learning and retaining traditional Irish music tunes — practice tracking,
 spaced repetition, and interactive sheet music, built to declutter a student's desktop
 and make the most of limited practice time.
+
+Work in progress is tracked on [this GitHub Project board](https://github.com/users/torstees/projects/2/views/1).
 
 <div align='center'>
        

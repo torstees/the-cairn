@@ -40,6 +40,15 @@ async def test_dashboard_renders_empty_state(client: AsyncClient) -> None:
     assert "No tune box selected" in resp.text
 
 
+async def test_dashboard_accepts_head_for_uptime_checks(client: AsyncClient) -> None:
+    # Uptime/status checkers (e.g. shields.io's website badge) probe with
+    # HEAD, not GET — the root route must accept it or they report the app
+    # as down even though it's actually up.
+    resp = await client.head("/")
+    assert resp.status_code == 200
+    assert resp.text == ""
+
+
 async def test_dashboard_shows_active_box(client: AsyncClient, db: AsyncSession) -> None:
     u = await _seed_user(db)
     await create_box(db, u.id, "My Session Box", [Instrument.fiddle])

@@ -70,7 +70,7 @@ app.include_router(content_router.router)
 _STUB_USER_ID = 1
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def index(
     request: Request,
     db: AsyncSession = Depends(get_db),
