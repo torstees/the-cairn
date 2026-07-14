@@ -66,23 +66,24 @@ _CHART_PAD_BOTTOM = 20
 def _build_tempo_chart(tempo_records: list[TempoRecord]) -> TempoChart | None:
     """Map tempo readings (oldest first) to SVG pixel coordinates for #182's trend graph.
 
-    x reflects actual elapsed time between readings (not just reading
-    order), so uneven gaps between practice sessions show up honestly.
-    Both axes fall back to a fixed midpoint/even spacing when the data has
-    no range to scale against (a single reading, or all-equal values).
+    x is evenly spaced by reading order, not actual elapsed time. Several
+    readings logged within one practice session (working a passage up from
+    one setting to a faster one) would otherwise all crowd into a sliver of
+    the axis whenever the history also spans weeks/months — the trend is
+    the point, not real-time spacing. The actual timestamp is still shown
+    in each point's tooltip, so nothing is lost.
     """
     if not tempo_records:
         return None
     tempos = [r.tempo for r in tempo_records]
-    times = [r.created_at for r in tempo_records]
     t_range = (max(tempos) - min(tempos)) or 1
-    time_range = (max(times) - min(times)).total_seconds() or 1
     plot_w = _CHART_WIDTH - 2 * _CHART_PAD_X
     plot_h = _CHART_HEIGHT - _CHART_PAD_TOP - _CHART_PAD_BOTTOM
+    n = len(tempo_records)
 
     points = []
-    for record in tempo_records:
-        x_frac = 0.5 if len(tempo_records) == 1 else (record.created_at - min(times)).total_seconds() / time_range
+    for i, record in enumerate(tempo_records):
+        x_frac = 0.5 if n == 1 else i / (n - 1)
         y_frac = (record.tempo - min(tempos)) / t_range
         x = _CHART_PAD_X + x_frac * plot_w
         y = _CHART_HEIGHT - _CHART_PAD_BOTTOM - y_frac * plot_h
