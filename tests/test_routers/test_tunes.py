@@ -609,3 +609,70 @@ async def test_alias_remove_route_returns_updated_badges(client: AsyncClient, db
     assert resp.status_code == 200
     assert "Sunrise Reel" not in resp.text
     assert 'id="aliases-section"' in resp.text
+
+
+async def test_tempo_record_renders_svg_point_with_bpm_label(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "100"})
+    assert resp.status_code == 200
+    assert "<svg" in resp.text
+    assert "<circle" in resp.text
+    assert "100 bpm" in resp.text
+
+
+async def test_tempo_history_two_increasing_readings_shows_trending_faster(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    tune = await _seed_tune(db)
+    await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "90"})
+    resp = await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "100"})
+    assert resp.status_code == 200
+    assert "trending faster" in resp.text
+    assert "<polyline" in resp.text
+
+
+async def test_tempo_history_two_decreasing_readings_shows_trending_slower(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    tune = await _seed_tune(db)
+    await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "100"})
+    resp = await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "90"})
+    assert resp.status_code == 200
+    assert "trending slower" in resp.text
+
+
+async def test_tempo_history_equal_readings_shows_steady_and_no_zero_division(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    tune = await _seed_tune(db)
+    await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "100"})
+    resp = await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "100"})
+    assert resp.status_code == 200
+    assert "steady" in resp.text
+    assert "<circle" in resp.text
+
+
+async def test_tempo_history_single_reading_has_no_polyline(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "100"})
+    assert resp.status_code == 200
+    assert "<polyline" not in resp.text
+    assert "<circle" in resp.text
+
+
+async def test_tempo_history_partial_endpoint_includes_chart(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "100"})
+    resp = await client.get(f"/tunes/{tune.id}/tempo-history")
+    assert resp.status_code == 200
+    assert "<svg" in resp.text
+    assert "100 bpm" in resp.text
+
+
+async def test_tune_detail_page_includes_tempo_chart(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    await client.post(f"/tunes/{tune.id}/tempo", data={"tempo": "100"})
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert "<svg" in resp.text
+    assert "100 bpm" in resp.text

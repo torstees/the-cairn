@@ -1,10 +1,12 @@
+from typing import NamedTuple
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, Tune, TuneType
+from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TempoRecord, Tune, TuneType
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import KEY_ROOT_MAP, build_abc, shortest_semitones_to_root, transpose_abc
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
@@ -38,6 +40,62 @@ _ORN_LEVELS = list(OrnamentationLevel)
 _FORM_CTX = {"tune_types": _TUNE_TYPES, "key_roots": _KEY_ROOTS, "key_modes": _KEY_MODES}
 _SETTINGS_CTX = {"instruments": _INSTRUMENTS, "orn_levels": _ORN_LEVELS}
 _STUB_USER_ID = 1
+
+
+class TempoChartPoint(NamedTuple):
+    x: float
+    y: float
+    tempo: int
+    label: str  # friendly date/time, e.g. "Jul 10, 02:30 PM"
+
+
+class TempoChart(NamedTuple):
+    width: int
+    height: int
+    points: list[TempoChartPoint]
+    polyline: str  # "x1,y1 x2,y2 ..." for <polyline points="...">
+
+
+_CHART_WIDTH = 560
+_CHART_HEIGHT = 140
+_CHART_PAD_X = 16
+_CHART_PAD_TOP = 44  # extra headroom so the hover tooltip never needs per-point clamping
+_CHART_PAD_BOTTOM = 20
+
+
+def _build_tempo_chart(tempo_records: list[TempoRecord]) -> TempoChart | None:
+    """Map tempo readings (oldest first) to SVG pixel coordinates for #182's trend graph.
+
+    x reflects actual elapsed time between readings (not just reading
+    order), so uneven gaps between practice sessions show up honestly.
+    Both axes fall back to a fixed midpoint/even spacing when the data has
+    no range to scale against (a single reading, or all-equal values).
+    """
+    if not tempo_records:
+        return None
+    tempos = [r.tempo for r in tempo_records]
+    times = [r.created_at for r in tempo_records]
+    t_range = (max(tempos) - min(tempos)) or 1
+    time_range = (max(times) - min(times)).total_seconds() or 1
+    plot_w = _CHART_WIDTH - 2 * _CHART_PAD_X
+    plot_h = _CHART_HEIGHT - _CHART_PAD_TOP - _CHART_PAD_BOTTOM
+
+    points = []
+    for record in tempo_records:
+        x_frac = 0.5 if len(tempo_records) == 1 else (record.created_at - min(times)).total_seconds() / time_range
+        y_frac = (record.tempo - min(tempos)) / t_range
+        x = _CHART_PAD_X + x_frac * plot_w
+        y = _CHART_HEIGHT - _CHART_PAD_BOTTOM - y_frac * plot_h
+        points.append(
+            TempoChartPoint(
+                x=round(x, 1),
+                y=round(y, 1),
+                tempo=record.tempo,
+                label=record.created_at.strftime("%b %d, %I:%M %p"),
+            )
+        )
+    polyline = " ".join(f"{p.x},{p.y}" for p in points)
+    return TempoChart(width=_CHART_WIDTH, height=_CHART_HEIGHT, points=points, polyline=polyline)
 
 
 @router.get("/new")
@@ -207,6 +265,7 @@ async def tune_detail(
             "reset_href": reset_href,
             "min_tempo": min_tempo,
             "tempo_records": tempo_records,
+            "chart": _build_tempo_chart(tempo_records),
             "last_tempo": tempo_records[-1].tempo if tempo_records else None,
             "beats_per_bar": beats_per_bar,
             "boxes": boxes,
@@ -330,7 +389,7 @@ async def tempo_record_create(
     return templates.TemplateResponse(
         request,
         "tunes/partials/_tempo_history.html",
-        {"min_tempo": min_tempo, "tempo_records": tempo_records},
+        {"min_tempo": min_tempo, "tempo_records": tempo_records, "chart": _build_tempo_chart(tempo_records)},
     )
 
 
@@ -344,7 +403,7 @@ async def tempo_history_partial(
     return templates.TemplateResponse(
         request,
         "tunes/partials/_tempo_history.html",
-        {"min_tempo": min_tempo, "tempo_records": tempo_records},
+        {"min_tempo": min_tempo, "tempo_records": tempo_records, "chart": _build_tempo_chart(tempo_records)},
     )
 
 
