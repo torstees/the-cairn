@@ -30,6 +30,16 @@ from cairn.services.lists import (
     update_list_entry_setting,
     update_list_entry_transpose,
 )
+from cairn.services.tune_sets import (
+    add_list_set,
+    clear_list_set_difficulty,
+    compute_default_set_difficulty,
+    get_list_set_difficulty_override,
+    list_list_sets,
+    list_sets,
+    remove_list_set,
+    set_list_set_difficulty,
+)
 from cairn.services.tunes import (
     COLUMN_PREVIEW_N_BARS,
     FAMILY_LABELS,
@@ -81,6 +91,25 @@ def _entry_previews(entries) -> dict[int, TunePreview]:
             column = strip_chord_symbols(truncate_to_bars(popup, COLUMN_PREVIEW_N_BARS))
             previews[entry.tune_id] = TunePreview(column=column, popup=popup)
     return previews
+
+
+async def _set_difficulties(db: AsyncSession, box, list_sets_) -> dict[int, tuple[int | None, bool]]:
+    """Map set id -> (effective difficulty, is_override) for a list's linked sets.
+
+    The default is computed against the list's own parent box's instruments
+    (PracticeList.box_id is NOT NULL — a list has no independent instrument
+    concept of its own), recomputed fresh each time rather than cached.
+    """
+    result: dict[int, tuple[int | None, bool]] = {}
+    for entry in list_sets_:
+        override = await get_list_set_difficulty_override(db, entry.list_id, entry.set_id)
+        if override is not None:
+            result[entry.set_id] = (override, True)
+        elif box is not None:
+            result[entry.set_id] = (compute_default_set_difficulty(box, entry.tune_set), False)
+        else:
+            result[entry.set_id] = (None, False)
+    return result
 
 
 def _transpose_popup_ctx(entry, key_root: KeyRoot | None, octave: int, action_url: str, modal_id: str) -> dict:
@@ -247,6 +276,14 @@ async def list_detail(
     )
     box_tune_ids_json = json.dumps([e.tune_id for e in box_entries])
     tune_previews = _entry_previews(practice_list.entries)
+
+    list_sets_ = await list_list_sets(db, list_id)
+    linked_set_ids = {e.set_id for e in list_sets_}
+    all_sets = await list_sets(db)
+    addable_sets = [s for s in all_sets if s.id not in linked_set_ids]
+    addable_sets_json = json.dumps([{"id": s.id, "label": f"{s.title} ({len(s.members)} tunes)"} for s in addable_sets])
+    set_difficulties = await _set_difficulties(db, box, list_sets_)
+
     return templates.TemplateResponse(
         request,
         "lists/detail.html",
@@ -263,7 +300,91 @@ async def list_detail(
             "family_labels": FAMILY_LABELS,
             "family_for_type": _FAMILY_FOR_TYPE,
             "tune_previews": tune_previews,
+            "list_sets": list_sets_,
+            "addable_sets": addable_sets,
+            "addable_sets_json": addable_sets_json,
+            "set_difficulties": set_difficulties,
         },
+    )
+
+
+@router.post("/{list_id}/sets")
+async def list_add_set(
+    request: Request,
+    list_id: int,
+    db: AsyncSession = Depends(get_db),
+    set_id: int = Form(...),
+) -> Response:
+    practice_list = await get_list(db, list_id)
+    if practice_list is None:
+        raise HTTPException(status_code=404, detail="List not found")
+    try:
+        await add_list_set(db, list_id, set_id)
+    except IntegrityError as exc:
+        raise HTTPException(status_code=409, detail="Set already in list") from exc
+    box = await get_box_detail(db, practice_list.box_id)
+    list_sets_ = await list_list_sets(db, list_id)
+    entry = next(e for e in list_sets_ if e.set_id == set_id)
+    set_difficulties = await _set_difficulties(db, box, [entry])
+    return templates.TemplateResponse(
+        request,
+        "lists/partials/_set_row.html",
+        {"list_id": list_id, "entry": entry, "set_difficulties": set_difficulties},
+    )
+
+
+@router.delete("/{list_id}/sets/{set_id}")
+async def list_remove_set(
+    list_id: int,
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    removed = await remove_list_set(db, list_id, set_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Set not in list")
+    return Response(status_code=200)
+
+
+@router.post("/{list_id}/sets/{set_id}/difficulty")
+async def list_set_set_difficulty(
+    request: Request,
+    list_id: int,
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+    difficulty: int = Form(...),
+) -> Response:
+    practice_list = await get_list(db, list_id)
+    if practice_list is None:
+        raise HTTPException(status_code=404, detail="List not found")
+    await set_list_set_difficulty(db, list_id, set_id, difficulty)
+    return templates.TemplateResponse(
+        request,
+        "lists/partials/_set_difficulty.html",
+        {"list_id": list_id, "set_id": set_id, "difficulty": difficulty, "is_override": True},
+    )
+
+
+@router.post("/{list_id}/sets/{set_id}/difficulty/reset")
+async def list_reset_set_difficulty(
+    request: Request,
+    list_id: int,
+    set_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    practice_list = await get_list(db, list_id)
+    if practice_list is None:
+        raise HTTPException(status_code=404, detail="List not found")
+    box = await get_box_detail(db, practice_list.box_id)
+    list_sets_ = await list_list_sets(db, list_id)
+    entry = next((e for e in list_sets_ if e.set_id == set_id), None)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Set not in list")
+    await clear_list_set_difficulty(db, list_id, set_id)
+    difficulty = compute_default_set_difficulty(box, entry.tune_set) if box is not None else None
+    return templates.TemplateResponse(
+        request,
+        "lists/partials/_set_difficulty.html",
+        {"list_id": list_id, "set_id": set_id, "difficulty": difficulty, "is_override": False},
     )
 
 
