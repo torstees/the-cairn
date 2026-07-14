@@ -3,7 +3,17 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from cairn.models import Tune, TuneBox, TuneBoxSetDifficulty, TuneBoxSetEntry, TuneSet, TuneSetMember, TuneSetTempo
+from cairn.models import (
+    Tune,
+    TuneBox,
+    TuneBoxSetDifficulty,
+    TuneBoxSetEntry,
+    TuneListSetDifficulty,
+    TuneListSetEntry,
+    TuneSet,
+    TuneSetMember,
+    TuneSetTempo,
+)
 
 
 def _deep_load():
@@ -219,6 +229,83 @@ async def clear_box_set_difficulty(db: AsyncSession, box_id: int, set_id: int) -
         select(TuneBoxSetDifficulty).where(
             TuneBoxSetDifficulty.box_id == box_id,
             TuneBoxSetDifficulty.set_id == set_id,
+        )
+    )
+    override = result.scalar_one_or_none()
+    if override is None:
+        return False
+    await db.delete(override)
+    await db.commit()
+    return True
+
+
+async def add_list_set(db: AsyncSession, list_id: int, set_id: int) -> TuneListSetEntry:
+    entry = TuneListSetEntry(list_id=list_id, set_id=set_id)
+    db.add(entry)
+    await db.commit()
+    await db.refresh(entry)
+    return entry
+
+
+async def remove_list_set(db: AsyncSession, list_id: int, set_id: int) -> bool:
+    result = await db.execute(
+        select(TuneListSetEntry).where(
+            TuneListSetEntry.list_id == list_id,
+            TuneListSetEntry.set_id == set_id,
+        )
+    )
+    entry = result.scalar_one_or_none()
+    if entry is None:
+        return False
+    await db.delete(entry)
+    await db.commit()
+    return True
+
+
+async def list_list_sets(db: AsyncSession, list_id: int) -> list[TuneListSetEntry]:
+    result = await db.execute(
+        select(TuneListSetEntry)
+        .where(TuneListSetEntry.list_id == list_id)
+        .options(
+            selectinload(TuneListSetEntry.tune_set)
+            .selectinload(TuneSet.members)
+            .selectinload(TuneSetMember.tune)
+            .selectinload(Tune.difficulties)
+        )
+        .join(TuneSet, TuneListSetEntry.set_id == TuneSet.id)
+        .order_by(TuneSet.title)
+    )
+    return list(result.scalars().all())
+
+
+async def get_list_set_difficulty_override(db: AsyncSession, list_id: int, set_id: int) -> int | None:
+    result = await db.execute(
+        select(TuneListSetDifficulty.difficulty).where(
+            TuneListSetDifficulty.list_id == list_id,
+            TuneListSetDifficulty.set_id == set_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def set_list_set_difficulty(db: AsyncSession, list_id: int, set_id: int, difficulty: int) -> None:
+    stmt = (
+        sqlite_insert(TuneListSetDifficulty)
+        .values(list_id=list_id, set_id=set_id, difficulty=difficulty)
+        .on_conflict_do_update(
+            index_elements=["list_id", "set_id"],
+            set_={"difficulty": difficulty},
+        )
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+
+async def clear_list_set_difficulty(db: AsyncSession, list_id: int, set_id: int) -> bool:
+    result = await db.execute(
+        select(TuneListSetDifficulty).where(
+            TuneListSetDifficulty.list_id == list_id,
+            TuneListSetDifficulty.set_id == set_id,
         )
     )
     override = result.scalar_one_or_none()

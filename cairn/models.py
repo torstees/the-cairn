@@ -286,6 +286,9 @@ class TuneSet(TimestampMixin, Base):
     box_set_entries: Mapped[list["TuneBoxSetEntry"]] = relationship(
         back_populates="tune_set", cascade="all, delete-orphan"
     )
+    list_set_entries: Mapped[list["TuneListSetEntry"]] = relationship(
+        back_populates="tune_set", cascade="all, delete-orphan"
+    )
 
 
 class TuneSetMember(TimestampMixin, Base):
@@ -401,6 +404,37 @@ class TuneBoxSetDifficulty(TimestampMixin, Base):
     __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_tune_box_set_difficulty_range"),)
 
 
+class TuneListSetEntry(TimestampMixin, Base):
+    __tablename__ = "tune_list_set_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    list_id: Mapped[int] = mapped_column(ForeignKey("practice_lists.id"), nullable=False)
+    set_id: Mapped[int] = mapped_column(ForeignKey("tune_sets.id"), nullable=False)
+
+    __table_args__ = (UniqueConstraint("list_id", "set_id", name="uq_tune_list_set_entry_list_set"),)
+
+    practice_list: Mapped["PracticeList"] = relationship(back_populates="list_set_entries")
+    tune_set: Mapped["TuneSet"] = relationship(back_populates="list_set_entries")
+
+
+class TuneListSetDifficulty(TimestampMixin, Base):
+    """A user's override of a TuneSet's computed default difficulty, scoped to one list.
+
+    Same design as TuneBoxSetDifficulty: a row only exists once explicitly
+    overridden. The default is computed against the list's own parent box's
+    instruments (compute_default_set_difficulty), since PracticeList.box_id
+    is NOT NULL — a list has no independent instrument concept of its own.
+    """
+
+    __tablename__ = "tune_list_set_difficulties"
+
+    list_id: Mapped[int] = mapped_column(ForeignKey("practice_lists.id"), primary_key=True)
+    set_id: Mapped[int] = mapped_column(ForeignKey("tune_sets.id"), primary_key=True)
+    difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="ck_tune_list_set_difficulty_range"),)
+
+
 class PracticeList(TimestampMixin, Base):
     __tablename__ = "practice_lists"
 
@@ -418,6 +452,9 @@ class PracticeList(TimestampMixin, Base):
     user: Mapped["User"] = relationship(back_populates="practice_lists")
     box: Mapped["TuneBox"] = relationship()
     entries: Mapped[list["TuneListEntry"]] = relationship(back_populates="practice_list", cascade="all, delete-orphan")
+    list_set_entries: Mapped[list["TuneListSetEntry"]] = relationship(
+        back_populates="practice_list", cascade="all, delete-orphan"
+    )
 
 
 class TuneListEntry(TimestampMixin, Base):

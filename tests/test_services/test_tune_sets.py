@@ -5,6 +5,7 @@ from cairn.models import (
     KeyMode,
     KeyRoot,
     OrnamentationLevel,
+    PracticeListType,
     Role,
     TuneSet,
     TuneSetMember,
@@ -14,18 +15,25 @@ from cairn.models import (
 from cairn.schemas import TuneCreate, TuneDifficultyCreate
 from cairn.services.abc_utils import build_set_abc
 from cairn.services.boxes import create_box, get_box_detail
+from cairn.services.lists import create_list
 from cairn.services.tune_sets import (
     add_box_set,
+    add_list_set,
     clear_box_set_difficulty,
+    clear_list_set_difficulty,
     compute_default_set_difficulty,
     create_set,
     delete_set,
+    get_list_set_difficulty_override,
     get_set,
     get_set_difficulty_override,
     list_box_sets,
+    list_list_sets,
     list_sets,
     remove_box_set,
+    remove_list_set,
     set_box_set_difficulty,
+    set_list_set_difficulty,
     set_members,
     update_set,
 )
@@ -315,6 +323,83 @@ async def test_set_get_and_clear_box_set_difficulty_override(db: AsyncSession) -
     assert await clear_box_set_difficulty(db, box.id, s.id) is True
     assert await get_set_difficulty_override(db, box.id, s.id) is None
     assert await clear_box_set_difficulty(db, box.id, s.id) is False
+
+
+# ── list-set linking (#202) ──────────────────────────────────────────────────
+
+
+async def test_add_and_remove_list_set(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    practice_list = await create_list(db, u.id, box.id, "My Repertoire", PracticeListType.repertoire)
+    s = await _set(db)
+
+    entry = await add_list_set(db, list_id=practice_list.id, set_id=s.id)
+    assert entry.list_id == practice_list.id
+    assert entry.set_id == s.id
+
+    assert await remove_list_set(db, list_id=practice_list.id, set_id=s.id) is True
+    assert await remove_list_set(db, list_id=practice_list.id, set_id=s.id) is False
+
+
+async def test_list_list_sets_eager_loads_members_and_difficulties(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    box_id = box.id
+    practice_list = await create_list(db, u.id, box_id, "My Repertoire", PracticeListType.repertoire)
+    list_id = practice_list.id
+    tune = await _tune(db)
+    await set_difficulty(db, tune.id, TuneDifficultyCreate(tune_id=tune.id, instrument=Instrument.flute, difficulty=4))
+    s = await _set(db)
+    set_id = s.id
+    await set_members(db, set_id, [{"tune_id": tune.id}])
+    await add_list_set(db, list_id, set_id)
+
+    entries = await list_list_sets(db, list_id)
+    assert len(entries) == 1
+    assert entries[0].tune_set.title == "Morning Set"
+    assert entries[0].tune_set.members[0].tune.difficulties[0].difficulty == 4
+
+
+async def test_list_set_default_difficulty_uses_parent_box_instruments(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    box_id = box.id
+    practice_list = await create_list(db, u.id, box_id, "My Repertoire", PracticeListType.repertoire)
+    list_id = practice_list.id
+    tune = await _tune(db)
+    await set_difficulty(db, tune.id, TuneDifficultyCreate(tune_id=tune.id, instrument=Instrument.flute, difficulty=5))
+    s = await _set(db)
+    set_id = s.id
+    await set_members(db, set_id, [{"tune_id": tune.id}])
+    await add_list_set(db, list_id, set_id)
+
+    box_detail = await get_box_detail(db, box_id)
+    entries = await list_list_sets(db, list_id)
+    # compute_default_set_difficulty is unchanged from the box case — a list
+    # has no independent instrument concept, so its parent box's is used.
+    assert compute_default_set_difficulty(box_detail, entries[0].tune_set) == 5
+
+
+async def test_set_get_and_clear_list_set_difficulty_override(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await create_box(db, user_id=u.id, name="My Box", instruments=[Instrument.flute])
+    practice_list = await create_list(db, u.id, box.id, "My Repertoire", PracticeListType.repertoire)
+    s = await _set(db)
+    await add_list_set(db, practice_list.id, s.id)
+
+    assert await get_list_set_difficulty_override(db, practice_list.id, s.id) is None
+
+    await set_list_set_difficulty(db, practice_list.id, s.id, 4)
+    assert await get_list_set_difficulty_override(db, practice_list.id, s.id) == 4
+
+    # upsert — setting again updates rather than conflicting
+    await set_list_set_difficulty(db, practice_list.id, s.id, 2)
+    assert await get_list_set_difficulty_override(db, practice_list.id, s.id) == 2
+
+    assert await clear_list_set_difficulty(db, practice_list.id, s.id) is True
+    assert await get_list_set_difficulty_override(db, practice_list.id, s.id) is None
+    assert await clear_list_set_difficulty(db, practice_list.id, s.id) is False
 
 
 # ── build_set_abc ─────────────────────────────────────────────────────────────
