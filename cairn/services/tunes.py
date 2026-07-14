@@ -393,15 +393,21 @@ async def record_tempo(db: AsyncSession, user_id: int, tune_id: int, box_id: int
 
 
 async def get_tempo_history(
-    db: AsyncSession, user_id: int, tune_id: int, limit: int = 5
+    db: AsyncSession, user_id: int, tune_id: int, limit: int = 20
 ) -> tuple[int | None, list[TempoRecord]]:
-    """Return (all-time min tempo, last `limit` records oldest-first)."""
+    """Return (all-time min tempo, last `limit` records oldest-first).
+
+    Orders by id as a tiebreaker after created_at — SQLite's CURRENT_TIMESTAMP
+    only has second resolution, so two records logged within the same second
+    (e.g. back-to-back metronome runs) would otherwise come back in an
+    unpredictable order, silently breaking the oldest-first guarantee.
+    """
     recent = (
         (
             await db.execute(
                 select(TempoRecord)
                 .where(TempoRecord.user_id == user_id, TempoRecord.tune_id == tune_id)
-                .order_by(TempoRecord.created_at.desc())
+                .order_by(TempoRecord.created_at.desc(), TempoRecord.id.desc())
                 .limit(limit)
             )
         )

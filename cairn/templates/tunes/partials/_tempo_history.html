@@ -15,16 +15,29 @@
         {% endif %}
       {% endif %}
     </div>
-    <div class="flex items-center gap-1 flex-wrap">
-      {% for record in tempo_records %}
-        {% if not loop.first %}<span class="text-stone-300 text-xs">›</span>{% endif %}
-        <span class="text-sm font-medium text-stone-700">{{ record.tempo }}</span>
-      {% endfor %}
-      <span class="text-xs text-stone-400 ml-1">bpm</span>
-      {% if min_tempo is not none and min_tempo < tempo_records[0].tempo %}
-      <span class="text-xs text-stone-400 ml-3">(started at {{ min_tempo }} bpm)</span>
+
+    {% if chart %}
+    <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" class="w-full h-auto" style="max-height:140px">
+      {% if chart.points | length > 1 %}
+      <polyline points="{{ chart.polyline }}" fill="none" class="stroke-stone-400" stroke-width="2" />
       {% endif %}
-    </div>
+      {% for point in chart.points %}
+      <g class="group cursor-pointer">
+        <circle cx="{{ point.x }}" cy="{{ point.y }}" r="10" class="fill-transparent" />
+        <circle cx="{{ point.x }}" cy="{{ point.y }}" r="3.5" class="fill-stone-600 group-hover:fill-stone-800 transition-colors" />
+        <g class="opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+          <rect x="{{ point.x - 44 }}" y="{{ point.y - 40 }}" width="88" height="32" rx="4" class="fill-white stroke-stone-200" stroke-width="1" />
+          <text x="{{ point.x }}" y="{{ point.y - 26 }}" text-anchor="middle" class="fill-stone-800" style="font-size:10px;font-weight:600">{{ point.tempo }} bpm</text>
+          <text x="{{ point.x }}" y="{{ point.y - 14 }}" text-anchor="middle" class="fill-stone-500" style="font-size:9px">{{ point.label }}</text>
+        </g>
+      </g>
+      {% endfor %}
+    </svg>
+    {% endif %}
+
+    {% if min_tempo is not none and min_tempo < tempo_records[0].tempo %}
+    <p class="text-xs text-stone-400 mt-1">(started at {{ min_tempo }} bpm)</p>
+    {% endif %}
   </div>
 {% endif %}
 </div>
