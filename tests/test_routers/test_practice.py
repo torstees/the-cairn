@@ -6,6 +6,7 @@ from cairn.models import (
     KeyMode,
     KeyRoot,
     PracticeListType,
+    Role,
     TuneType,
     User,
     WarmupItem,
@@ -267,3 +268,68 @@ async def test_session_finish_shows_finished_state(client: AsyncClient, db: Asyn
     assert resp.status_code == 200
     assert "Finished" in resp.text
     assert "Finish Session" not in resp.text
+
+
+# ── cross-account ownership (#193) ──────────────────────────────────────────
+
+
+async def _seed_other_owner_session(db: AsyncSession):
+    """A practice session (with at least one item) owned by a different user
+    than the `user` fixture's logged-in user."""
+    other = User(username="other-fiddler", email="other@example.com", google_sub="google-sub-other", role=Role.student)
+    db.add(other)
+    await db.flush()
+    box = await create_box(db, other.id, "Someone Else's Box", [Instrument.fiddle])
+    tune = await create_tune(
+        db,
+        TuneCreate(
+            title="Someone Else's Tune",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+        ),
+        abc_notation=_ABC,
+    )
+    await add_tune(db, box.id, tune.id)
+    return await build_session(db, other.id, box.id, 30)
+
+
+async def test_session_detail_404_for_another_users_session(client: AsyncClient, db: AsyncSession) -> None:
+    session = await _seed_other_owner_session(db)
+    resp = await client.get(f"/practice/session/{session.id}")
+    assert resp.status_code == 404
+
+
+async def test_item_complete_404_for_another_users_session(client: AsyncClient, db: AsyncSession) -> None:
+    session = await _seed_other_owner_session(db)
+    item = session.items[0]
+    resp = await client.post(f"/practice/session/{session.id}/item/{item.id}/complete")
+    assert resp.status_code == 404
+
+
+async def test_item_rate_404_for_another_users_session(client: AsyncClient, db: AsyncSession) -> None:
+    session = await _seed_other_owner_session(db)
+    item = session.items[0]
+    resp = await client.post(f"/practice/session/{session.id}/item/{item.id}/rate", data={"confidence": "5"})
+    assert resp.status_code == 404
+
+
+async def test_session_finish_404_for_another_users_session(client: AsyncClient, db: AsyncSession) -> None:
+    session = await _seed_other_owner_session(db)
+    resp = await client.post(f"/practice/session/{session.id}/finish")
+    assert resp.status_code == 404
+
+
+async def test_plan_create_404_for_another_users_box(client: AsyncClient, db: AsyncSession) -> None:
+    other = User(
+        username="other-fiddler2", email="other2@example.com", google_sub="google-sub-other2", role=Role.student
+    )
+    db.add(other)
+    await db.flush()
+    other_box = await create_box(db, other.id, "Someone Else's Box", [Instrument.fiddle])
+
+    resp = await client.post(
+        "/practice/plan", data={"box_id": str(other_box.id), "total_minutes": "30"}, follow_redirects=False
+    )
+    assert resp.status_code == 404
