@@ -174,20 +174,32 @@ Content                    standalone; created_by FK → users.id is nullable
   `activate_list()` deactivates the current active list before setting the new one.
   Not enforced at DB level — enforced in the service.
 
-- **Phase 1 stubs**: `_STUB_USER_ID = 1` and `_STUB_BOX_ID = 1` are used
-  throughout routers and services in place of real auth. All stubs are named
-  with the `_STUB_` prefix so they are easy to find and replace in Phase 2.
+- **Phase 1 stub**: `_STUB_BOX_ID = 1` (in `progress.py`) is still used in
+  place of real TuneBox selection — `/progress` always shows the first box.
+  `_STUB_USER_ID` is gone; every route now uses the real logged-in user.
 
-- **Authentication (Phase 2, in progress)**: Google OAuth via `authlib`.
-  `routers/auth.py` handles `/auth/login` (redirect to Google), `/auth/callback`
-  (verify ID token, look up `User` by `google_sub`, auto-provision on first
-  login with `role=student`), and `/auth/logout`. Session state (`user_id`)
-  lives in a signed cookie via Starlette's `SessionMiddleware`.
-  `dependencies.get_current_user` reads it and raises `NotAuthenticatedError`
-  on a missing/invalid session, which `main.py` turns into a redirect to
-  `/auth/login?next=...`. Not yet wired onto the existing routers — until
-  that lands (replacing `_STUB_USER_ID` with the real logged-in user), the
-  stub above is still what every route actually uses.
+- **Authentication (Phase 2)**: Google OAuth via `authlib`. `routers/auth.py`
+  handles `/auth/login` (redirect to Google), `/auth/callback` (verify ID
+  token, look up `User` by `google_sub`, auto-provision on first login with
+  `role=student`), and `/auth/logout`. Session state (`user_id`) lives in a
+  signed cookie via Starlette's `SessionMiddleware`. `dependencies.
+  get_current_user` reads it, sets `request.state.user`, and raises
+  `NotAuthenticatedError` on a missing/invalid session, which `main.py` turns
+  into a redirect to `/auth/login?next=...`. Every router except `auth`
+  itself requires login (`dependencies=[Depends(get_current_user)]` on each
+  `include_router(...)` call) — the one exception is `HEAD /`, kept public
+  for uptime checks (shields.io badge etc.) that carry no session cookie.
+
+  Ownership is enforced per-request, not just per-login: `_get_owned_box`
+  (`boxes.py`), `_get_owned_list` (`lists.py`), and `_get_owned_session`
+  (`practice.py`) 404 — never 403 — on a box/list/practice-session that
+  doesn't belong to the current user, so another user's resource's
+  existence isn't revealed. `_get_owned_list` deliberately uses a plain PK
+  fetch rather than `get_list()`'s eager-loaded version — eager-loading an
+  entry's `display_alias`/`setting` relationship *before* a mutation on that
+  same entry poisons the identity map with pre-mutation state that
+  `expire_on_commit=False` never refreshes, silently no-op'ing the mutation
+  on the response that follows.
 
 ---
 

@@ -6,8 +6,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_db
-from cairn.models import ProgressStatus, StudentProgress, TuneSetting, TuneType
+from cairn.dependencies import get_current_user, get_db
+from cairn.models import ProgressStatus, StudentProgress, TuneSetting, TuneType, User
 from cairn.services.abc_utils import build_set_abc
 from cairn.services.boxes import get_box
 from cairn.services.tune_sets import (
@@ -26,8 +26,6 @@ from cairn.templating import templates
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sets", tags=["sets"])
-
-_STUB_USER_ID = 1
 
 _TUNE_TYPES = list(TuneType)
 _FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FAMILIES.items() for t in types}
@@ -206,6 +204,7 @@ async def set_detail(
     request: Request,
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     box_id: int | None = Query(default=None),
 ) -> Response:
     tune_set = await get_set(db, set_id)
@@ -213,7 +212,7 @@ async def set_detail(
         raise HTTPException(status_code=404)
 
     box = await get_box(db, box_id) if box_id is not None else None
-    last_tempo = await get_set_tempo(db, _STUB_USER_ID, box_id, set_id) if box_id else None
+    last_tempo = await get_set_tempo(db, user.id, box_id, set_id) if box_id else None
 
     # Pre-build three variants of the set ABC server-side (compact single-X:1
     # format that ABCJS renders reliably), rather than combining per-member
@@ -228,7 +227,7 @@ async def set_detail(
     if box_id and tune_ids:
         rows = await db.execute(
             select(StudentProgress.tune_id, StudentProgress.status).where(
-                StudentProgress.user_id == _STUB_USER_ID,
+                StudentProgress.user_id == user.id,
                 StudentProgress.box_id == box_id,
                 StudentProgress.tune_id.in_(tune_ids),
             )
@@ -284,8 +283,9 @@ async def set_detail(
 async def set_tempo_record(
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     tempo: int = Form(...),
     box_id: int = Form(...),
 ) -> Response:
-    await upsert_set_tempo(db, _STUB_USER_ID, box_id, set_id, tempo)
+    await upsert_set_tempo(db, user.id, box_id, set_id, tempo)
     return Response(status_code=204)

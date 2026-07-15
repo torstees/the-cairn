@@ -1,8 +1,8 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, Role, TuneType, User
-from cairn.routers.progress import _STUB_BOX_ID, _STUB_USER_ID
+from cairn.models import Instrument, KeyMode, KeyRoot, TuneType, User
+from cairn.routers.progress import _STUB_BOX_ID
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.boxes import add_tune, create_box, set_preferred_setting
 from cairn.services.spaced_rep import record_practice
@@ -12,13 +12,9 @@ _ABC = "|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
 _ALT_ABC = "|:GABc defg|GABc defg|GABc defg|GABc defg|GABc defg|GABc defg:|"
 
 
-async def _seed(db: AsyncSession):
-    """Create the stub user (id=1), a TuneBox (id=1), and one tune; return (user, tune)."""
-    u = User(username="tester", email="t@example.com", google_sub="google-sub-tester", role=Role.student)
-    db.add(u)
-    await db.flush()
-    assert u.id == _STUB_USER_ID, "Stub user id must match _STUB_USER_ID"
-    b = await create_box(db, u.id, "Session Box", [Instrument.flute])
+async def _seed(db: AsyncSession, user: User):
+    """Create a TuneBox (id=1) and one tune for the given user; return (user, tune)."""
+    b = await create_box(db, user.id, "Session Box", [Instrument.flute])
     assert b.id == _STUB_BOX_ID, "Stub box id must match _STUB_BOX_ID"
     t = await create_tune(
         db,
@@ -31,7 +27,7 @@ async def _seed(db: AsyncSession):
         ),
         abc_notation=_ABC,
     )
-    return u, t
+    return user, t
 
 
 async def test_progress_index_empty_library(client: AsyncClient) -> None:
@@ -40,37 +36,39 @@ async def test_progress_index_empty_library(client: AsyncClient) -> None:
     assert "No tunes" in resp.text
 
 
-async def test_progress_index_shows_tune_aliases(client: AsyncClient, db: AsyncSession) -> None:
-    _, tune = await _seed(db)
+async def test_progress_index_shows_tune_aliases(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, tune = await _seed(db, user)
     await add_alias(db, tune.id, "Sunrise Reel")
     resp = await client.get("/progress/")
     assert resp.status_code == 200
     assert "Also known as: Sunrise Reel" in resp.text
 
 
-async def test_progress_index_shows_tune(client: AsyncClient, db: AsyncSession) -> None:
-    await _seed(db)
+async def test_progress_index_shows_tune(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    await _seed(db, user)
     resp = await client.get("/progress/")
     assert resp.status_code == 200
     assert "Morning Dew" in resp.text
 
 
-async def test_progress_index_tune_link_includes_from_progress(client: AsyncClient, db: AsyncSession) -> None:
-    _, tune = await _seed(db)
+async def test_progress_index_tune_link_includes_from_progress(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    _, tune = await _seed(db, user)
     resp = await client.get("/progress/")
     assert resp.status_code == 200
     assert f'href="/tunes/{tune.id}?from=progress"' in resp.text
 
 
-async def test_progress_index_shows_not_started_badge(client: AsyncClient, db: AsyncSession) -> None:
-    await _seed(db)
+async def test_progress_index_shows_not_started_badge(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    await _seed(db, user)
     resp = await client.get("/progress/")
     assert resp.status_code == 200
     assert "Not started" in resp.text
 
 
-async def test_progress_record_returns_badge(client: AsyncClient, db: AsyncSession) -> None:
-    _, t = await _seed(db)
+async def test_progress_record_returns_badge(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, t = await _seed(db, user)
     resp = await client.post(f"/progress/{t.id}", data={"confidence": "4"})
     assert resp.status_code == 200
     assert f"progress-badge-{t.id}" in resp.text
@@ -82,8 +80,8 @@ async def test_progress_record_404_for_unknown_tune(client: AsyncClient) -> None
     assert resp.status_code == 404
 
 
-async def test_progress_set_status_returns_badge(client: AsyncClient, db: AsyncSession) -> None:
-    _, t = await _seed(db)
+async def test_progress_set_status_returns_badge(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, t = await _seed(db, user)
     resp = await client.post(f"/progress/{t.id}/status", data={"status": "session_ready"})
     assert resp.status_code == 200
     assert f"progress-badge-{t.id}" in resp.text
@@ -95,16 +93,16 @@ async def test_progress_set_status_404_for_unknown_tune(client: AsyncClient) -> 
     assert resp.status_code == 404
 
 
-async def test_progress_set_status_updates_existing_record(client: AsyncClient, db: AsyncSession) -> None:
-    u, t = await _seed(db)
+async def test_progress_set_status_updates_existing_record(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    u, t = await _seed(db, user)
     await record_practice(db, u.id, _STUB_BOX_ID, t.id, confidence=5)
     resp = await client.post(f"/progress/{t.id}/status", data={"status": "committed"})
     assert resp.status_code == 200
     assert "Committed" in resp.text
 
 
-async def test_progress_index_shows_due_badge(client: AsyncClient, db: AsyncSession) -> None:
-    u, t = await _seed(db)
+async def test_progress_index_shows_due_badge(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    u, t = await _seed(db, user)
     # Record two practices to get a past next_suggested; we can't control the date
     # so we just check the page renders without error and contains the tune.
     await record_practice(db, u.id, _STUB_BOX_ID, t.id, confidence=2)
@@ -113,8 +111,8 @@ async def test_progress_index_shows_due_badge(client: AsyncClient, db: AsyncSess
     assert "Morning Dew" in resp.text
 
 
-async def test_progress_index_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:
-    _, t = await _seed(db)
+async def test_progress_index_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, t = await _seed(db, user)
     resp = await client.get("/progress/")
     assert resp.status_code == 200
     assert f'data-abc-preview-id="{t.id}"' in resp.text
@@ -122,9 +120,9 @@ async def test_progress_index_includes_abc_hover_preview(client: AsyncClient, db
 
 
 async def test_progress_index_hover_preview_trigger_is_preview_cell_not_card_or_title(
-    client: AsyncClient, db: AsyncSession
+    client: AsyncClient, db: AsyncSession, user: User
 ) -> None:
-    _, t = await _seed(db)
+    _, t = await _seed(db, user)
     resp = await client.get("/progress/")
     assert resp.status_code == 200
 
@@ -139,8 +137,10 @@ async def test_progress_index_hover_preview_trigger_is_preview_cell_not_card_or_
     assert 'data-abc-preview-delay="300"' in canvas_open
 
 
-async def test_progress_column_preview_is_shorter_than_popup_preview(client: AsyncClient, db: AsyncSession) -> None:
-    _, t = await _seed(db)
+async def test_progress_column_preview_is_shorter_than_popup_preview(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    _, t = await _seed(db, user)
     resp = await client.get("/progress/")
     assert resp.status_code == 200
 
@@ -153,24 +153,30 @@ async def test_progress_column_preview_is_shorter_than_popup_preview(client: Asy
     assert len(col) < len(popup)
 
 
-async def test_progress_record_response_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:
-    _, t = await _seed(db)
+async def test_progress_record_response_includes_abc_hover_preview(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    _, t = await _seed(db, user)
     resp = await client.post(f"/progress/{t.id}", data={"confidence": "4"})
     assert resp.status_code == 200
     assert f'data-abc-preview-id="{t.id}"' in resp.text
     assert f'<template id="tune-abc-preview-{t.id}">' in resp.text
 
 
-async def test_progress_set_status_response_has_no_preview_markup(client: AsyncClient, db: AsyncSession) -> None:
+async def test_progress_set_status_response_has_no_preview_markup(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
     # _progress_badge.html is just the status badge, not the title link — no preview needed.
-    _, t = await _seed(db)
+    _, t = await _seed(db, user)
     resp = await client.post(f"/progress/{t.id}/status", data={"status": "session_ready"})
     assert resp.status_code == 200
     assert "data-abc-preview-id" not in resp.text
 
 
-async def test_progress_preview_uses_box_preferred_setting_not_core(client: AsyncClient, db: AsyncSession) -> None:
-    _, t = await _seed(db)
+async def test_progress_preview_uses_box_preferred_setting_not_core(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    _, t = await _seed(db, user)
     await add_tune(db, _STUB_BOX_ID, t.id)
     alt = await create_setting(
         db,

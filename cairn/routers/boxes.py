@@ -6,8 +6,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_db
-from cairn.models import Instrument, KeyRoot, TuneType
+from cairn.dependencies import get_current_user, get_db
+from cairn.models import Instrument, KeyRoot, TuneBox, TuneType, User
 from cairn.services.abc_utils import (
     strip_chord_symbols,
     strip_decorative_headers,
@@ -27,7 +27,7 @@ from cairn.services.boxes import (
     set_preferred_setting,
     set_transpose,
 )
-from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting
+from cairn.services.lists import bulk_update_list_entry_setting, find_list_entries_by_setting, list_lists
 from cairn.services.tune_sets import (
     add_box_set,
     clear_box_set_difficulty,
@@ -53,11 +53,19 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/boxes", tags=["boxes"])
 
-_STUB_USER_ID = 1
 _INSTRUMENTS = list(Instrument)
 _TUNE_TYPES = list(TuneType)
 _KEY_ROOTS = list(KeyRoot)
 _FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FAMILIES.items() for t in types}
+
+
+async def _get_owned_box(db: AsyncSession, user_id: int, box_id: int) -> TuneBox:
+    """Fetch a box the user owns, or 404 — a missing row and an owner mismatch look
+    identical to the caller so another user's box's existence isn't revealed."""
+    box = await get_box(db, box_id)
+    if box is None or box.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Box not found")
+    return box
 
 
 def _transpose_popup_ctx(entry, key_root: KeyRoot | None, octave: int, action_url: str, modal_id: str) -> dict:
@@ -139,8 +147,9 @@ async def _set_difficulties(db: AsyncSession, box, box_sets) -> dict[int, tuple[
 async def box_index(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    boxes = await list_boxes(db, _STUB_USER_ID)
+    boxes = await list_boxes(db, user.id)
     return templates.TemplateResponse(request, "boxes/index.html", {"boxes": boxes})
 
 
@@ -157,6 +166,7 @@ async def box_new(request: Request) -> Response:
 async def box_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     name: str = Form(...),
     instruments: list[str] = Form(default=[]),
 ) -> Response:
@@ -173,7 +183,7 @@ async def box_create(
             status_code=422,
         )
     instrument_enums = [Instrument(i) for i in instruments]
-    box = await create_box(db, _STUB_USER_ID, name, instrument_enums)
+    box = await create_box(db, user.id, name, instrument_enums)
     return RedirectResponse(f"/boxes/{box.id}", status_code=303)
 
 
@@ -182,9 +192,10 @@ async def box_detail(
     request: Request,
     box_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
     box = await get_box_detail(db, box_id)
-    if box is None:
+    if box is None or box.user_id != user.id:
         raise HTTPException(status_code=404, detail="Box not found")
     entry_tune_ids = {e.tune_id for e in box.entries}
     all_tunes = await list_tunes(db)
@@ -233,11 +244,10 @@ async def box_add_tune(
     request: Request,
     box_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     tune_id: int = Form(...),
 ) -> Response:
-    box = await get_box_detail(db, box_id)
-    if box is None:
-        raise HTTPException(status_code=404, detail="Box not found")
+    await _get_owned_box(db, user.id, box_id)
     try:
         await add_tune(db, box_id, tune_id)
     except IntegrityError as exc:
@@ -255,7 +265,9 @@ async def box_remove_tune(
     box_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
+    await _get_owned_box(db, user.id, box_id)
     removed = await remove_tune(db, box_id, tune_id)
     if not removed:
         raise HTTPException(status_code=404, detail="Tune not in box")
@@ -267,10 +279,11 @@ async def box_add_set(
     request: Request,
     box_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     set_id: int = Form(...),
 ) -> Response:
     box = await get_box_detail(db, box_id)
-    if box is None:
+    if box is None or box.user_id != user.id:
         raise HTTPException(status_code=404, detail="Box not found")
     try:
         await add_box_set(db, box_id, set_id)
@@ -291,7 +304,9 @@ async def box_remove_set(
     box_id: int,
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
+    await _get_owned_box(db, user.id, box_id)
     removed = await remove_box_set(db, box_id, set_id)
     if not removed:
         raise HTTPException(status_code=404, detail="Set not in box")
@@ -304,10 +319,11 @@ async def box_set_set_difficulty(
     box_id: int,
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     difficulty: int = Form(...),
 ) -> Response:
     box = await get_box_detail(db, box_id)
-    if box is None:
+    if box is None or box.user_id != user.id:
         raise HTTPException(status_code=404, detail="Box not found")
     await set_box_set_difficulty(db, box_id, set_id, difficulty)
     return templates.TemplateResponse(
@@ -323,9 +339,10 @@ async def box_reset_set_difficulty(
     box_id: int,
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
     box = await get_box_detail(db, box_id)
-    if box is None:
+    if box is None or box.user_id != user.id:
         raise HTTPException(status_code=404, detail="Box not found")
     box_sets = await list_box_sets(db, box_id)
     entry = next((e for e in box_sets if e.set_id == set_id), None)
@@ -346,8 +363,10 @@ async def box_set_setting(
     box_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     setting_id: str = Form(default=""),
 ) -> Response:
+    await _get_owned_box(db, user.id, box_id)
     old_entry = await get_box_entry(db, box_id, tune_id)
     old_setting_id = old_entry.setting_id if old_entry else None
 
@@ -391,8 +410,10 @@ async def box_set_display_alias(
     box_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     display_alias_id: str = Form(default=""),
 ) -> Response:
+    await _get_owned_box(db, user.id, box_id)
     if await get_box_entry(db, box_id, tune_id) is None:
         raise HTTPException(status_code=404, detail="Tune not in box")
 
@@ -412,9 +433,11 @@ async def box_transpose_popup(
     box_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     key_root: str | None = Query(default=None),
     octave: str | None = Query(default=None),
 ) -> Response:
+    await _get_owned_box(db, user.id, box_id)
     entry = await get_box_entry(db, box_id, tune_id)
     if entry is None:
         raise HTTPException(status_code=404, detail="Tune not in box")
@@ -437,9 +460,11 @@ async def box_set_transpose(
     box_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     key_root: str = Form(default=""),
     octave: str = Form(default="0"),
 ) -> Response:
+    await _get_owned_box(db, user.id, box_id)
     if await get_box_entry(db, box_id, tune_id) is None:
         raise HTTPException(status_code=404, detail="Tune not in box")
 
@@ -460,10 +485,16 @@ async def box_propagate_setting(
     box_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     setting_id: str = Form(default=""),
     list_ids: list[int] = Form(default=[]),
 ) -> Response:
+    await _get_owned_box(db, user.id, box_id)
     sid = int(setting_id) if setting_id else None
+    # list_ids comes from the client — restrict to lists the user actually owns
+    # so a forged request can't bulk-update another user's practice list entries.
+    owned_list_ids = {pl.id for pl in await list_lists(db, user.id)}
+    list_ids = [lid for lid in list_ids if lid in owned_list_ids]
     logger.debug(
         "propagate setting: box=%s tune=%s setting_id=%r list_ids=%r",
         box_id,

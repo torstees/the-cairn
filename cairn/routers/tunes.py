@@ -5,8 +5,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_db
-from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TempoRecord, Tune, TuneType
+from cairn.dependencies import get_current_user, get_db
+from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TempoRecord, Tune, TuneType, User
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import KEY_ROOT_MAP, build_abc, shortest_semitones_to_root, transpose_abc
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
@@ -39,7 +39,6 @@ _ORN_LEVELS = list(OrnamentationLevel)
 
 _FORM_CTX = {"tune_types": _TUNE_TYPES, "key_roots": _KEY_ROOTS, "key_modes": _KEY_MODES}
 _SETTINGS_CTX = {"instruments": _INSTRUMENTS, "orn_levels": _ORN_LEVELS}
-_STUB_USER_ID = 1
 
 
 class TempoChartPoint(NamedTuple):
@@ -162,6 +161,7 @@ async def tune_detail(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     box_id: int | None = Query(default=None),
     list_id: int | None = Query(default=None),
     from_: str | None = Query(default=None, alias="from"),
@@ -189,15 +189,27 @@ async def tune_detail(
     octave = max(-1, min(1, octave or 0))
     transpose = key_shift + octave * 12
 
+    # box_id/list_id are just view-context (which box/list's setting, alias,
+    # transpose to show) — dropped silently rather than 404ing the whole tune
+    # page if they don't belong to the current user (a stale link, or a
+    # crafted query param), so the tune itself still renders.
     box = None
     entry = None
     if box_id is not None:
-        box, entry = await get_box(db, box_id), await get_box_entry(db, box_id, tune_id)
+        box = await get_box(db, box_id)
+        if box is not None and box.user_id == user.id:
+            entry = await get_box_entry(db, box_id, tune_id)
+        else:
+            box, box_id = None, None
 
     linked_list = None
     list_entry = None
     if list_id is not None:
-        linked_list, list_entry = await get_list(db, list_id), await get_list_entry(db, list_id, tune_id)
+        linked_list = await get_list(db, list_id)
+        if linked_list is not None and linked_list.user_id == user.id:
+            list_entry = await get_list_entry(db, list_id, tune_id)
+        else:
+            linked_list, list_id = None, None
 
     active_setting, display_name = resolve_display_context(tune, entry, list_entry)
     core = core_setting(tune)
@@ -207,15 +219,15 @@ async def tune_detail(
     if transpose:
         built_abc = transpose_abc(built_abc, transpose)
         settings_abc = {sid: transpose_abc(abc, transpose) for sid, abc in settings_abc.items()}
-    min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
+    min_tempo, tempo_records = await get_tempo_history(db, user.id, tune_id)
     beats_per_bar = int(tune.time_signature.split("/")[0])
 
-    boxes = await list_boxes(db, _STUB_USER_ID)
+    boxes = await list_boxes(db, user.id)
     box_entries = {b.id: next((e for e in b.entries if e.tune_id == tune_id), None) for b in boxes}
     lists_by_box_id: dict[int, list] = {}
-    for practice_list in await list_lists(db, _STUB_USER_ID):
+    for practice_list in await list_lists(db, user.id):
         lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
-    active_list = await get_active_list(db, _STUB_USER_ID)
+    active_list = await get_active_list(db, user.id)
     member_sets = await list_sets_for_tune(db, tune_id)
 
     # Base query string (box/list/breadcrumb context only) so the key picker
@@ -279,13 +291,18 @@ async def tune_detail(
     )
 
 
-async def _box_membership_context(db: AsyncSession, tune: Tune, box_id: int) -> dict:
+async def _get_owned_box(db: AsyncSession, user_id: int, box_id: int):
     box = await get_box(db, box_id)
-    if box is None:
+    if box is None or box.user_id != user_id:
         raise HTTPException(status_code=404, detail="Box not found")
+    return box
+
+
+async def _box_membership_context(db: AsyncSession, user_id: int, tune: Tune, box_id: int) -> dict:
+    box = await _get_owned_box(db, user_id, box_id)
     entry = await get_box_entry(db, box_id, tune.id)
-    lists_for_box = [pl for pl in await list_lists(db, _STUB_USER_ID) if pl.box_id == box_id]
-    active_list = await get_active_list(db, _STUB_USER_ID)
+    lists_for_box = [pl for pl in await list_lists(db, user_id) if pl.box_id == box_id]
+    active_list = await get_active_list(db, user_id)
     return {
         "tune": tune,
         "box": box,
@@ -301,6 +318,7 @@ async def tune_add_to_box(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     box_id: int = Form(...),
     setting_id: str = Form(default=""),
     display_alias_id: str = Form(default=""),
@@ -309,6 +327,7 @@ async def tune_add_to_box(
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
+    await _get_owned_box(db, user.id, box_id)
 
     sid = int(setting_id) if setting_id else None
     daid = int(display_alias_id) if display_alias_id else None
@@ -326,12 +345,14 @@ async def tune_add_to_box(
     await set_preferred_setting(db, box_id, tune_id, sid)
 
     if list_id:
-        try:
-            await add_tune_to_list(db, int(list_id), tune_id, setting_id=sid, display_alias_id=daid)
-        except IntegrityError:
-            pass  # already in that list — the box add still succeeded
+        target_list = await get_list(db, int(list_id))
+        if target_list is not None and target_list.user_id == user.id:
+            try:
+                await add_tune_to_list(db, int(list_id), tune_id, setting_id=sid, display_alias_id=daid)
+            except IntegrityError:
+                pass  # already in that list — the box add still succeeded
 
-    ctx = await _box_membership_context(db, tune, box_id)
+    ctx = await _box_membership_context(db, user.id, tune, box_id)
     return templates.TemplateResponse(request, "tunes/partials/_box_membership_row.html", ctx)
 
 
@@ -341,18 +362,20 @@ async def tune_update_box_setting(
     tune_id: int,
     box_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     setting_id: str = Form(default=""),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
+    await _get_owned_box(db, user.id, box_id)
     if await get_box_entry(db, box_id, tune_id) is None:
         raise HTTPException(status_code=404, detail="Tune not in box")
 
     sid = int(setting_id) if setting_id else None
     await set_preferred_setting(db, box_id, tune_id, sid)
 
-    ctx = await _box_membership_context(db, tune, box_id)
+    ctx = await _box_membership_context(db, user.id, tune, box_id)
     return templates.TemplateResponse(request, "tunes/partials/_box_membership_row.html", ctx)
 
 
@@ -362,18 +385,20 @@ async def tune_update_box_display_alias(
     tune_id: int,
     box_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     display_alias_id: str = Form(default=""),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
+    await _get_owned_box(db, user.id, box_id)
     if await get_box_entry(db, box_id, tune_id) is None:
         raise HTTPException(status_code=404, detail="Tune not in box")
 
     daid = int(display_alias_id) if display_alias_id else None
     await set_display_alias(db, box_id, tune_id, daid)
 
-    ctx = await _box_membership_context(db, tune, box_id)
+    ctx = await _box_membership_context(db, user.id, tune, box_id)
     return templates.TemplateResponse(request, "tunes/partials/_box_membership_row.html", ctx)
 
 
@@ -382,11 +407,12 @@ async def tempo_record_create(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     tempo: int = Form(...),
     box_id: int | None = Form(None),
 ) -> Response:
-    await record_tempo(db, _STUB_USER_ID, tune_id, box_id, tempo)
-    min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
+    await record_tempo(db, user.id, tune_id, box_id, tempo)
+    min_tempo, tempo_records = await get_tempo_history(db, user.id, tune_id)
     return templates.TemplateResponse(
         request,
         "tunes/partials/_tempo_history.html",
@@ -399,8 +425,9 @@ async def tempo_history_partial(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    min_tempo, tempo_records = await get_tempo_history(db, _STUB_USER_ID, tune_id)
+    min_tempo, tempo_records = await get_tempo_history(db, user.id, tune_id)
     return templates.TemplateResponse(
         request,
         "tunes/partials/_tempo_history.html",

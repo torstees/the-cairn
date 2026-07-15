@@ -5,8 +5,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_db
-from cairn.models import KeyRoot, PracticeListType, ProgressStatus
+from cairn.dependencies import get_current_user, get_db
+from cairn.models import KeyRoot, PracticeList, PracticeListType, ProgressStatus, User
 from cairn.services.abc_utils import (
     strip_chord_symbols,
     strip_decorative_headers,
@@ -53,11 +53,29 @@ from cairn.templating import templates
 
 router = APIRouter(prefix="/lists", tags=["lists"])
 
-_STUB_USER_ID = 1
 _LIST_TYPES = list(PracticeListType)
 _PROGRESS_STATUSES = [s for s in ProgressStatus if s != ProgressStatus.just_learning]
 _KEY_ROOTS = list(KeyRoot)
 _FAMILY_FOR_TYPE: dict[str, str] = {t.value: family for family, types in TUNE_FAMILIES.items() for t in types}
+
+
+async def _get_owned_list(db: AsyncSession, user_id: int, list_id: int) -> PracticeList:
+    """Fetch a practice list the user owns, or 404 — a missing row and an owner
+    mismatch look identical to the caller so another user's list's existence
+    isn't revealed.
+
+    Deliberately a plain PK fetch (db.get), not get_list()'s eager-loaded
+    version: pre-loading entries.display_alias/setting here, before a mutation
+    on one of those same entries, would cache their pre-mutation state in the
+    identity map — expire_on_commit=False never refreshes it, so the mutation
+    would appear to silently not take effect on the response that follows.
+    Callers that need the full detail object (entries, box, etc.) fetch it
+    themselves via get_list() after this check.
+    """
+    practice_list = await db.get(PracticeList, list_id)
+    if practice_list is None or practice_list.user_id != user_id:
+        raise HTTPException(status_code=404, detail="List not found")
+    return practice_list
 
 
 def _entry_previews(entries) -> dict[int, TunePreview]:
@@ -140,8 +158,9 @@ def _transpose_popup_ctx(entry, key_root: KeyRoot | None, octave: int, action_ur
 async def list_index(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    practice_lists = await list_lists(db, _STUB_USER_ID)
+    practice_lists = await list_lists(db, user.id)
     return templates.TemplateResponse(
         request,
         "lists/index.html",
@@ -153,8 +172,9 @@ async def list_index(
 async def list_new(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    boxes = await list_boxes(db, _STUB_USER_ID)
+    boxes = await list_boxes(db, user.id)
     return templates.TemplateResponse(
         request,
         "lists/form.html",
@@ -172,6 +192,7 @@ async def list_new(
 async def list_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     name: str = Form(...),
     list_type: PracticeListType = Form(...),
     box_id: int = Form(...),
@@ -180,10 +201,14 @@ async def list_create(
 ) -> Response:
     from datetime import date
 
+    box = await get_box_detail(db, box_id)
+    if box is None or box.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Box not found")
+
     parsed_date = date.fromisoformat(target_date) if target_date else None
     practice_list = await create_list(
         db,
-        _STUB_USER_ID,
+        user.id,
         box_id,
         name,
         list_type,
@@ -198,9 +223,10 @@ async def list_edit(
     request: Request,
     list_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
     practice_list = await get_list(db, list_id)
-    if practice_list is None:
+    if practice_list is None or practice_list.user_id != user.id:
         raise HTTPException(status_code=404, detail="List not found")
     return templates.TemplateResponse(
         request,
@@ -220,6 +246,7 @@ async def list_update(
     request: Request,
     list_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     name: str = Form(...),
     list_type: PracticeListType = Form(...),
     progress_goal: ProgressStatus = Form(default=ProgressStatus.committed),
@@ -227,6 +254,7 @@ async def list_update(
 ) -> Response:
     from datetime import date
 
+    await _get_owned_list(db, user.id, list_id)
     parsed_date = date.fromisoformat(target_date) if target_date else None
     practice_list = await update_list(db, list_id, name, list_type, progress_goal, parsed_date)
     if practice_list is None:
@@ -239,9 +267,10 @@ async def list_detail(
     request: Request,
     list_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
     practice_list = await get_list(db, list_id)
-    if practice_list is None:
+    if practice_list is None or practice_list.user_id != user.id:
         raise HTTPException(status_code=404, detail="List not found")
     entry_tune_ids = {e.tune_id for e in practice_list.entries}
     all_tunes = await list_tunes(db)
@@ -313,11 +342,10 @@ async def list_add_set(
     request: Request,
     list_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     set_id: int = Form(...),
 ) -> Response:
-    practice_list = await get_list(db, list_id)
-    if practice_list is None:
-        raise HTTPException(status_code=404, detail="List not found")
+    practice_list = await _get_owned_list(db, user.id, list_id)
     try:
         await add_list_set(db, list_id, set_id)
     except IntegrityError as exc:
@@ -338,7 +366,9 @@ async def list_remove_set(
     list_id: int,
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
+    await _get_owned_list(db, user.id, list_id)
     removed = await remove_list_set(db, list_id, set_id)
     if not removed:
         raise HTTPException(status_code=404, detail="Set not in list")
@@ -351,11 +381,10 @@ async def list_set_set_difficulty(
     list_id: int,
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     difficulty: int = Form(...),
 ) -> Response:
-    practice_list = await get_list(db, list_id)
-    if practice_list is None:
-        raise HTTPException(status_code=404, detail="List not found")
+    await _get_owned_list(db, user.id, list_id)
     await set_list_set_difficulty(db, list_id, set_id, difficulty)
     return templates.TemplateResponse(
         request,
@@ -370,10 +399,9 @@ async def list_reset_set_difficulty(
     list_id: int,
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    practice_list = await get_list(db, list_id)
-    if practice_list is None:
-        raise HTTPException(status_code=404, detail="List not found")
+    practice_list = await _get_owned_list(db, user.id, list_id)
     box = await get_box_detail(db, practice_list.box_id)
     list_sets_ = await list_list_sets(db, list_id)
     entry = next((e for e in list_sets_ if e.set_id == set_id), None)
@@ -393,8 +421,9 @@ async def list_activate(
     request: Request,
     list_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    practice_list = await activate_list(db, _STUB_USER_ID, list_id)
+    practice_list = await activate_list(db, user.id, list_id)
     if practice_list is None:
         raise HTTPException(status_code=404, detail="List not found")
     return templates.TemplateResponse(
@@ -409,11 +438,10 @@ async def list_deactivate(
     request: Request,
     list_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    practice_list = await get_list(db, list_id)
-    if practice_list is None:
-        raise HTTPException(status_code=404, detail="List not found")
-    await deactivate_list(db, _STUB_USER_ID)
+    practice_list = await _get_owned_list(db, user.id, list_id)
+    await deactivate_list(db, user.id)
     practice_list.is_active = False
     return templates.TemplateResponse(
         request,
@@ -427,13 +455,12 @@ async def list_add_tune(
     request: Request,
     list_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     tune_id: int = Form(...),
     setting_id: str = Form(default=""),
     display_alias_id: str = Form(default=""),
 ) -> Response:
-    practice_list = await get_list(db, list_id)
-    if practice_list is None:
-        raise HTTPException(status_code=404, detail="List not found")
+    await _get_owned_list(db, user.id, list_id)
     parsed_setting_id = int(setting_id) if setting_id else None
     parsed_display_alias_id = int(display_alias_id) if display_alias_id else None
     try:
@@ -460,8 +487,10 @@ async def list_set_entry_setting(
     list_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     setting_id: str = Form(default=""),
 ) -> Response:
+    await _get_owned_list(db, user.id, list_id)
     sid = int(setting_id) if setting_id else None
     entry = await update_list_entry_setting(db, list_id, tune_id, sid)
     if entry is None:
@@ -479,8 +508,10 @@ async def list_set_entry_display_alias(
     list_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     display_alias_id: str = Form(default=""),
 ) -> Response:
+    await _get_owned_list(db, user.id, list_id)
     daid = int(display_alias_id) if display_alias_id else None
     entry = await update_list_entry_display_alias(db, list_id, tune_id, daid)
     if entry is None:
@@ -498,9 +529,11 @@ async def list_transpose_popup(
     list_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     key_root: str | None = Query(default=None),
     octave: str | None = Query(default=None),
 ) -> Response:
+    await _get_owned_list(db, user.id, list_id)
     entry = await get_list_entry(db, list_id, tune_id)
     if entry is None:
         raise HTTPException(status_code=404, detail="Entry not found")
@@ -523,9 +556,11 @@ async def list_set_entry_transpose(
     list_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     key_root: str = Form(default=""),
     octave: str = Form(default="0"),
 ) -> Response:
+    await _get_owned_list(db, user.id, list_id)
     kr = KeyRoot(key_root) if key_root else None
     oc = int(octave) if octave else 0
     entry = await update_list_entry_transpose(db, list_id, tune_id, kr, oc)
@@ -543,7 +578,9 @@ async def list_set_entry_transpose(
 async def list_delete(
     list_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
+    await _get_owned_list(db, user.id, list_id)
     deleted = await delete_list(db, list_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="List not found")
@@ -555,7 +592,9 @@ async def list_remove_tune(
     list_id: int,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
+    await _get_owned_list(db, user.id, list_id)
     removed = await remove_tune_from_list(db, list_id, tune_id)
     if not removed:
         raise HTTPException(status_code=404, detail="Tune not in list")

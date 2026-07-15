@@ -11,8 +11,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from cairn.config import SESSION_SECRET_KEY
-from cairn.dependencies import NotAuthenticatedError, get_db
+from cairn.dependencies import NotAuthenticatedError, get_current_user, get_db
 from cairn.logging_config import setup_logging
+from cairn.models import User
 from cairn.routers import auth as auth_router
 from cairn.routers import boxes as boxes_router
 from cairn.routers import content as content_router
@@ -66,20 +67,18 @@ async def handle_not_authenticated(request: Request, exc: NotAuthenticatedError)
 app.mount("/static", StaticFiles(directory=BASE_DIR.parent / "static"), name="static")
 
 app.include_router(auth_router.router)
-app.include_router(tunes_router.router)
-app.include_router(thesession_link_router.router)
-app.include_router(settings_router.router)
-app.include_router(difficulty_router.router)
-app.include_router(progress_router.router)
-app.include_router(boxes_router.router)
-app.include_router(lists_router.router)
-app.include_router(practice_router.router)
-app.include_router(warmups_router.router)
-app.include_router(tune_sets_router.router)
-app.include_router(content_router.router)
-
-
-_STUB_USER_ID = 1
+_login_required = [Depends(get_current_user)]
+app.include_router(tunes_router.router, dependencies=_login_required)
+app.include_router(thesession_link_router.router, dependencies=_login_required)
+app.include_router(settings_router.router, dependencies=_login_required)
+app.include_router(difficulty_router.router, dependencies=_login_required)
+app.include_router(progress_router.router, dependencies=_login_required)
+app.include_router(boxes_router.router, dependencies=_login_required)
+app.include_router(lists_router.router, dependencies=_login_required)
+app.include_router(practice_router.router, dependencies=_login_required)
+app.include_router(warmups_router.router, dependencies=_login_required)
+app.include_router(tune_sets_router.router, dependencies=_login_required)
+app.include_router(content_router.router, dependencies=_login_required)
 
 
 @app.get("/version")
@@ -87,10 +86,19 @@ async def get_version() -> dict[str, str]:
     return {"version": APP_VERSION}
 
 
-@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
+@app.head("/")
+async def index_head() -> Response:
+    # Uptime/status checkers (e.g. shields.io's website badge) probe with HEAD
+    # and carry no session cookie — this must stay public, unlike the GET
+    # below, or they'd report the app as down even though it's actually up.
+    return Response(status_code=200)
+
+
+@app.get("/", response_class=HTMLResponse)
 async def index(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> HTMLResponse:
-    data = await get_dashboard_data(db, _STUB_USER_ID)
+    data = await get_dashboard_data(db, user.id)
     return templates.TemplateResponse(request, "dashboard.html", {"data": data})
