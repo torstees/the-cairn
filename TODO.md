@@ -1435,7 +1435,7 @@ use instead of a formal roster.
 **Follow-up, not built this round** (schema from 11.2 already supports
 these; no routes/UI yet):
 
-- [ ] **11.8 — Tune/setting visibility enforcement**
+- [x] **11.8 — Tune/setting visibility enforcement**
   Filter `/tunes` listing and search to
   `visibility == public OR created_by == current_user`; a "make private"
   toggle in the tune/setting edit UI.

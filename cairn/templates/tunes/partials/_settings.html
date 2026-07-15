@@ -112,6 +112,13 @@
             </div>
           </div>
 
+          <div class="flex items-center gap-2">
+            <input id="se-private-{{ setting.id }}" name="is_private" type="checkbox" value="true"
+                   {% if setting.visibility.value == 'private' %}checked{% endif %}
+                   class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+            <label for="se-private-{{ setting.id }}" class="text-xs font-medium text-stone-600">Private (only visible to you)</label>
+          </div>
+
           <div>
             <label class="block text-xs font-medium text-stone-600 mb-1" for="se-abc-{{ setting.id }}">Music Notation</label>
             <textarea id="se-abc-{{ setting.id }}" name="abc_notation" rows="5" required
@@ -212,6 +219,12 @@ K:D
                    placeholder="e.g. Tommy Peoples"
                    class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
           </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input id="s-private" name="is_private" type="checkbox" value="true"
+                 class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+          <label for="s-private" class="text-sm font-medium text-stone-700">Private (only visible to you)</label>
         </div>
 
         <div>

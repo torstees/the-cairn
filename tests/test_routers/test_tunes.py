@@ -1,7 +1,19 @@
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, Role, TuneType, User
+from cairn.models import (
+    ContentVisibility,
+    Instrument,
+    KeyMode,
+    KeyRoot,
+    PracticeListType,
+    Role,
+    Tune,
+    TuneSetting,
+    TuneType,
+    User,
+)
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.boxes import add_tune, create_box, get_box_entry, set_display_alias, set_preferred_setting
 from cairn.services.lists import add_tune_to_list, create_list, get_list_entry, update_list_entry_display_alias
@@ -711,3 +723,137 @@ async def test_tune_detail_drops_another_users_box_context(client: AsyncClient, 
     resp = await client.get(f"/tunes/{tune.id}", params={"box_id": str(box.id)})
     assert resp.status_code == 200
     assert "Someone Else's Box" not in resp.text
+
+
+# ── tune/setting visibility (#197) ──────────────────────────────────────────
+
+
+async def _seed_other_users_private_tune(db: AsyncSession, title: str = "Someone Else's Secret Tune"):
+    other = User(
+        username="other-owner", email="other-owner@example.com", google_sub="google-sub-other-owner", role=Role.student
+    )
+    db.add(other)
+    await db.flush()
+    return await create_tune(
+        db,
+        TuneCreate(
+            title=title,
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+            created_by=other.id,
+            visibility=ContentVisibility.private,
+        ),
+        abc_notation=_ABC,
+    )
+
+
+async def test_tune_list_excludes_another_users_private_tune(client: AsyncClient, db: AsyncSession) -> None:
+    await _seed_other_users_private_tune(db)
+    resp = await client.get("/tunes/")
+    assert resp.status_code == 200
+    assert "Someone Else's Secret Tune" not in resp.text
+
+
+async def test_tune_list_includes_own_private_tune(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    await create_tune(
+        db,
+        TuneCreate(
+            title="My Secret Tune",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+            created_by=user.id,
+            visibility=ContentVisibility.private,
+        ),
+        abc_notation=_ABC,
+    )
+    resp = await client.get("/tunes/")
+    assert resp.status_code == 200
+    assert "My Secret Tune" in resp.text
+
+
+async def test_tune_detail_404_for_another_users_private_tune(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_other_users_private_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 404
+
+
+async def test_tune_create_with_is_private_sets_visibility_and_owner(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    resp = await client.post(
+        "/tunes/",
+        data={
+            "title": "My New Private Tune",
+            "tune_type": "reel",
+            "key_root": "D",
+            "key_mode": "major",
+            "time_signature": "4/4",
+            "abc_notation": _ABC,
+            "is_private": "true",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    tune_id = int(resp.headers["location"].rsplit("/", 1)[-1])
+
+    # visible to its own creator
+    resp = await client.get(f"/tunes/{tune_id}")
+    assert resp.status_code == 200
+
+    result = await db.execute(select(Tune).where(Tune.id == tune_id))
+    tune = result.scalar_one()
+    assert tune.visibility == ContentVisibility.private
+    assert tune.created_by == user.id
+
+
+async def test_tune_update_toggles_visibility(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    tune = await create_tune(
+        db,
+        TuneCreate(
+            title="Toggle Me",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+            created_by=user.id,
+        ),
+        abc_notation=_ABC,
+    )
+    assert tune.visibility == ContentVisibility.public
+
+    resp = await client.post(
+        f"/tunes/{tune.id}",
+        data={
+            "title": tune.title,
+            "tune_type": "reel",
+            "key_root": "D",
+            "key_mode": "major",
+            "time_signature": "4/4",
+            "is_private": "true",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    await db.refresh(tune)
+    assert tune.visibility == ContentVisibility.private
+
+
+async def test_setting_create_with_is_private_sets_visibility(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.post(
+        f"/tunes/{tune.id}/settings",
+        data={
+            "label": "Private Arrangement",
+            "abc_notation": _ABC,
+            "is_private": "true",
+        },
+    )
+    assert resp.status_code == 200
+
+    result = await db.execute(select(TuneSetting).where(TuneSetting.label == "Private Arrangement"))
+    setting = result.scalar_one()
+    assert setting.visibility == ContentVisibility.private

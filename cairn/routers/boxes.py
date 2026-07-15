@@ -198,7 +198,7 @@ async def box_detail(
     if box is None or box.user_id != user.id:
         raise HTTPException(status_code=404, detail="Box not found")
     entry_tune_ids = {e.tune_id for e in box.entries}
-    all_tunes = await list_tunes(db)
+    all_tunes = await list_tunes(db, user.id)
     addable_tunes = [t for t in all_tunes if t.id not in entry_tune_ids]
     addable_tunes_json = json.dumps(
         [

@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneSetting, TuneType
+from cairn.models import ContentVisibility, Instrument, KeyMode, KeyRoot, OrnamentationLevel, TuneSetting, TuneType
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneUpdate
 from cairn.services.tunes import (
     TUNE_FAMILIES,
@@ -99,14 +99,14 @@ async def test_get_tune_returns_none_for_missing_id(db: AsyncSession) -> None:
 async def test_list_tunes_returns_all(db: AsyncSession) -> None:
     await create_tune(db, _tune_create(title="Banish Misfortune"), abc_notation=ABC)
     await create_tune(db, _tune_create(title="The Foxhunter"), abc_notation=ABC)
-    tunes = await list_tunes(db)
+    tunes = await list_tunes(db, 1)
     assert len(tunes) == 2
 
 
 async def test_list_tunes_ordered_by_title(db: AsyncSession) -> None:
     await create_tune(db, _tune_create(title="The Foxhunter"), abc_notation=ABC)
     await create_tune(db, _tune_create(title="Banish Misfortune"), abc_notation=ABC)
-    tunes = await list_tunes(db)
+    tunes = await list_tunes(db, 1)
     assert tunes[0].title == "Banish Misfortune"
     assert tunes[1].title == "The Foxhunter"
 
@@ -116,7 +116,7 @@ async def test_list_tunes_article_sort_order(db: AsyncSession) -> None:
     await create_tune(db, _tune_create(title="An Rogaire Dubh"), abc_notation=ABC)
     await create_tune(db, _tune_create(title="A Fig For A Kiss"), abc_notation=ABC)
     await create_tune(db, _tune_create(title="Banish Misfortune"), abc_notation=ABC)
-    tunes = await list_tunes(db)
+    tunes = await list_tunes(db, 1)
     titles = [t.title for t in tunes]
     assert titles == ["Banish Misfortune", "A Fig For A Kiss", "The Foxhunter", "An Rogaire Dubh"]
 
@@ -159,14 +159,14 @@ def test_sort_key_function_cases() -> None:
 
 
 async def test_list_tunes_empty(db: AsyncSession) -> None:
-    tunes = await list_tunes(db)
+    tunes = await list_tunes(db, 1)
     assert tunes == []
 
 
 async def test_list_tunes_filter_by_type(db: AsyncSession) -> None:
     await create_tune(db, _tune_create(title="The Morning Dew", tune_type=TuneType.reel), abc_notation=ABC)
     await create_tune(db, _tune_create(title="Banish Misfortune", tune_type=TuneType.jig), abc_notation=ABC)
-    reels = await list_tunes(db, tune_type=TuneType.reel)
+    reels = await list_tunes(db, 1, tune_type=TuneType.reel)
     assert len(reels) == 1
     assert reels[0].title == "The Morning Dew"
 
@@ -175,15 +175,41 @@ async def test_list_tunes_filter_by_family(db: AsyncSession) -> None:
     await create_tune(db, _tune_create(title="A Jig", tune_type=TuneType.jig), abc_notation=ABC)
     await create_tune(db, _tune_create(title="A Slip Jig", tune_type=TuneType.slip_jig), abc_notation=ABC)
     await create_tune(db, _tune_create(title="A Reel", tune_type=TuneType.reel), abc_notation=ABC)
-    results = await list_tunes(db, family="jig_family")
+    results = await list_tunes(db, 1, family="jig_family")
     titles = {t.title for t in results}
     assert titles == {"A Jig", "A Slip Jig"}
 
 
 async def test_list_tunes_unknown_family_returns_all(db: AsyncSession) -> None:
     await create_tune(db, _tune_create(title="A Reel", tune_type=TuneType.reel), abc_notation=ABC)
-    results = await list_tunes(db, family="nonexistent")
+    results = await list_tunes(db, 1, family="nonexistent")
     assert len(results) == 1  # unknown family → no WHERE clause → all tunes
+
+
+# ── list_tunes visibility (#197) ─────────────────────────────────────────────
+
+
+async def test_list_tunes_excludes_another_users_private_tune(db: AsyncSession) -> None:
+    await create_tune(
+        db,
+        _tune_create(title="My Private Tune", created_by=2, visibility=ContentVisibility.private),
+        abc_notation=ABC,
+    )
+    await create_tune(db, _tune_create(title="A Public Tune"), abc_notation=ABC)
+    results = await list_tunes(db, 1)
+    titles = {t.title for t in results}
+    assert titles == {"A Public Tune"}
+
+
+async def test_list_tunes_includes_own_private_tune(db: AsyncSession) -> None:
+    await create_tune(
+        db,
+        _tune_create(title="My Private Tune", created_by=1, visibility=ContentVisibility.private),
+        abc_notation=ABC,
+    )
+    results = await list_tunes(db, 1)
+    titles = {t.title for t in results}
+    assert titles == {"My Private Tune"}
 
 
 async def test_tune_families_cover_all_tune_types(db: AsyncSession) -> None:

@@ -51,8 +51,8 @@ def _parse_members(members_raw: str) -> list[dict]:
     return result
 
 
-async def _form_context(db: AsyncSession, tune_set=None, error: str | None = None) -> dict:
-    tunes = await list_tunes(db)
+async def _form_context(db: AsyncSession, user_id: int, tune_set=None, error: str | None = None) -> dict:
+    tunes = await list_tunes(db, user_id)
     tunes_json = json.dumps(
         [
             {
@@ -100,8 +100,10 @@ async def set_index(request: Request, db: AsyncSession = Depends(get_db)) -> Res
 
 
 @router.get("/new")
-async def set_new(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
-    ctx = await _form_context(db)
+async def set_new(
+    request: Request, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
+    ctx = await _form_context(db, user.id)
     return templates.TemplateResponse(request, "sets/form.html", ctx)
 
 
@@ -145,11 +147,13 @@ async def set_create(
 
 
 @router.get("/{set_id}/edit")
-async def set_edit(request: Request, set_id: int, db: AsyncSession = Depends(get_db)) -> Response:
+async def set_edit(
+    request: Request, set_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
     tune_set = await get_set(db, set_id)
     if tune_set is None:
         raise HTTPException(status_code=404)
-    ctx = await _form_context(db, tune_set)
+    ctx = await _form_context(db, user.id, tune_set)
     return templates.TemplateResponse(request, "sets/form.html", ctx)
 
 

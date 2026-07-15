@@ -206,6 +206,17 @@ Content                    standalone; created_by FK → users.id is nullable
   `expire_on_commit=False` never refreshes, silently no-op'ing the mutation
   on the response that follows.
 
+  **Tune/setting visibility**: `Tune`/`TuneSetting.visibility` (public/private
+  this round — `enrolled` is reserved for a future teacher/student roster
+  feature) plus `Tune.created_by` gate the shared catalog. `list_tunes()`
+  filters every listing/combobox (`/tunes`, box/list "add tune", set-builder
+  tune picker) to `visibility == public OR created_by == current_user`;
+  `tune_detail` 404s a private tune for anyone but its creator. `TuneSetting`
+  has no `created_by` of its own — a private setting's ownership is the
+  parent tune's. Mutation (edit/delete) is deliberately NOT ownership-gated
+  here, matching the existing shared-catalog editing model — the "make
+  private" toggle only controls visibility, not who can edit.
+
 ---
 
 ## Key Patterns
