@@ -536,6 +536,9 @@ Set `CAIRN_LOG_LEVEL` env var to override the default `INFO` level.
 - Push with `gh pr create` after committing; include the issue number in the PR body if applicable
 - **Never commit directly to `main`**
 - **Never merge or close a PR** — the user reviews, tests, and merges all PRs themselves
+- Whenever `pyproject.toml` changes (version bump, dependency add/remove), immediately run
+  `uv lock` and commit the updated `uv.lock` in the same commit — CI and the deploy script both
+  run `uv sync --locked`, which fails on any mismatch between the two files
 
 ### Closing issues via PR
 
