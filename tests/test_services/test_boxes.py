@@ -28,7 +28,7 @@ async def _user(db: AsyncSession, username: str = "alice") -> User:
     u = User(
         username=username,
         email=f"{username}@example.com",
-        hashed_password="x",
+        google_sub=f"google-sub-{username}",
         role=Role.student,
     )
     db.add(u)

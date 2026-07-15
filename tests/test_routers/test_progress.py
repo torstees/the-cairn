@@ -14,7 +14,7 @@ _ALT_ABC = "|:GABc defg|GABc defg|GABc defg|GABc defg|GABc defg|GABc defg:|"
 
 async def _seed(db: AsyncSession):
     """Create the stub user (id=1), a TuneBox (id=1), and one tune; return (user, tune)."""
-    u = User(username="tester", email="t@example.com", hashed_password="x", role=Role.student)
+    u = User(username="tester", email="t@example.com", google_sub="google-sub-tester", role=Role.student)
     db.add(u)
     await db.flush()
     assert u.id == _STUB_USER_ID, "Stub user id must match _STUB_USER_ID"

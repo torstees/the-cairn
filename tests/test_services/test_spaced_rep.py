@@ -38,7 +38,7 @@ _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
 
 async def _user(db: AsyncSession) -> User:
-    u = User(username="tester", email="tester@example.com", hashed_password="x", role=Role.student)
+    u = User(username="tester", email="tester@example.com", google_sub="google-sub-tester", role=Role.student)
     db.add(u)
     await db.flush()
     return u

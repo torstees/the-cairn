@@ -15,7 +15,7 @@ _ALT_ABC = "X:1\nT:x\nK:D\n|:GABc defg|GABc defg|GABc defg|GABc defg|GABc defg|G
 
 async def _seed(db: AsyncSession):
     """Create stub user (id=1), a box, a practice list, and one tune with a core setting."""
-    u = User(username="tester", email="t@example.com", hashed_password="x", role=Role.student)
+    u = User(username="tester", email="t@example.com", google_sub="google-sub-tester", role=Role.student)
     db.add(u)
     await db.flush()
     assert u.id == _STUB_USER_ID
@@ -72,7 +72,7 @@ async def test_list_detail_shows_tune_aliases(client: AsyncClient, db: AsyncSess
 
 
 async def test_list_add_tune_response_includes_abc_hover_preview(client: AsyncClient, db: AsyncSession) -> None:
-    u = User(username="tester", email="t@example.com", hashed_password="x", role=Role.student)
+    u = User(username="tester", email="t@example.com", google_sub="google-sub-tester", role=Role.student)
     db.add(u)
     await db.flush()
     box = await create_box(db, u.id, "Session Box", [Instrument.fiddle])
@@ -105,7 +105,7 @@ async def test_list_set_entry_setting_response_includes_abc_hover_preview(
 
 
 async def test_list_add_tune_with_display_alias(client: AsyncClient, db: AsyncSession) -> None:
-    u = User(username="tester", email="t@example.com", hashed_password="x", role=Role.student)
+    u = User(username="tester", email="t@example.com", google_sub="google-sub-tester", role=Role.student)
     db.add(u)
     await db.flush()
     box = await create_box(db, u.id, "Session Box", [Instrument.fiddle])

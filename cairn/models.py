@@ -98,6 +98,11 @@ class ContentVisibility(LabelledEnum):
     private = "private"
 
 
+class EnrollmentStatus(LabelledEnum):
+    pending = "pending"
+    active = "active"
+
+
 class ContentType(LabelledEnum):
     page = "page"
     lesson = "lesson"
@@ -152,6 +157,9 @@ class Tune(TimestampMixin, Base):
     region: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    visibility: Mapped[ContentVisibility] = mapped_column(
+        Enum(ContentVisibility), server_default=ContentVisibility.public.value, nullable=False
+    )
     # Plain reference ids, not FKs into the thesession_* side tables (TODO 8.1) —
     # those are a refreshable cache; these are a permanent attribution link
     # that must survive a cache refresh/rebuild. See TODO 8.2.
@@ -193,6 +201,9 @@ class TuneSetting(TimestampMixin, Base):
     # Plain reference id, not a FK — see the matching note on Tune above.
     thesession_setting_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     thesession_username: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    visibility: Mapped[ContentVisibility] = mapped_column(
+        Enum(ContentVisibility), server_default=ContentVisibility.public.value, nullable=False
+    )
 
     tune: Mapped["Tune"] = relationship(back_populates="settings")
 
@@ -311,7 +322,7 @@ class User(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(200), nullable=False)
+    google_sub: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     role: Mapped[Role] = mapped_column(Enum(Role), nullable=False)
     primary_instrument: Mapped[Instrument | None] = mapped_column(Enum(Instrument), nullable=True)
 
@@ -319,6 +330,13 @@ class User(TimestampMixin, Base):
     practice_lists: Mapped[list["PracticeList"]] = relationship(back_populates="user")
     progress_records: Mapped[list["StudentProgress"]] = relationship(back_populates="user")
     practice_sessions: Mapped[list["PracticeSession"]] = relationship(back_populates="user")
+    enrollments_as_teacher: Mapped[list["Enrollment"]] = relationship(
+        back_populates="teacher", foreign_keys="Enrollment.teacher_id"
+    )
+    enrollments_as_student: Mapped[list["Enrollment"]] = relationship(
+        back_populates="student", foreign_keys="Enrollment.student_id"
+    )
+    share_links: Mapped[list["ShareLink"]] = relationship(back_populates="created_by_user")
 
 
 class TuneBox(TimestampMixin, Base):
@@ -578,3 +596,40 @@ class Content(TimestampMixin, Base):
     # reserved on declarative Base for the table's MetaData registry; the
     # column itself is still named "metadata" in the database.
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+
+
+class Enrollment(TimestampMixin, Base):
+    __tablename__ = "enrollments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    status: Mapped[EnrollmentStatus] = mapped_column(
+        Enum(EnrollmentStatus), default=EnrollmentStatus.pending, nullable=False
+    )
+
+    __table_args__ = (UniqueConstraint("teacher_id", "student_id", name="uq_enrollment_teacher_student"),)
+
+    teacher: Mapped["User"] = relationship(back_populates="enrollments_as_teacher", foreign_keys=[teacher_id])
+    student: Mapped["User"] = relationship(back_populates="enrollments_as_student", foreign_keys=[student_id])
+
+
+class ShareLink(TimestampMixin, Base):
+    __tablename__ = "share_links"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    tune_id: Mapped[int | None] = mapped_column(ForeignKey("tunes.id"), nullable=True)
+    setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "(tune_id IS NOT NULL AND setting_id IS NULL) OR (tune_id IS NULL AND setting_id IS NOT NULL)",
+            name="ck_share_link_exactly_one_target",
+        ),
+    )
+
+    tune: Mapped["Tune | None"] = relationship()
+    setting: Mapped["TuneSetting | None"] = relationship()
+    created_by_user: Mapped["User"] = relationship(back_populates="share_links")
