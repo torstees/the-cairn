@@ -45,7 +45,7 @@ async def setting_create(
     instrument: str = Form(""),
     ornamentation_level: OrnamentationLevel = Form(OrnamentationLevel.none),
     source: str = Form(""),
-    is_private: bool = Form(False),
+    visibility: ContentVisibility = Form(ContentVisibility.public),
 ) -> Response:
     setting_in = TuneSettingCreate(
         tune_id=tune_id,
@@ -54,7 +54,7 @@ async def setting_create(
         instrument=Instrument(instrument) if instrument else None,
         ornamentation_level=ornamentation_level,
         source=source or None,
-        visibility=ContentVisibility.private if is_private else ContentVisibility.public,
+        visibility=visibility,
     )
     result = await create_setting(db, tune_id, setting_in)
     if result is None:
@@ -75,7 +75,7 @@ async def setting_update(
     ornamentation_level: OrnamentationLevel = Form(OrnamentationLevel.none),
     source: str = Form(""),
     source_notes: str = Form(""),
-    is_private: bool = Form(False),
+    visibility: ContentVisibility = Form(ContentVisibility.public),
 ) -> Response:
     setting_in = TuneSettingUpdate(
         label=label,
@@ -84,7 +84,7 @@ async def setting_update(
         ornamentation_level=ornamentation_level,
         source=source or None,
         source_notes=source_notes or None,
-        visibility=ContentVisibility.private if is_private else ContentVisibility.public,
+        visibility=visibility,
     )
     result = await update_setting(db, tune_id, setting_id, setting_in)
     if result is None:

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Roster — The Cairn{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-8">
+  <h1 class="text-3xl font-bold text-stone-800">Roster</h1>
+
+  {% if error %}
+  <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+    {{ error }}
+  </div>
+  {% endif %}
+
+  {% if is_teacher %}
+  <section>
+    <h2 class="text-xl font-semibold text-stone-700 mb-3">Invite a Student</h2>
+    <form method="post" action="/enrollments/invite" class="bg-white rounded-lg shadow-sm p-4 flex gap-3">
+      <input name="student_email" type="email" required placeholder="student@example.com"
+             class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+      <button type="submit"
+              class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+        Invite
+      </button>
+    </form>
+    <p class="text-xs text-stone-400 mt-2">
+      The student must already have signed in to The Cairn at least once. No email is sent —
+      they'll see the invitation the next time they visit their own Roster page.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-700 mb-3">Your Students</h2>
+    {% if students %}
+    <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100">
+      {% for enrollment in students %}
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="text-stone-800">{{ enrollment.student.username }}</span>
+        <button hx-delete="/enrollments/{{ enrollment.id }}" hx-confirm="Remove this student from your roster?"
+                class="text-xs text-stone-400 hover:text-red-600">Remove</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-stone-400 text-sm">No students yet.</p>
+    {% endif %}
+  </section>
+
+  {% if sent_invites %}
+  <section>
+    <h2 class="text-xl font-semibold text-stone-700 mb-3">Pending Invitations Sent</h2>
+    <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100">
+      {% for enrollment in sent_invites %}
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="text-stone-800">{{ enrollment.student.username }}</span>
+        <div class="flex items-center gap-3">
+          <span class="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">Pending</span>
+          <button hx-delete="/enrollments/{{ enrollment.id }}" hx-confirm="Rescind this invitation?"
+                  class="text-xs text-stone-400 hover:text-red-600">Rescind</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% endif %}
+
+  {% if pending_invites %}
+  <section>
+    <h2 class="text-xl font-semibold text-stone-700 mb-3">Invitations for You</h2>
+    <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100">
+      {% for enrollment in pending_invites %}
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="text-stone-800">{{ enrollment.teacher.username }} invited you</span>
+        <div class="flex items-center gap-2">
+          <button hx-post="/enrollments/{{ enrollment.id }}/accept"
+                  class="text-xs bg-stone-700 hover:bg-stone-600 text-white px-3 py-1 rounded-lg">Accept</button>
+          <button hx-delete="/enrollments/{{ enrollment.id }}" hx-confirm="Decline this invitation?"
+                  class="text-xs border border-stone-300 text-stone-600 hover:bg-stone-50 px-3 py-1 rounded-lg">Decline</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-700 mb-3">Your Teachers</h2>
+    {% if teachers %}
+    <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100">
+      {% for enrollment in teachers %}
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="text-stone-800">{{ enrollment.teacher.username }}</span>
+        <button hx-delete="/enrollments/{{ enrollment.id }}" hx-confirm="Leave this teacher's roster?"
+                class="text-xs text-stone-400 hover:text-red-600">Leave</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-stone-400 text-sm">No teachers yet.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

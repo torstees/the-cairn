@@ -20,6 +20,7 @@ from cairn.models import (
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import KEY_ROOT_MAP, build_abc, shortest_semitones_to_root, transpose_abc
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
+from cairn.services.enrollments import get_active_enrollment_partner_ids
 from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
 from cairn.services.tune_sets import list_sets_for_tune
 from cairn.services.tunes import (
@@ -153,7 +154,7 @@ async def tune_create(
     origin: str | None = Form(None),
     region: str | None = Form(None),
     notes: str | None = Form(None),
-    is_private: bool = Form(False),
+    visibility: ContentVisibility = Form(ContentVisibility.public),
 ) -> Response:
     tune_in = TuneCreate(
         title=title,
@@ -165,7 +166,7 @@ async def tune_create(
         region=region or None,
         notes=notes or None,
         created_by=user.id,
-        visibility=ContentVisibility.private if is_private else ContentVisibility.public,
+        visibility=visibility,
     )
     tune = await create_tune(db, tune_in, abc_notation=abc_notation)
     return RedirectResponse(f"/tunes/{tune.id}", status_code=303)
@@ -184,8 +185,16 @@ async def tune_detail(
     octave: int | None = Query(default=None),
 ) -> Response:
     tune = await get_tune(db, tune_id)
-    if tune is None or (tune.visibility == ContentVisibility.private and tune.created_by != user.id):
+    if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
+    if tune.created_by != user.id and tune.visibility != ContentVisibility.public:
+        partner_ids = (
+            await get_active_enrollment_partner_ids(db, user.id)
+            if tune.visibility == ContentVisibility.enrolled
+            else set()
+        )
+        if tune.created_by not in partner_ids:
+            raise HTTPException(status_code=404, detail="Tune not found")
 
     # Progress is not a setting-override source the way a box or list entry
     # is (see #120) — it only ever affects the breadcrumb, and only when
@@ -478,7 +487,7 @@ async def tune_update(
     origin: str | None = Form(None),
     region: str | None = Form(None),
     notes: str | None = Form(None),
-    is_private: bool = Form(False),
+    visibility: ContentVisibility = Form(ContentVisibility.public),
 ) -> Response:
     tune_in = TuneUpdate(
         title=title,
@@ -489,7 +498,7 @@ async def tune_update(
         origin=origin or None,
         region=region or None,
         notes=notes or None,
-        visibility=ContentVisibility.private if is_private else ContentVisibility.public,
+        visibility=visibility,
     )
     tune = await update_tune(db, tune_id, tune_in, abc_notation=abc_notation or None)
     if tune is None:

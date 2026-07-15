@@ -206,16 +206,28 @@ Content                    standalone; created_by FK → users.id is nullable
   `expire_on_commit=False` never refreshes, silently no-op'ing the mutation
   on the response that follows.
 
-  **Tune/setting visibility**: `Tune`/`TuneSetting.visibility` (public/private
-  this round — `enrolled` is reserved for a future teacher/student roster
-  feature) plus `Tune.created_by` gate the shared catalog. `list_tunes()`
-  filters every listing/combobox (`/tunes`, box/list "add tune", set-builder
-  tune picker) to `visibility == public OR created_by == current_user`;
-  `tune_detail` 404s a private tune for anyone but its creator. `TuneSetting`
-  has no `created_by` of its own — a private setting's ownership is the
-  parent tune's. Mutation (edit/delete) is deliberately NOT ownership-gated
-  here, matching the existing shared-catalog editing model — the "make
-  private" toggle only controls visibility, not who can edit.
+  **Tune/setting visibility**: `Tune`/`TuneSetting.visibility` (public /
+  enrolled / private) plus `Tune.created_by` gate the shared catalog.
+  `list_tunes()` filters every listing/combobox (`/tunes`, box/list "add
+  tune", set-builder tune picker) to `visibility == public OR created_by ==
+  current_user OR (visibility == enrolled AND created_by is an active
+  enrollment partner)`; `tune_detail` 404s anything the viewer doesn't pass
+  that check for. `TuneSetting` has no `created_by` of its own — a private
+  or enrolled setting's ownership is the parent tune's. Mutation (edit/
+  delete) is deliberately NOT ownership-gated here, matching the existing
+  shared-catalog editing model — the visibility selector only controls who
+  can *see* something, not who can edit it.
+
+  **Enrollment (teacher/student roster)**: `Enrollment(teacher_id,
+  student_id, status: pending|active)` — a teacher invites a student by
+  email (`services/enrollments.create_invite`; the student must already
+  have signed in once, since `student_id` is a NOT NULL FK — there's no
+  email-sending infrastructure, so the invite is just a `pending` row the
+  student sees next time they open their own `/enrollments` page, not an
+  emailed link). `get_active_enrollment_partner_ids()` — active enrollments
+  only, either direction — feeds the `enrolled`-visibility check above.
+  Role (`teacher` vs `student`) is assigned manually (no self-service UI);
+  every new Google-provisioned account defaults to `student`.
 
 ---
 

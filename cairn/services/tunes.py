@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterable
 from typing import NamedTuple
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,6 +21,7 @@ from cairn.models import (
 )
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
 from cairn.services.abc_utils import build_abc, strip_chord_symbols, strip_decorative_headers, truncate_to_bars
+from cairn.services.enrollments import get_active_enrollment_partner_ids
 
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
 _TEMPO_HEADER_RE = re.compile(r"^Q:[^\n]*\n?", re.MULTILINE)
@@ -233,10 +234,17 @@ async def list_tunes(
     tune_type: TuneType | None = None,
     family: str | None = None,
 ) -> list[Tune]:
+    visibility_filter = or_(Tune.visibility == ContentVisibility.public, Tune.created_by == user_id)
+    partner_ids = await get_active_enrollment_partner_ids(db, user_id)
+    if partner_ids:
+        visibility_filter = or_(
+            visibility_filter,
+            and_(Tune.visibility == ContentVisibility.enrolled, Tune.created_by.in_(partner_ids)),
+        )
     stmt = (
         select(Tune)
         .options(selectinload(Tune.settings), selectinload(Tune.difficulties), selectinload(Tune.aliases))
-        .where(or_(Tune.visibility == ContentVisibility.public, Tune.created_by == user_id))
+        .where(visibility_filter)
         .order_by(Tune.sort_title)
     )
     if tune_type is not None:

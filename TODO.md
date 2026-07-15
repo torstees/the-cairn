@@ -1440,7 +1440,7 @@ these; no routes/UI yet):
   `visibility == public OR created_by == current_user`; a "make private"
   toggle in the tune/setting edit UI.
 
-- [ ] **11.9 — Enrollment (teacher/student roster) UI**
+- [x] **11.9 — Enrollment (teacher/student roster) UI**
   Teacher-facing "invite a student" flow (email-address-based invite →
   accept screen) and a student-facing pending-invitations view;
   `enrolled`-visibility content filtered to the enrolled roster.

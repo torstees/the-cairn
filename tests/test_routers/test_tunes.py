@@ -781,7 +781,7 @@ async def test_tune_detail_404_for_another_users_private_tune(client: AsyncClien
     assert resp.status_code == 404
 
 
-async def test_tune_create_with_is_private_sets_visibility_and_owner(
+async def test_tune_create_with_private_visibility_sets_owner(
     client: AsyncClient, db: AsyncSession, user: User
 ) -> None:
     resp = await client.post(
@@ -793,7 +793,7 @@ async def test_tune_create_with_is_private_sets_visibility_and_owner(
             "key_mode": "major",
             "time_signature": "4/4",
             "abc_notation": _ABC,
-            "is_private": "true",
+            "visibility": "private",
         },
         follow_redirects=False,
     )
@@ -833,7 +833,7 @@ async def test_tune_update_toggles_visibility(client: AsyncClient, db: AsyncSess
             "key_root": "D",
             "key_mode": "major",
             "time_signature": "4/4",
-            "is_private": "true",
+            "visibility": "private",
         },
         follow_redirects=False,
     )
@@ -842,14 +842,14 @@ async def test_tune_update_toggles_visibility(client: AsyncClient, db: AsyncSess
     assert tune.visibility == ContentVisibility.private
 
 
-async def test_setting_create_with_is_private_sets_visibility(client: AsyncClient, db: AsyncSession) -> None:
+async def test_setting_create_with_private_visibility(client: AsyncClient, db: AsyncSession) -> None:
     tune = await _seed_tune(db)
     resp = await client.post(
         f"/tunes/{tune.id}/settings",
         data={
             "label": "Private Arrangement",
             "abc_notation": _ABC,
-            "is_private": "true",
+            "visibility": "private",
         },
     )
     assert resp.status_code == 200

@@ -18,6 +18,7 @@ from cairn.routers import auth as auth_router
 from cairn.routers import boxes as boxes_router
 from cairn.routers import content as content_router
 from cairn.routers import difficulty as difficulty_router
+from cairn.routers import enrollments as enrollments_router
 from cairn.routers import lists as lists_router
 from cairn.routers import practice as practice_router
 from cairn.routers import progress as progress_router
@@ -79,6 +80,7 @@ app.include_router(practice_router.router, dependencies=_login_required)
 app.include_router(warmups_router.router, dependencies=_login_required)
 app.include_router(tune_sets_router.router, dependencies=_login_required)
 app.include_router(content_router.router, dependencies=_login_required)
+app.include_router(enrollments_router.router, dependencies=_login_required)
 
 
 @app.get("/version")
