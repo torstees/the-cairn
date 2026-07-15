@@ -133,3 +133,23 @@ async def test_logout_clears_session_and_redirects_to_login(client: AsyncClient,
     resp = await client.post("/auth/logout", follow_redirects=False)
     assert resp.status_code == 303
     assert resp.headers["location"] == "/auth/login"
+
+
+async def test_provision_user_commits_not_just_flushes(db: AsyncSession, monkeypatch) -> None:
+    # Regression test: _provision_user() originally only called db.flush(), never
+    # db.commit(). Each real request gets a fresh session with no auto-commit, so
+    # the provisioned row was silently rolled back at the end of the request that
+    # created it — invisible to this test's shared-session fixture (which sees a
+    # flushed-but-uncommitted row just fine), but fatal in production: the next
+    # request's login check found no user, bounced back through Google's silent
+    # re-auth, and looped forever. Assert on the actual db.commit() call instead
+    # of just querying afterward, since a query through the same session can't
+    # tell flush and commit apart.
+    from unittest.mock import AsyncMock
+
+    commit_spy = AsyncMock(side_effect=db.commit)
+    monkeypatch.setattr(db, "commit", commit_spy)
+
+    await auth_module._provision_user(db, {"sub": "google-sub-commit-check", "email": "committer@example.com"})
+
+    assert commit_spy.await_count >= 1

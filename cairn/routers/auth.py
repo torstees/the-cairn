@@ -72,6 +72,6 @@ async def _provision_user(db: AsyncSession, userinfo: dict) -> User:
 
     user = User(username=username, email=email, google_sub=userinfo["sub"], role=Role.student)
     db.add(user)
-    await db.flush()
+    await db.commit()
     logger.info("Auto-provisioned new user %s from Google login", username)
     return user
