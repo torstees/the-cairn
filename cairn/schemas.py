@@ -2,7 +2,16 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, ProgressStatus, TuneType, WarmupType
+from cairn.models import (
+    ContentVisibility,
+    Instrument,
+    KeyMode,
+    KeyRoot,
+    OrnamentationLevel,
+    ProgressStatus,
+    TuneType,
+    WarmupType,
+)
 
 
 class _ReadBase(BaseModel):
@@ -26,6 +35,7 @@ class TuneCreate(BaseModel):
     region: str | None = None
     notes: str | None = None
     created_by: int | None = None
+    visibility: ContentVisibility = ContentVisibility.public
 
 
 class TuneUpdate(BaseModel):
@@ -38,6 +48,7 @@ class TuneUpdate(BaseModel):
     origin: str | None = None
     region: str | None = None
     notes: str | None = None
+    visibility: ContentVisibility | None = None
 
 
 class TuneRead(_ReadBase):
@@ -66,6 +77,7 @@ class TuneSettingCreate(BaseModel):
     ornamentation_level: OrnamentationLevel = OrnamentationLevel.none
     source_notes: str | None = None
     mutation_notation: str | None = None
+    visibility: ContentVisibility = ContentVisibility.public
 
 
 class TuneSettingUpdate(BaseModel):
@@ -77,6 +89,7 @@ class TuneSettingUpdate(BaseModel):
     ornamentation_level: OrnamentationLevel | None = None
     source_notes: str | None = None
     mutation_notation: str | None = None
+    visibility: ContentVisibility | None = None
 
 
 class TuneSettingRead(_ReadBase):

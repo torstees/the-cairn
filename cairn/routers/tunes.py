@@ -6,7 +6,17 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_current_user, get_db
-from cairn.models import Instrument, KeyMode, KeyRoot, OrnamentationLevel, TempoRecord, Tune, TuneType, User
+from cairn.models import (
+    ContentVisibility,
+    Instrument,
+    KeyMode,
+    KeyRoot,
+    OrnamentationLevel,
+    TempoRecord,
+    Tune,
+    TuneType,
+    User,
+)
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import KEY_ROOT_MAP, build_abc, shortest_semitones_to_root, transpose_abc
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
@@ -111,10 +121,11 @@ async def tune_new(request: Request) -> Response:
 async def tune_list(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     tune_type: TuneType | None = Query(default=None, alias="type"),
     family: str | None = None,
 ) -> Response:
-    tunes = await list_tunes(db, tune_type=tune_type, family=family)
+    tunes = await list_tunes(db, user.id, tune_type=tune_type, family=family)
     tune_previews = build_tune_previews(tunes)
     ctx = {
         "tunes": tunes,
@@ -132,6 +143,7 @@ async def tune_list(
 async def tune_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     title: str = Form(...),
     tune_type: TuneType = Form(...),
     key_root: KeyRoot = Form(...),
@@ -141,6 +153,7 @@ async def tune_create(
     origin: str | None = Form(None),
     region: str | None = Form(None),
     notes: str | None = Form(None),
+    is_private: bool = Form(False),
 ) -> Response:
     tune_in = TuneCreate(
         title=title,
@@ -151,6 +164,8 @@ async def tune_create(
         origin=origin or None,
         region=region or None,
         notes=notes or None,
+        created_by=user.id,
+        visibility=ContentVisibility.private if is_private else ContentVisibility.public,
     )
     tune = await create_tune(db, tune_in, abc_notation=abc_notation)
     return RedirectResponse(f"/tunes/{tune.id}", status_code=303)
@@ -169,7 +184,7 @@ async def tune_detail(
     octave: int | None = Query(default=None),
 ) -> Response:
     tune = await get_tune(db, tune_id)
-    if tune is None:
+    if tune is None or (tune.visibility == ContentVisibility.private and tune.created_by != user.id):
         raise HTTPException(status_code=404, detail="Tune not found")
 
     # Progress is not a setting-override source the way a box or list entry
@@ -463,6 +478,7 @@ async def tune_update(
     origin: str | None = Form(None),
     region: str | None = Form(None),
     notes: str | None = Form(None),
+    is_private: bool = Form(False),
 ) -> Response:
     tune_in = TuneUpdate(
         title=title,
@@ -473,6 +489,7 @@ async def tune_update(
         origin=origin or None,
         region=region or None,
         notes=notes or None,
+        visibility=ContentVisibility.private if is_private else ContentVisibility.public,
     )
     tune = await update_tune(db, tune_id, tune_in, abc_notation=abc_notation or None)
     if tune is None:

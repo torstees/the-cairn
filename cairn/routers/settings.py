@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_db
-from cairn.models import Instrument, OrnamentationLevel
+from cairn.models import ContentVisibility, Instrument, OrnamentationLevel
 from cairn.schemas import TuneSettingCreate, TuneSettingUpdate
 from cairn.services.abc_utils import build_abc
 from cairn.services.tunes import create_setting, get_tune, set_core_setting, update_setting
@@ -45,6 +45,7 @@ async def setting_create(
     instrument: str = Form(""),
     ornamentation_level: OrnamentationLevel = Form(OrnamentationLevel.none),
     source: str = Form(""),
+    is_private: bool = Form(False),
 ) -> Response:
     setting_in = TuneSettingCreate(
         tune_id=tune_id,
@@ -53,6 +54,7 @@ async def setting_create(
         instrument=Instrument(instrument) if instrument else None,
         ornamentation_level=ornamentation_level,
         source=source or None,
+        visibility=ContentVisibility.private if is_private else ContentVisibility.public,
     )
     result = await create_setting(db, tune_id, setting_in)
     if result is None:
@@ -73,6 +75,7 @@ async def setting_update(
     ornamentation_level: OrnamentationLevel = Form(OrnamentationLevel.none),
     source: str = Form(""),
     source_notes: str = Form(""),
+    is_private: bool = Form(False),
 ) -> Response:
     setting_in = TuneSettingUpdate(
         label=label,
@@ -81,6 +84,7 @@ async def setting_update(
         ornamentation_level=ornamentation_level,
         source=source or None,
         source_notes=source_notes or None,
+        visibility=ContentVisibility.private if is_private else ContentVisibility.public,
     )
     result = await update_setting(db, tune_id, setting_id, setting_in)
     if result is None:

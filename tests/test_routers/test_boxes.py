@@ -1,7 +1,7 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, Role, TuneType, User
+from cairn.models import ContentVisibility, Instrument, KeyMode, KeyRoot, Role, TuneType, User
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate
 from cairn.services.boxes import add_tune, create_box, set_display_alias, set_preferred_setting, set_transpose
 from cairn.services.tune_sets import add_box_set, create_set, set_members
@@ -492,3 +492,31 @@ async def test_box_remove_tune_404_for_another_users_box(client: AsyncClient, db
     box = await _seed_other_owner_box(db)
     resp = await client.delete(f"/boxes/{box.id}/tunes/9999")
     assert resp.status_code == 404
+
+
+async def test_box_detail_addable_tunes_excludes_another_users_private_tune(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    box, _tune = await _seed(db, user)
+    other = User(
+        username="other-owner", email="other-owner@example.com", google_sub="google-sub-other-owner", role=Role.student
+    )
+    db.add(other)
+    await db.flush()
+    await create_tune(
+        db,
+        TuneCreate(
+            title="Someone Else's Secret Tune",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+            created_by=other.id,
+            visibility=ContentVisibility.private,
+        ),
+        abc_notation=_ABC,
+    )
+
+    resp = await client.get(f"/boxes/{box.id}")
+    assert resp.status_code == 200
+    assert "Someone Else's Secret Tune" not in resp.text

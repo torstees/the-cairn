@@ -2,11 +2,12 @@ import re
 from collections.abc import Iterable
 from typing import NamedTuple
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from cairn.models import (
+    ContentVisibility,
     Instrument,
     OrnamentationLevel,
     TempoRecord,
@@ -227,6 +228,7 @@ async def remove_alias(db: AsyncSession, alias_id: int) -> bool:
 
 async def list_tunes(
     db: AsyncSession,
+    user_id: int,
     *,
     tune_type: TuneType | None = None,
     family: str | None = None,
@@ -234,6 +236,7 @@ async def list_tunes(
     stmt = (
         select(Tune)
         .options(selectinload(Tune.settings), selectinload(Tune.difficulties), selectinload(Tune.aliases))
+        .where(or_(Tune.visibility == ContentVisibility.public, Tune.created_by == user_id))
         .order_by(Tune.sort_title)
     )
     if tune_type is not None:
@@ -294,6 +297,7 @@ async def create_setting(
         ornamentation_level=setting_in.ornamentation_level,
         source_notes=setting_in.source_notes,
         mutation_notation=setting_in.mutation_notation,
+        visibility=setting_in.visibility,
     )
     db.add(setting)
     await db.commit()
