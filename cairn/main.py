@@ -22,7 +22,7 @@ from cairn.routers import tune_sets as tune_sets_router
 from cairn.routers import tunes as tunes_router
 from cairn.routers import warmups as warmups_router
 from cairn.services.dashboard import get_dashboard_data
-from cairn.templating import templates
+from cairn.templating import APP_VERSION, templates
 
 setup_logging()
 
@@ -68,6 +68,11 @@ app.include_router(content_router.router)
 
 
 _STUB_USER_ID = 1
+
+
+@app.get("/version")
+async def get_version() -> dict[str, str]:
+    return {"version": APP_VERSION}
 
 
 @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)

@@ -75,6 +75,9 @@
     <main class="container mx-auto px-4 py-8">
       {% block content %}{% endblock %}
     </main>
+    <footer class="text-center text-xs text-stone-400 py-4">
+      v{{ app_version }}
+    </footer>
   </div>
 
   <script src="/static/js/app.js?v=31"></script>
