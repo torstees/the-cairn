@@ -30,7 +30,7 @@ def _user(**kwargs) -> User:
     defaults = dict(
         username="alice",
         email="alice@example.com",
-        hashed_password="hashed",
+        google_sub="google-sub-alice",
         role=Role.student,
     )
     return User(**{**defaults, **kwargs})

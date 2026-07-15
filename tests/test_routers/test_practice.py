@@ -30,7 +30,7 @@ _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
 async def _seed(db: AsyncSession):
     """Create stub user (id=1), a TuneBox, and one just_learning tune."""
-    u = User(username="tester", email="t@example.com", hashed_password="x", role=Role.student)
+    u = User(username="tester", email="t@example.com", google_sub="google-sub-tester", role=Role.student)
     db.add(u)
     await db.flush()
     assert u.id == _STUB_USER_ID
