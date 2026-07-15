@@ -1410,7 +1410,7 @@ use instead of a formal roster.
   `base.html`'s nav, left of the existing Tuner button (same `ml-auto`
   group).
 
-- [ ] **11.6 — Test suite**
+- [x] **11.6 — Test suite**
   Add a `user` fixture to `tests/test_routers/conftest.py` that creates a
   `User` row and overrides `get_current_user` via
   `app.dependency_overrides` (same mechanism already used for `get_db`) —

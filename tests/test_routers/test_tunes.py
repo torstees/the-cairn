@@ -1,7 +1,7 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, TuneType, User
+from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, Role, TuneType, User
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.boxes import add_tune, create_box, get_box_entry, set_display_alias, set_preferred_setting
 from cairn.services.lists import add_tune_to_list, create_list, get_list_entry, update_list_entry_display_alias
@@ -668,3 +668,46 @@ async def test_tune_detail_page_includes_tempo_chart(client: AsyncClient, db: As
     assert resp.status_code == 200
     assert "<svg" in resp.text
     assert "100 bpm" in resp.text
+
+
+# ── cross-account ownership (#193) ──────────────────────────────────────────
+
+
+async def _seed_other_owner_box(db: AsyncSession):
+    """A box owned by a different user than the `user` fixture's logged-in user."""
+    other = User(username="other-fiddler", email="other@example.com", google_sub="google-sub-other", role=Role.student)
+    db.add(other)
+    await db.flush()
+    return await create_box(db, other.id, "Someone Else's Box", [Instrument.fiddle])
+
+
+async def test_tune_add_to_box_404_for_another_users_box(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    box = await _seed_other_owner_box(db)
+    resp = await client.post(f"/tunes/{tune.id}/boxes", data={"box_id": str(box.id)})
+    assert resp.status_code == 404
+
+
+async def test_tune_update_box_setting_404_for_another_users_box(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    box = await _seed_other_owner_box(db)
+    resp = await client.post(f"/tunes/{tune.id}/boxes/{box.id}/setting", data={"setting_id": ""})
+    assert resp.status_code == 404
+
+
+async def test_tune_update_box_display_alias_404_for_another_users_box(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    box = await _seed_other_owner_box(db)
+    resp = await client.post(f"/tunes/{tune.id}/boxes/{box.id}/display-alias", data={"display_alias_id": ""})
+    assert resp.status_code == 404
+
+
+async def test_tune_detail_drops_another_users_box_context(client: AsyncClient, db: AsyncSession) -> None:
+    # box_id is just view context (which box's setting/alias to show) — it
+    # should be silently dropped, not leak the other user's box name/entry
+    # into the response or 404 the whole (otherwise-public) tune page.
+    tune = await _seed_tune(db)
+    box = await _seed_other_owner_box(db)
+    resp = await client.get(f"/tunes/{tune.id}", params={"box_id": str(box.id)})
+    assert resp.status_code == 200
+    assert "Someone Else's Box" not in resp.text
