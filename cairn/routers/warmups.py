@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_db
-from cairn.models import Instrument, WarmupType
+from cairn.dependencies import get_current_user, get_db
+from cairn.models import Instrument, User, WarmupType
 from cairn.services.content import render_markdown
 from cairn.services.warmups import (
     create_warmup,
@@ -25,7 +25,6 @@ router = APIRouter(prefix="/warmups", tags=["warmups"])
 _WARMUP_TYPES = list(WarmupType)
 _INSTRUMENTS = list(Instrument)
 _ABC_TYPES = {WarmupType.scale, WarmupType.snippet}
-_STUB_USER_ID = 1
 
 
 @router.get("")
@@ -98,11 +97,12 @@ async def warmup_detail(
     request: Request,
     warmup_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
     warmup = await get_warmup(db, warmup_id)
     if warmup is None:
         raise HTTPException(status_code=404, detail="Warmup not found")
-    last_tempo = await get_warmup_tempo(db, _STUB_USER_ID, warmup_id)
+    last_tempo = await get_warmup_tempo(db, user.id, warmup_id)
     is_abc = warmup.warmup_type in _ABC_TYPES
     return templates.TemplateResponse(
         request,
@@ -171,12 +171,13 @@ async def warmup_update(
 async def warmup_tempo_record(
     warmup_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     tempo: int = Form(...),
 ) -> Response:
     warmup = await get_warmup(db, warmup_id)
     if warmup is None:
         raise HTTPException(status_code=404, detail="Warmup not found")
-    await upsert_warmup_tempo(db, _STUB_USER_ID, warmup_id, tempo)
+    await upsert_warmup_tempo(db, user.id, warmup_id, tempo)
     return Response(status_code=204)
 
 

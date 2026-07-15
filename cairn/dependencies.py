@@ -25,6 +25,7 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     if user_id is not None:
         user = await db.get(User, user_id)
         if user is not None:
+            request.state.user = user
             return user
     next_path = request.url.path
     if request.url.query:

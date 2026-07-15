@@ -6,10 +6,10 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_db
-from cairn.models import KeyRoot, ProgressStatus, TempoRecord
+from cairn.dependencies import get_current_user, get_db
+from cairn.models import KeyRoot, PracticeSession, ProgressStatus, TempoRecord, User
 from cairn.services.abc_utils import build_abc, transpose_abc, transpose_semitones_for, truncate_to_bars
-from cairn.services.boxes import get_display_names_for_tunes, get_transposes_for_tunes, list_boxes
+from cairn.services.boxes import get_box, get_display_names_for_tunes, get_transposes_for_tunes, list_boxes
 from cairn.services.lists import activate_list, deactivate_list, get_active_list, list_lists
 from cairn.services.session_plan import (
     _load_progress_map,
@@ -26,7 +26,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/practice", tags=["practice"])
 
-_STUB_USER_ID = 1
+
+async def _get_owned_session(db: AsyncSession, user_id: int, session_id: int) -> PracticeSession:
+    """Fetch a practice session the user owns, or 404 — a missing row and an
+    owner mismatch look identical to the caller so another user's in-progress
+    practice session isn't revealed."""
+    session = await get_session(db, session_id)
+    if session is None or session.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
 
 # Cheat levels available above each starting level.
 # Keys match the sentinel values returned by bars_for_status.
@@ -97,10 +106,11 @@ def _build_item_display(
 async def plan_form(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    boxes = await list_boxes(db, _STUB_USER_ID)
-    active_list = await get_active_list(db, _STUB_USER_ID)
-    all_lists = await list_lists(db, _STUB_USER_ID)
+    boxes = await list_boxes(db, user.id)
+    active_list = await get_active_list(db, user.id)
+    all_lists = await list_lists(db, user.id)
     lists_by_box: dict[int, list[dict]] = {}
     for pl in all_lists:
         lists_by_box.setdefault(pl.box_id, []).append({"id": pl.id, "name": pl.name, "type_label": pl.list_type.label})
@@ -121,15 +131,19 @@ async def plan_form(
 async def plan_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     box_id: int = Form(...),
     total_minutes: int = Form(...),
     list_id: str = Form(""),
 ) -> Response:
+    box = await get_box(db, box_id)
+    if box is None or box.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Box not found")
     if list_id == "":
-        await deactivate_list(db, _STUB_USER_ID)
+        await deactivate_list(db, user.id)
     else:
-        await activate_list(db, _STUB_USER_ID, int(list_id))
-    session = await build_session(db, _STUB_USER_ID, box_id, total_minutes)
+        await activate_list(db, user.id, int(list_id))
+    session = await build_session(db, user.id, box_id, total_minutes)
     logger.info("practice session created", extra={"session_id": session.id, "box_id": box_id})
     return RedirectResponse(f"/practice/session/{session.id}", status_code=303)
 
@@ -139,19 +153,18 @@ async def session_detail(
     request: Request,
     session_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    session = await get_session(db, session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _get_owned_session(db, user.id, session_id)
 
-    active_list = await get_active_list(db, _STUB_USER_ID)
+    active_list = await get_active_list(db, user.id)
 
     tune_ids = {item.tune_id for item in session.items if item.tune_id}
     progress_map: dict[int, ProgressStatus] = {}
     display_names: dict[int, str] = {}
     transposes: dict[int, tuple[KeyRoot | None, int]] = {}
     if tune_ids and session.box_id:
-        progress_map = await _load_progress_map(db, _STUB_USER_ID, session.box_id, tune_ids)
+        progress_map = await _load_progress_map(db, user.id, session.box_id, tune_ids)
         display_names = await get_display_names_for_tunes(db, session.box_id, tune_ids)
         list_id = active_list.id if active_list and active_list.box_id == session.box_id else None
         transposes = await get_transposes_for_tunes(db, session.box_id, tune_ids, list_id=list_id)
@@ -163,7 +176,7 @@ async def session_detail(
     if tune_ids:
         rows = await db.execute(
             select(TempoRecord)
-            .where(TempoRecord.user_id == _STUB_USER_ID, TempoRecord.tune_id.in_(tune_ids))
+            .where(TempoRecord.user_id == user.id, TempoRecord.tune_id.in_(tune_ids))
             .order_by(TempoRecord.created_at.desc())
         )
         for r in rows.scalars().all():
@@ -246,7 +259,9 @@ async def item_complete(
     session_id: int,
     item_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
+    await _get_owned_session(db, user.id, session_id)
     item = await complete_item(db, session_id, item_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -263,9 +278,11 @@ async def item_rate(
     session_id: int,
     item_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     confidence: int = Form(...),
 ) -> Response:
-    item = await rate_item(db, session_id, item_id, _STUB_USER_ID, confidence)
+    await _get_owned_session(db, user.id, session_id)
+    item = await rate_item(db, session_id, item_id, user.id, confidence)
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     return templates.TemplateResponse(
@@ -279,7 +296,9 @@ async def item_rate(
 async def session_finish(
     session_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
+    await _get_owned_session(db, user.id, session_id)
     session = await finish_session(db, session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")

@@ -1,21 +1,13 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import Instrument, KeyMode, KeyRoot, ProgressStatus, Role, TuneType, User
+from cairn.models import Instrument, KeyMode, KeyRoot, ProgressStatus, TuneType, User
 from cairn.schemas import TuneCreate
 from cairn.services.boxes import add_tune, create_box
 from cairn.services.spaced_rep import set_status
 from cairn.services.tunes import create_tune
 
-_STUB_USER_ID = 1
 _ABC = "|:DEFA BAFA|DEFA BAFA:|"
-
-
-async def _seed_user(db: AsyncSession) -> User:
-    u = User(username="tester", email="t@example.com", google_sub="google-sub-tester", role=Role.student)
-    db.add(u)
-    await db.flush()
-    return u
 
 
 async def _seed_tune(db: AsyncSession, title: str = "Morning Dew"):
@@ -49,20 +41,18 @@ async def test_dashboard_accepts_head_for_uptime_checks(client: AsyncClient) -> 
     assert resp.text == ""
 
 
-async def test_dashboard_shows_active_box(client: AsyncClient, db: AsyncSession) -> None:
-    u = await _seed_user(db)
-    await create_box(db, u.id, "My Session Box", [Instrument.fiddle])
+async def test_dashboard_shows_active_box(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    await create_box(db, user.id, "My Session Box", [Instrument.fiddle])
     resp = await client.get("/")
     assert resp.status_code == 200
     assert "My Session Box" in resp.text
 
 
-async def test_dashboard_shows_learning_tune(client: AsyncClient, db: AsyncSession) -> None:
-    u = await _seed_user(db)
-    box = await create_box(db, u.id, "Box", [Instrument.fiddle])
+async def test_dashboard_shows_learning_tune(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    box = await create_box(db, user.id, "Box", [Instrument.fiddle])
     tune = await _seed_tune(db)
     await add_tune(db, box.id, tune.id)
-    await set_status(db, u.id, box.id, tune.id, ProgressStatus.just_learning)
+    await set_status(db, user.id, box.id, tune.id, ProgressStatus.just_learning)
     resp = await client.get("/")
     assert resp.status_code == 200
     assert "Morning Dew" in resp.text
@@ -70,21 +60,19 @@ async def test_dashboard_shows_learning_tune(client: AsyncClient, db: AsyncSessi
     assert "Just Learning" in resp.text
 
 
-async def test_dashboard_shows_retention_due(client: AsyncClient, db: AsyncSession) -> None:
-    u = await _seed_user(db)
-    box = await create_box(db, u.id, "Box", [Instrument.fiddle])
+async def test_dashboard_shows_retention_due(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    box = await create_box(db, user.id, "Box", [Instrument.fiddle])
     tune = await _seed_tune(db)
     await add_tune(db, box.id, tune.id)
-    await set_status(db, u.id, box.id, tune.id, ProgressStatus.committed)
+    await set_status(db, user.id, box.id, tune.id, ProgressStatus.committed)
     resp = await client.get("/")
     assert resp.status_code == 200
     assert "Due for review" in resp.text
     assert "Morning Dew" in resp.text
 
 
-async def test_dashboard_empty_sections_when_no_progress(client: AsyncClient, db: AsyncSession) -> None:
-    u = await _seed_user(db)
-    await create_box(db, u.id, "Box", [Instrument.fiddle])
+async def test_dashboard_empty_sections_when_no_progress(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    await create_box(db, user.id, "Box", [Instrument.fiddle])
     resp = await client.get("/")
     assert resp.status_code == 200
     assert "Nothing due for review today" in resp.text

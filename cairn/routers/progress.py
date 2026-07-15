@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_db
-from cairn.models import ProgressStatus, Tune, TuneSetting
+from cairn.dependencies import get_current_user, get_db
+from cairn.models import ProgressStatus, Tune, TuneSetting, User
 from cairn.services.abc_utils import strip_chord_symbols, truncate_to_bars
 from cairn.services.boxes import get_box_detail, get_box_entry
 from cairn.services.spaced_rep import get_user_progress, record_practice, set_status
@@ -13,8 +13,7 @@ from cairn.templating import templates
 
 router = APIRouter(prefix="/progress", tags=["progress"])
 
-# Phase 1 stubs — replace with real auth + TuneBox selection once those land.
-_STUB_USER_ID = 1
+# Phase 1 stub — replace with real TuneBox selection once that lands.
 _STUB_BOX_ID = 1
 
 _STATUSES = list(ProgressStatus)
@@ -41,8 +40,9 @@ def _tune_previews(pairs, box_setting_by_tune_id: dict[int, TuneSetting]) -> dic
 async def progress_index(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
-    pairs = await get_user_progress(db, _STUB_USER_ID, _STUB_BOX_ID)
+    pairs = await get_user_progress(db, user.id, _STUB_BOX_ID)
     box = await get_box_detail(db, _STUB_BOX_ID)
     box_setting_by_tune_id = {e.tune_id: e.setting for e in box.entries} if box else {}
     tune_previews = _tune_previews(pairs, box_setting_by_tune_id)
@@ -59,12 +59,13 @@ async def progress_record(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     confidence: int = Form(...),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    progress = await record_practice(db, _STUB_USER_ID, _STUB_BOX_ID, tune_id, confidence)
+    progress = await record_practice(db, user.id, _STUB_BOX_ID, tune_id, confidence)
     entry = await get_box_entry(db, _STUB_BOX_ID, tune_id)
     preview = _build_preview(tune, entry.setting if entry else None)
     tune_previews = {tune.id: preview} if preview is not None else {}
@@ -81,12 +82,13 @@ async def progress_set_status(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     status: ProgressStatus = Form(...),
 ) -> Response:
     tune = await db.get(Tune, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    progress = await set_status(db, _STUB_USER_ID, _STUB_BOX_ID, tune_id, status)
+    progress = await set_status(db, user.id, _STUB_BOX_ID, tune_id, status)
     return templates.TemplateResponse(
         request,
         "components/_progress_badge.html",

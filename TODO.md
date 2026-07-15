@@ -1382,7 +1382,7 @@ use instead of a formal roster.
   `dependencies=[Depends(get_current_user)]` — everything requires login in
   this round, no public unauthenticated browsing yet.
 
-- [ ] **11.4 — Replace `_STUB_USER_ID`, close the ownership gap**
+- [x] **11.4 — Replace `_STUB_USER_ID`, close the ownership gap**
   Delete the module-level `_STUB_USER_ID = 1` from `main.py` and all seven
   routers (`boxes.py`, `lists.py`, `tune_sets.py`, `warmups.py`,
   `practice.py`, `tunes.py`, `progress.py`); add

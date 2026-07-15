@@ -6,13 +6,11 @@ from cairn.models import (
     KeyMode,
     KeyRoot,
     PracticeListType,
-    Role,
     TuneType,
     User,
     WarmupItem,
     WarmupType,
 )
-from cairn.routers.practice import _STUB_USER_ID
 from cairn.schemas import TuneCreate
 from cairn.services.boxes import add_tune, create_box, set_display_alias, set_transpose
 from cairn.services.lists import (
@@ -28,14 +26,9 @@ from cairn.services.tunes import add_alias, create_tune
 _ABC = "|:DEFA BAFA|DEFA BAFA:|"
 
 
-async def _seed(db: AsyncSession):
-    """Create stub user (id=1), a TuneBox, and one just_learning tune."""
-    u = User(username="tester", email="t@example.com", google_sub="google-sub-tester", role=Role.student)
-    db.add(u)
-    await db.flush()
-    assert u.id == _STUB_USER_ID
-
-    box = await create_box(db, u.id, "Session Box", [Instrument.fiddle])
+async def _seed(db: AsyncSession, user: User):
+    """Create a TuneBox and one just_learning tune for the given user."""
+    box = await create_box(db, user.id, "Session Box", [Instrument.fiddle])
 
     tune = await create_tune(
         db,
@@ -54,7 +47,7 @@ async def _seed(db: AsyncSession):
     db.add(warmup)
     await db.flush()
 
-    return u, box, tune, warmup
+    return user, box, tune, warmup
 
 
 async def test_plan_form_renders(client: AsyncClient) -> None:
@@ -70,15 +63,15 @@ async def test_plan_form_shows_no_boxes_message(client: AsyncClient) -> None:
     assert "don't have any tune boxes" in resp.text
 
 
-async def test_plan_form_shows_boxes(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
+async def test_plan_form_shows_boxes(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
     resp = await client.get("/practice/plan")
     assert resp.status_code == 200
     assert box.name in resp.text
 
 
-async def test_plan_create_redirects_to_session(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
+async def test_plan_create_redirects_to_session(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
     resp = await client.post(
         "/practice/plan", data={"box_id": str(box.id), "total_minutes": "30"}, follow_redirects=False
     )
@@ -86,9 +79,9 @@ async def test_plan_create_redirects_to_session(client: AsyncClient, db: AsyncSe
     assert resp.headers["location"].startswith("/practice/session/")
 
 
-async def test_session_detail_shows_items(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+async def test_session_detail_shows_items(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    session = await build_session(db, user.id, box.id, 30)
     resp = await client.get(f"/practice/session/{session.id}")
     assert resp.status_code == 200
     assert "Practice Session" in resp.text
@@ -100,12 +93,12 @@ async def test_session_detail_404_for_unknown(client: AsyncClient) -> None:
     assert resp.status_code == 404
 
 
-async def test_session_detail_shows_box_display_alias(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, tune, _ = await _seed(db)
+async def test_session_detail_shows_box_display_alias(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, tune, _ = await _seed(db, user)
     alias = await add_alias(db, tune.id, "Sunrise Reel")
     await set_display_alias(db, box.id, tune.id, alias.id)
 
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    session = await build_session(db, user.id, box.id, 30)
     resp = await client.get(f"/practice/session/{session.id}")
     assert resp.status_code == 200
     assert '"title": "Sunrise Reel"' in resp.text
@@ -113,61 +106,63 @@ async def test_session_detail_shows_box_display_alias(client: AsyncClient, db: A
     assert "T:Sunrise Reel" in resp.text
 
 
-async def test_session_detail_shows_box_transpose(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, tune, _ = await _seed(db)
+async def test_session_detail_shows_box_transpose(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, tune, _ = await _seed(db, user)
     await set_transpose(db, box.id, tune.id, KeyRoot.E, 0)
 
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    session = await build_session(db, user.id, box.id, 30)
     resp = await client.get(f"/practice/session/{session.id}")
     assert resp.status_code == 200
     assert '"keyLabel": "E Major"' in resp.text
     assert "K:E" in resp.text
 
 
-async def test_session_detail_list_transpose_overrides_box_transpose(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, tune, _ = await _seed(db)
+async def test_session_detail_list_transpose_overrides_box_transpose(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    _, box, tune, _ = await _seed(db, user)
     await set_transpose(db, box.id, tune.id, KeyRoot.E, 0)
 
-    practice_list = await create_list(db, _STUB_USER_ID, box.id, "Session List", PracticeListType.repertoire)
+    practice_list = await create_list(db, user.id, box.id, "Session List", PracticeListType.repertoire)
     await add_tune_to_list(db, practice_list.id, tune.id)
     await update_list_entry_transpose(db, practice_list.id, tune.id, KeyRoot.G, 0)
-    await activate_list(db, _STUB_USER_ID, practice_list.id)
+    await activate_list(db, user.id, practice_list.id)
 
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+    session = await build_session(db, user.id, box.id, 30)
     resp = await client.get(f"/practice/session/{session.id}")
     assert resp.status_code == 200
     assert '"keyLabel": "G Major"' in resp.text
     assert "K:G" in resp.text
 
 
-async def test_item_complete_returns_done_indicator(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+async def test_item_complete_returns_done_indicator(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    session = await build_session(db, user.id, box.id, 30)
     item = session.items[0]
     resp = await client.post(f"/practice/session/{session.id}/item/{item.id}/complete")
     assert resp.status_code == 200
     assert "Done" in resp.text
 
 
-async def test_item_complete_404_for_wrong_session(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+async def test_item_complete_404_for_wrong_session(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    session = await build_session(db, user.id, box.id, 30)
     item = session.items[0]
     resp = await client.post(f"/practice/session/9999/item/{item.id}/complete")
     assert resp.status_code == 404
 
 
-async def test_session_finish_redirects(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+async def test_session_finish_redirects(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    session = await build_session(db, user.id, box.id, 30)
     resp = await client.post(f"/practice/session/{session.id}/finish", follow_redirects=False)
     assert resp.status_code == 303
     assert resp.headers["location"] == f"/practice/session/{session.id}"
 
 
-async def test_item_rate_moving_on_returns_done_indicator(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+async def test_item_rate_moving_on_returns_done_indicator(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    session = await build_session(db, user.id, box.id, 30)
     # Find the first tune item
     tune_item = next(i for i in session.items if i.tune_id)
     resp = await client.post(
@@ -178,9 +173,9 @@ async def test_item_rate_moving_on_returns_done_indicator(client: AsyncClient, d
     assert "Done" in resp.text
 
 
-async def test_item_rate_keep_working_returns_done_indicator(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+async def test_item_rate_keep_working_returns_done_indicator(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    session = await build_session(db, user.id, box.id, 30)
     tune_item = next(i for i in session.items if i.tune_id)
     resp = await client.post(
         f"/practice/session/{session.id}/item/{tune_item.id}/rate",
@@ -190,9 +185,9 @@ async def test_item_rate_keep_working_returns_done_indicator(client: AsyncClient
     assert "Done" in resp.text
 
 
-async def test_item_rate_404_for_wrong_session(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+async def test_item_rate_404_for_wrong_session(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    session = await build_session(db, user.id, box.id, 30)
     tune_item = next(i for i in session.items if i.tune_id)
     resp = await client.post(
         f"/practice/session/9999/item/{tune_item.id}/rate",
@@ -201,9 +196,9 @@ async def test_item_rate_404_for_wrong_session(client: AsyncClient, db: AsyncSes
     assert resp.status_code == 404
 
 
-async def test_plan_form_shows_lists_for_box(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    pl = await create_list(db, _STUB_USER_ID, box.id, "Woodshed", PracticeListType.woodshed)
+async def test_plan_form_shows_lists_for_box(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    pl = await create_list(db, user.id, box.id, "Woodshed", PracticeListType.woodshed)
     resp = await client.get("/practice/plan")
     assert resp.status_code == 200
     assert "Active List" in resp.text
@@ -213,26 +208,26 @@ async def test_plan_form_shows_lists_for_box(client: AsyncClient, db: AsyncSessi
     assert str(pl.id) in resp.text
 
 
-async def test_plan_create_activates_list(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    pl = await create_list(db, _STUB_USER_ID, box.id, "My List", PracticeListType.repertoire)
+async def test_plan_create_activates_list(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    pl = await create_list(db, user.id, box.id, "My List", PracticeListType.repertoire)
     await client.post(
         "/practice/plan",
         data={"box_id": str(box.id), "total_minutes": "30", "list_id": str(pl.id)},
         follow_redirects=False,
     )
-    active = await get_active_list(db, _STUB_USER_ID)
+    active = await get_active_list(db, user.id)
     assert active is not None
     assert active.id == pl.id
 
 
-async def test_plan_form_defaults_box_to_active_list_box(client: AsyncClient, db: AsyncSession) -> None:
+async def test_plan_form_defaults_box_to_active_list_box(client: AsyncClient, db: AsyncSession, user: User) -> None:
     # Reproduce the bug: active list is under a non-first box; the form must
     # initialise boxId to that box so the list dropdown is populated.
-    u, box, _, _ = await _seed(db)
+    u, box, _, _ = await _seed(db, user)
     # Create a second box that sorts first alphabetically.
     box2 = await create_box(db, u.id, "AAA Box", [Instrument.fiddle])
-    pl = await create_list(db, _STUB_USER_ID, box.id, "My List", PracticeListType.repertoire)
+    pl = await create_list(db, user.id, box.id, "My List", PracticeListType.repertoire)
     # Activate the list so active_list.box_id == box.id (not box2.id).
     await client.post(
         "/practice/plan",
@@ -247,9 +242,9 @@ async def test_plan_form_defaults_box_to_active_list_box(client: AsyncClient, db
     assert f"boxId: {box2.id}" not in resp.text
 
 
-async def test_plan_create_deactivates_list_when_none_chosen(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    pl = await create_list(db, _STUB_USER_ID, box.id, "My List", PracticeListType.repertoire)
+async def test_plan_create_deactivates_list_when_none_chosen(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    pl = await create_list(db, user.id, box.id, "My List", PracticeListType.repertoire)
     await client.post(
         "/practice/plan",
         data={"box_id": str(box.id), "total_minutes": "30", "list_id": str(pl.id)},
@@ -260,13 +255,13 @@ async def test_plan_create_deactivates_list_when_none_chosen(client: AsyncClient
         data={"box_id": str(box.id), "total_minutes": "30", "list_id": ""},
         follow_redirects=False,
     )
-    active = await get_active_list(db, _STUB_USER_ID)
+    active = await get_active_list(db, user.id)
     assert active is None
 
 
-async def test_session_finish_shows_finished_state(client: AsyncClient, db: AsyncSession) -> None:
-    _, box, _, _ = await _seed(db)
-    session = await build_session(db, _STUB_USER_ID, box.id, 30)
+async def test_session_finish_shows_finished_state(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    session = await build_session(db, user.id, box.id, 30)
     await client.post(f"/practice/session/{session.id}/finish", follow_redirects=False)
     resp = await client.get(f"/practice/session/{session.id}")
     assert resp.status_code == 200
