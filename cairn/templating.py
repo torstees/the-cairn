@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader
+from starlette.requests import Request
 
 _BASE_DIR = Path(__file__).parent
 
@@ -24,4 +25,12 @@ _env = Environment(
 )
 _env.globals["app_version"] = APP_VERSION
 
-templates = Jinja2Templates(env=_env)
+
+def _user_context(request: Request) -> dict:
+    # request.state.user is set once in dependencies.get_current_user — merged
+    # in here so every template can reference {{ user }} (e.g. base.html's
+    # nav) without each route threading it through its own context dict.
+    return {"user": getattr(request.state, "user", None)}
+
+
+templates = Jinja2Templates(env=_env, context_processors=[_user_context])

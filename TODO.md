@@ -1399,7 +1399,7 @@ use instead of a formal roster.
   `list_remove_tune`) — 404 (not 403) on a missing row or an owner
   mismatch, so another user's resource's existence isn't revealed.
 
-- [ ] **11.5 — Nav: logged-in state**
+- [x] **11.5 — Nav: logged-in state**
   `cairn/templating.py` currently has no context-processor hook and
   `base.html`'s nav is hardcoded with no per-page override point. Add a
   thin `TemplateResponse`-shaped wrapper that merges in

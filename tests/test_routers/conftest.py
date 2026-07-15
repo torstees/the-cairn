@@ -1,6 +1,7 @@
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from starlette.requests import Request
 
 from cairn.database import Base
 from cairn.dependencies import get_current_user, get_db
@@ -41,8 +42,12 @@ async def client(db, user):
     async def _override_db():
         yield db
 
-    async def _override_user() -> User:
-        return await db.get(User, user_id)
+    async def _override_user(request: Request) -> User:
+        # Mirrors the real get_current_user's request.state.user side effect
+        # (templating.py's context processor reads it for base.html's nav).
+        current_user = await db.get(User, user_id)
+        request.state.user = current_user
+        return current_user
 
     app.dependency_overrides[get_db] = _override_db
     app.dependency_overrides[get_current_user] = _override_user
