@@ -66,11 +66,19 @@
       <a href="/practice/plan" class="hover:text-stone-300 text-sm">Practice</a>
       <a href="/warmups" class="hover:text-stone-300 text-sm">Warmups</a>
       <a href="/sets" class="hover:text-stone-300 text-sm">Sets</a>
-      <button @click="toggleTuner()"
-              :class="tunerOpen ? 'text-white border-stone-400' : 'text-stone-300 border-stone-600'"
-              class="ml-auto text-sm font-medium px-3 py-1 rounded border hover:text-white hover:border-stone-400 transition-colors">
-        &#119070; Tuner
-      </button>
+      <div class="ml-auto flex items-center gap-4">
+        {% if user %}
+        <span class="text-sm text-stone-300">{{ user.username }}</span>
+        <form method="post" action="/auth/logout">
+          <button type="submit" class="text-sm text-stone-300 hover:text-white transition-colors">Log out</button>
+        </form>
+        {% endif %}
+        <button @click="toggleTuner()"
+                :class="tunerOpen ? 'text-white border-stone-400' : 'text-stone-300 border-stone-600'"
+                class="text-sm font-medium px-3 py-1 rounded border hover:text-white hover:border-stone-400 transition-colors">
+          &#119070; Tuner
+        </button>
+      </div>
     </nav>
     <main class="container mx-auto px-4 py-8">
       {% block content %}{% endblock %}

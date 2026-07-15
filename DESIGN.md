@@ -189,6 +189,11 @@ Content                    standalone; created_by FK → users.id is nullable
   itself requires login (`dependencies=[Depends(get_current_user)]` on each
   `include_router(...)` call) — the one exception is `HEAD /`, kept public
   for uptime checks (shields.io badge etc.) that carry no session cookie.
+  `templating.py`'s `templates` object registers a `context_processors`
+  hook (Starlette's own `Jinja2Templates` feature) that reads
+  `request.state.user` into every `TemplateResponse`'s context as `{{ user }}`
+  — `base.html`'s nav uses it to show the username + a logout form, with no
+  per-route context threading needed.
 
   Ownership is enforced per-request, not just per-login: `_get_owned_box`
   (`boxes.py`), `_get_owned_list` (`lists.py`), and `_get_owned_session`

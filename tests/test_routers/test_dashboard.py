@@ -32,6 +32,13 @@ async def test_dashboard_renders_empty_state(client: AsyncClient) -> None:
     assert "No tune box selected" in resp.text
 
 
+async def test_dashboard_nav_shows_logged_in_user(client: AsyncClient, user: User) -> None:
+    resp = await client.get("/")
+    assert resp.status_code == 200
+    assert user.username in resp.text
+    assert 'action="/auth/logout"' in resp.text
+
+
 async def test_dashboard_accepts_head_for_uptime_checks(client: AsyncClient) -> None:
     # Uptime/status checkers (e.g. shields.io's website badge) probe with
     # HEAD, not GET — the root route must accept it or they report the app
