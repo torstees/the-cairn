@@ -1,15 +1,19 @@
 import logging
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
-from cairn.dependencies import get_db
+from cairn.config import SESSION_SECRET_KEY
+from cairn.dependencies import NotAuthenticatedError, get_db
 from cairn.logging_config import setup_logging
+from cairn.routers import auth as auth_router
 from cairn.routers import boxes as boxes_router
 from cairn.routers import content as content_router
 from cairn.routers import difficulty as difficulty_router
@@ -51,9 +55,17 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET_KEY)
+
+
+@app.exception_handler(NotAuthenticatedError)
+async def handle_not_authenticated(request: Request, exc: NotAuthenticatedError) -> RedirectResponse:
+    return RedirectResponse(f"/auth/login?next={quote(exc.next_path, safe='')}")
+
 
 app.mount("/static", StaticFiles(directory=BASE_DIR.parent / "static"), name="static")
 
+app.include_router(auth_router.router)
 app.include_router(tunes_router.router)
 app.include_router(thesession_link_router.router)
 app.include_router(settings_router.router)

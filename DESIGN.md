@@ -62,12 +62,14 @@ SQLite  (cairn.db)
 ```
 cairn/
   main.py           app factory, router mounts, static files
+  config.py         GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / SESSION_SECRET_KEY
   database.py       async engine, AsyncSession factory, Base, TimestampMixin
-  dependencies.py   get_db FastAPI dependency
+  dependencies.py   get_db, get_current_user FastAPI dependencies
   models.py         all SQLAlchemy models and enums
   schemas.py        Pydantic Create / Update / Read schemas
   templating.py     Jinja2 environment setup
   routers/
+    auth.py         /auth — Google OAuth login/callback/logout
     tunes.py        /tunes
     boxes.py        /boxes
     lists.py        /lists
@@ -175,6 +177,17 @@ Content                    standalone; created_by FK → users.id is nullable
 - **Phase 1 stubs**: `_STUB_USER_ID = 1` and `_STUB_BOX_ID = 1` are used
   throughout routers and services in place of real auth. All stubs are named
   with the `_STUB_` prefix so they are easy to find and replace in Phase 2.
+
+- **Authentication (Phase 2, in progress)**: Google OAuth via `authlib`.
+  `routers/auth.py` handles `/auth/login` (redirect to Google), `/auth/callback`
+  (verify ID token, look up `User` by `google_sub`, auto-provision on first
+  login with `role=student`), and `/auth/logout`. Session state (`user_id`)
+  lives in a signed cookie via Starlette's `SessionMiddleware`.
+  `dependencies.get_current_user` reads it and raises `NotAuthenticatedError`
+  on a missing/invalid session, which `main.py` turns into a redirect to
+  `/auth/login?next=...`. Not yet wired onto the existing routers — until
+  that lands (replacing `_STUB_USER_ID` with the real logged-in user), the
+  stub above is still what every route actually uses.
 
 ---
 
