@@ -1352,7 +1352,7 @@ use instead of a formal roster.
   if empty outside a test context.
 
 - [ ] **11.2 — Schema migration**
-  Chains off current head `7ae690dc49a9`.
+  Chains off current head `16937de1282b`.
   - `User`: add `google_sub` (String, unique, indexed, NOT NULL). Drop
     `hashed_password` entirely — confirm production has zero `User` rows
     first (no seed file creates one).
