@@ -229,18 +229,22 @@ async def remove_alias(db: AsyncSession, alias_id: int) -> bool:
 
 async def list_tunes(
     db: AsyncSession,
-    user_id: int,
+    user_id: int | None,
     *,
     tune_type: TuneType | None = None,
     family: str | None = None,
 ) -> list[Tune]:
-    visibility_filter = or_(Tune.visibility == ContentVisibility.public, Tune.created_by == user_id)
-    partner_ids = await get_active_enrollment_partner_ids(db, user_id)
-    if partner_ids:
-        visibility_filter = or_(
-            visibility_filter,
-            and_(Tune.visibility == ContentVisibility.enrolled, Tune.created_by.in_(partner_ids)),
-        )
+    if user_id is None:
+        # A guest (see #225): only the public catalog, no ownership/enrollment to check.
+        visibility_filter = Tune.visibility == ContentVisibility.public
+    else:
+        visibility_filter = or_(Tune.visibility == ContentVisibility.public, Tune.created_by == user_id)
+        partner_ids = await get_active_enrollment_partner_ids(db, user_id)
+        if partner_ids:
+            visibility_filter = or_(
+                visibility_filter,
+                and_(Tune.visibility == ContentVisibility.enrolled, Tune.created_by.in_(partner_ids)),
+            )
     stmt = (
         select(Tune)
         .options(selectinload(Tune.settings), selectinload(Tune.difficulties), selectinload(Tune.aliases))

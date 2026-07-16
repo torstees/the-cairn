@@ -73,18 +73,21 @@ app.include_router(auth_router.router)
 # ShareLink token is itself the credential for exactly the one shared item.
 app.include_router(shared_router.router)
 _login_required = [Depends(get_current_user)]
-app.include_router(tunes_router.router, dependencies=_login_required)
-app.include_router(thesession_link_router.router, dependencies=_login_required)
-app.include_router(settings_router.router, dependencies=_login_required)
-app.include_router(difficulty_router.router, dependencies=_login_required)
 app.include_router(progress_router.router, dependencies=_login_required)
 app.include_router(boxes_router.router, dependencies=_login_required)
 app.include_router(lists_router.router, dependencies=_login_required)
 app.include_router(practice_router.router, dependencies=_login_required)
-app.include_router(warmups_router.router, dependencies=_login_required)
-app.include_router(tune_sets_router.router, dependencies=_login_required)
-app.include_router(content_router.router, dependencies=_login_required)
 app.include_router(enrollments_router.router, dependencies=_login_required)
+# tunes/warmups/sets/content are NOT gated at the router level (see #225): each
+# lets a guest browse its public-catalog view routes (list/detail), while every
+# mutation route declares its own Depends(get_current_user) individually.
+app.include_router(tunes_router.router)
+app.include_router(thesession_link_router.router, dependencies=_login_required)
+app.include_router(settings_router.router, dependencies=_login_required)
+app.include_router(difficulty_router.router, dependencies=_login_required)
+app.include_router(warmups_router.router)
+app.include_router(tune_sets_router.router)
+app.include_router(content_router.router)
 
 
 @app.get("/version")
