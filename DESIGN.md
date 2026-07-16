@@ -263,6 +263,18 @@ Content                    standalone; created_by FK → users.id is nullable
   those) rather than erroring — see the `if user is None:` branches in
   `tune_detail`, `warmup_detail`, and `set_detail`.
 
+  **Guest landing page**: `GET /` (in `main.py`, not a router) branches on
+  the same `get_current_user_optional` — a logged-in user gets the personal
+  dashboard as before, a guest gets `templates/landing.html` instead of a
+  redirect to `/auth/login`. The page renders the `Content` row at slug
+  `getting-started` (the same one `/pages/getting-started` serves) via
+  `render_markdown()`, with a hardcoded fallback paragraph if that row is
+  ever missing (e.g. before `scripts/import_content.py` has been run against
+  an environment) rather than a bare page. `base.html`'s nav has a
+  `{% else %}` branch — a "Sign in with Google" link — alongside the
+  existing logged-in username/logout, since a guest previously had no
+  visible way to log in from any page short of typing `/auth/login`.
+
 ---
 
 ## Key Patterns

@@ -11,7 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from cairn.config import SESSION_SECRET_KEY
-from cairn.dependencies import NotAuthenticatedError, get_current_user, get_db
+from cairn.dependencies import NotAuthenticatedError, get_current_user, get_current_user_optional, get_db
 from cairn.logging_config import setup_logging
 from cairn.models import User
 from cairn.routers import auth as auth_router
@@ -28,8 +28,11 @@ from cairn.routers import thesession_link as thesession_link_router
 from cairn.routers import tune_sets as tune_sets_router
 from cairn.routers import tunes as tunes_router
 from cairn.routers import warmups as warmups_router
+from cairn.services.content import get_content, render_markdown
 from cairn.services.dashboard import get_dashboard_data
 from cairn.templating import APP_VERSION, templates
+
+_GUEST_LANDING_SLUG = "getting-started"
 
 setup_logging()
 
@@ -107,7 +110,14 @@ async def index_head() -> Response:
 async def index(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_current_user_optional),
 ) -> HTMLResponse:
+    if user is None:
+        # A guest (see #228) gets a public landing page, not the personal
+        # dashboard -- there's nothing of their own to show, and redirecting
+        # straight to /auth/login gave them no chance to look around first.
+        content = await get_content(db, _GUEST_LANDING_SLUG)
+        rendered_body = render_markdown(content.body) if content else None
+        return templates.TemplateResponse(request, "landing.html", {"rendered_body": rendered_body})
     data = await get_dashboard_data(db, user.id)
     return templates.TemplateResponse(request, "dashboard.html", {"data": data})

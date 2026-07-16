@@ -1461,6 +1461,15 @@ these; no routes/UI yet):
   on these routers keeps its own explicit `Depends(get_current_user)`
   rather than relying on the router-level gate.
 
+- [x] **11.12 — Guest landing page at root**
+  `GET /` no longer redirects a guest straight to `/auth/login` — it
+  renders `templates/landing.html` (a hero + "Sign in with Google" button,
+  then the `getting-started` `Content` page's rendered body) instead of the
+  personal dashboard. Uses the same `get_current_user_optional` from 11.11.
+  `base.html`'s nav also gained a "Sign in with Google" link for the
+  logged-out case (there was previously no visible way to log in from any
+  page other than by guessing `/auth/login`).
+
 ---
 
 ### Phase 1 Complete Checklist
