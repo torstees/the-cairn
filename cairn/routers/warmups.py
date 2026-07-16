@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_current_user, get_db
+from cairn.dependencies import get_current_user, get_current_user_optional, get_db
 from cairn.models import Instrument, User, WarmupType
 from cairn.services.content import render_markdown
 from cairn.services.warmups import (
@@ -41,7 +41,7 @@ async def warmup_index(
 
 
 @router.get("/new")
-async def warmup_new(request: Request) -> Response:
+async def warmup_new(request: Request, user: User = Depends(get_current_user)) -> Response:
     return templates.TemplateResponse(
         request,
         "warmups/form.html",
@@ -59,6 +59,7 @@ async def warmup_new(request: Request) -> Response:
 async def warmup_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     title: str = Form(...),
     warmup_type: str = Form(...),
     content: str = Form(...),
@@ -83,6 +84,7 @@ async def warmup_create(
 @router.post("/preview-markdown")
 async def warmup_preview_markdown(
     request: Request,
+    user: User = Depends(get_current_user),
     content: str = Form(default=""),
 ) -> Response:
     return templates.TemplateResponse(
@@ -97,12 +99,13 @@ async def warmup_detail(
     request: Request,
     warmup_id: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_current_user_optional),
 ) -> Response:
     warmup = await get_warmup(db, warmup_id)
     if warmup is None:
         raise HTTPException(status_code=404, detail="Warmup not found")
-    last_tempo = await get_warmup_tempo(db, user.id, warmup_id)
+    # A guest (see #225) has no personal tempo history for this warmup.
+    last_tempo = await get_warmup_tempo(db, user.id, warmup_id) if user else None
     is_abc = warmup.warmup_type in _ABC_TYPES
     return templates.TemplateResponse(
         request,
@@ -121,6 +124,7 @@ async def warmup_edit(
     request: Request,
     warmup_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
     warmup = await get_warmup(db, warmup_id)
     if warmup is None:
@@ -144,6 +148,7 @@ async def warmup_update(
     request: Request,
     warmup_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     title: str = Form(...),
     warmup_type: str = Form(...),
     content: str = Form(...),
@@ -185,6 +190,7 @@ async def warmup_tempo_record(
 async def warmup_delete(
     warmup_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
     deleted = await delete_warmup(db, warmup_id)
     if not deleted:

@@ -1451,6 +1451,16 @@ these; no routes/UI yet):
   exception to "everything requires auth" from 11.3, scoped narrowly to
   exactly the shared item.
 
+- [x] **11.11 — Guest read access to the public catalog**
+  `GET /tunes`, `/tunes/{id}`, `/warmups`, `/warmups/{id}`, `/sets`,
+  `/sets/{id}`, and `/pages/{slug}` no longer require login — a guest can
+  browse the public catalog itself, not just an individual shared item.
+  `get_current_user_optional` (returns `None` instead of raising) backs
+  these routes; visibility enforcement is unchanged (guest = public only,
+  same rule 11.8 already applies to a logged-in user). Every mutation route
+  on these routers keeps its own explicit `Depends(get_current_user)`
+  rather than relying on the router-level gate.
+
 ---
 
 ### Phase 1 Complete Checklist

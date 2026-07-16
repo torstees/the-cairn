@@ -229,19 +229,39 @@ Content                    standalone; created_by FK → users.id is nullable
   Role (`teacher` vs `student`) is assigned manually (no self-service UI);
   every new Google-provisioned account defaults to `student`.
 
-  **ShareLink (unauthenticated view-only sharing)**: the one deliberate
-  bypass of "every router requires login" beyond `HEAD /` (see above) —
-  `routers/shared.py` is registered in `main.py` with no
-  `dependencies=[Depends(get_current_user)]`, since a `ShareLink.token`
-  (`secrets.token_urlsafe(24)`, via `services/share_links.py`) is itself the
-  credential for exactly the one tune or setting it points at. A `ShareLink`
-  row has exactly one of `tune_id`/`setting_id` set (DB check constraint) —
-  "share the whole tune" vs "share one specific setting" — created from a
-  button on `tune_detail` or next to a setting in `_settings.html`, listed
-  and revocable from the `_share_links.html` partial. `GET /shared/{token}`
-  renders a standalone `shared/detail.html` that does not extend `base.html`
-  (an anonymous visitor shouldn't see the logged-in nav) and 404s on an
-  unknown or revoked token, never leaking whether a token ever existed.
+  **ShareLink (unauthenticated view-only sharing)**: `routers/shared.py` is
+  registered in `main.py` with no `dependencies=[Depends(get_current_user)]`,
+  since a `ShareLink.token` (`secrets.token_urlsafe(24)`, via
+  `services/share_links.py`) is itself the credential for exactly the one
+  tune or setting it points at. A `ShareLink` row has exactly one of
+  `tune_id`/`setting_id` set (DB check constraint) — "share the whole tune"
+  vs "share one specific setting" — created from a button on `tune_detail`
+  or next to a setting in `_settings.html`, listed and revocable from the
+  `_share_links.html` partial. `GET /shared/{token}` renders a standalone
+  `shared/detail.html` that does not extend `base.html` (an anonymous
+  visitor shouldn't see the logged-in nav) and 404s on an unknown or revoked
+  token, never leaking whether a token ever existed.
+
+  **Guest read access to the public catalog**: `tunes`/`warmups`/`sets`/
+  `content` are the other routers (besides `auth` and `shared`) registered
+  in `main.py` with no router-level `dependencies=[Depends(get_current_user)]`
+  — a guest can browse `GET /tunes`, `/tunes/{id}`, `/warmups`,
+  `/warmups/{id}`, `/sets`, `/sets/{id}`, and `/pages/{slug}` without an
+  account. This is safe only because every *mutation* route on those same
+  routers declares its own `Depends(get_current_user)` directly (not
+  inherited from the router), so removing the blanket gate doesn't silently
+  open anything else up — `dependencies.get_current_user_optional` (returns
+  `None` instead of raising) backs the view routes instead. Visibility
+  enforcement is unchanged from the `enrolled`/`private` rule above; a guest
+  is simply `user=None`, which the same `list_tunes()`/`tune_detail`/
+  `content_page` checks treat as "public only, no ownership or enrollment
+  possible." Warmups and sets have no `visibility`/`created_by` columns at
+  all — they're already a single global catalog for every account, so guest
+  access just extends that same view to a logged-out visitor. Every guest
+  view route also drops any of the caller's own boxes/lists/tempo history/
+  progress data it would otherwise show a real user (a guest has none of
+  those) rather than erroring — see the `if user is None:` branches in
+  `tune_detail`, `warmup_detail`, and `set_detail`.
 
 ---
 

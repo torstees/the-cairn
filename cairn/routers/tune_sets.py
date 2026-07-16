@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_current_user, get_db
+from cairn.dependencies import get_current_user, get_current_user_optional, get_db
 from cairn.models import ProgressStatus, StudentProgress, TuneSetting, TuneType, User
 from cairn.services.abc_utils import build_set_abc
 from cairn.services.boxes import get_box
@@ -108,7 +108,9 @@ async def set_new(
 
 
 @router.get("/tune-settings/{tune_id}")
-async def tune_settings_json(tune_id: int, db: AsyncSession = Depends(get_db)) -> Response:
+async def tune_settings_json(
+    tune_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
     result = await db.execute(
         select(TuneSetting)
         .where(TuneSetting.tune_id == tune_id)
@@ -122,6 +124,7 @@ async def tune_settings_json(tune_id: int, db: AsyncSession = Depends(get_db)) -
 async def set_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     title: str = Form(...),
     description: str = Form(""),
     source: str = Form(""),
@@ -162,6 +165,7 @@ async def set_update(
     request: Request,
     set_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     title: str = Form(...),
     description: str = Form(""),
     source: str = Form(""),
@@ -188,7 +192,9 @@ async def set_update(
 
 
 @router.delete("/{set_id}")
-async def set_delete(set_id: int, db: AsyncSession = Depends(get_db)) -> Response:
+async def set_delete(
+    set_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
     deleted = await delete_set(db, set_id)
     if not deleted:
         raise HTTPException(status_code=404)
@@ -208,15 +214,19 @@ async def set_detail(
     request: Request,
     set_id: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_current_user_optional),
     box_id: int | None = Query(default=None),
 ) -> Response:
     tune_set = await get_set(db, set_id)
     if tune_set is None:
         raise HTTPException(status_code=404)
 
+    # box_id-driven data (last tempo, per-box progress) is a guest's own — see
+    # #225 — a guest has no box, so treat any box_id query param as absent.
+    if user is None:
+        box_id = None
     box = await get_box(db, box_id) if box_id is not None else None
-    last_tempo = await get_set_tempo(db, user.id, box_id, set_id) if box_id else None
+    last_tempo = await get_set_tempo(db, user.id, box_id, set_id) if (user and box_id) else None
 
     # Pre-build three variants of the set ABC server-side (compact single-X:1
     # format that ABCJS renders reliably), rather than combining per-member

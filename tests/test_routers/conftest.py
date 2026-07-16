@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from starlette.requests import Request
 
 from cairn.database import Base
-from cairn.dependencies import get_current_user, get_db
+from cairn.dependencies import get_current_user, get_current_user_optional, get_db
 from cairn.main import app
 from cairn.models import Role, User
 
@@ -51,6 +51,7 @@ async def client(db, user):
 
     app.dependency_overrides[get_db] = _override_db
     app.dependency_overrides[get_current_user] = _override_user
+    app.dependency_overrides[get_current_user_optional] = _override_user
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()

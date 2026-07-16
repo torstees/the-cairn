@@ -31,3 +31,16 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     if request.url.query:
         next_path += f"?{request.url.query}"
     raise NotAuthenticatedError(next_path=next_path)
+
+
+async def get_current_user_optional(request: Request, db: AsyncSession = Depends(get_db)) -> User | None:
+    """Like get_current_user, but returns None instead of raising for a guest —
+    for the handful of read-only views guests may browse (public tunes,
+    warmups, sets, and content pages)."""
+    user_id = request.session.get("user_id")
+    if user_id is not None:
+        user = await db.get(User, user_id)
+        if user is not None:
+            request.state.user = user
+            return user
+    return None

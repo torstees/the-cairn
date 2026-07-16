@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_current_user, get_db
+from cairn.dependencies import get_current_user, get_current_user_optional, get_db
 from cairn.models import (
     ContentVisibility,
     Instrument,
@@ -111,7 +111,7 @@ def _build_tempo_chart(tempo_records: list[TempoRecord]) -> TempoChart | None:
 
 
 @router.get("/new")
-async def tune_new(request: Request) -> Response:
+async def tune_new(request: Request, user: User = Depends(get_current_user)) -> Response:
     return templates.TemplateResponse(
         request,
         "tunes/form.html",
@@ -123,11 +123,11 @@ async def tune_new(request: Request) -> Response:
 async def tune_list(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_current_user_optional),
     tune_type: TuneType | None = Query(default=None, alias="type"),
     family: str | None = None,
 ) -> Response:
-    tunes = await list_tunes(db, user.id, tune_type=tune_type, family=family)
+    tunes = await list_tunes(db, user.id if user else None, tune_type=tune_type, family=family)
     tune_previews = build_tune_previews(tunes)
     ctx = {
         "tunes": tunes,
@@ -178,7 +178,7 @@ async def tune_detail(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_current_user_optional),
     box_id: int | None = Query(default=None),
     list_id: int | None = Query(default=None),
     from_: str | None = Query(default=None, alias="from"),
@@ -188,7 +188,13 @@ async def tune_detail(
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    if tune.created_by != user.id and tune.visibility != ContentVisibility.public:
+    if user is None:
+        # A guest (see #225): only the public catalog, no ownership/enrollment
+        # to check, and no boxes/lists/tempo history of their own to show.
+        if tune.visibility != ContentVisibility.public:
+            raise HTTPException(status_code=404, detail="Tune not found")
+        box_id = list_id = None
+    elif tune.created_by != user.id and tune.visibility != ContentVisibility.public:
         partner_ids = (
             await get_active_enrollment_partner_ids(db, user.id)
             if tune.visibility == ContentVisibility.enrolled
@@ -244,15 +250,22 @@ async def tune_detail(
     if transpose:
         built_abc = transpose_abc(built_abc, transpose)
         settings_abc = {sid: transpose_abc(abc, transpose) for sid, abc in settings_abc.items()}
-    min_tempo, tempo_records = await get_tempo_history(db, user.id, tune_id)
     beats_per_bar = int(tune.time_signature.split("/")[0])
 
-    boxes = await list_boxes(db, user.id)
+    # A guest (see #225) has no tempo history, boxes, or lists of their own.
+    if user is None:
+        min_tempo, tempo_records = None, []
+        boxes: list = []
+        lists_by_box_id: dict[int, list] = {}
+        active_list = None
+    else:
+        min_tempo, tempo_records = await get_tempo_history(db, user.id, tune_id)
+        boxes = await list_boxes(db, user.id)
+        lists_by_box_id = {}
+        for practice_list in await list_lists(db, user.id):
+            lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
+        active_list = await get_active_list(db, user.id)
     box_entries = {b.id: next((e for e in b.entries if e.tune_id == tune_id), None) for b in boxes}
-    lists_by_box_id: dict[int, list] = {}
-    for practice_list in await list_lists(db, user.id):
-        lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
-    active_list = await get_active_list(db, user.id)
     member_sets = await list_sets_for_tune(db, tune_id)
 
     # Base query string (box/list/breadcrumb context only) so the key picker
@@ -465,7 +478,9 @@ async def tempo_history_partial(
 
 
 @router.get("/{tune_id}/edit")
-async def tune_edit(request: Request, tune_id: int, db: AsyncSession = Depends(get_db)) -> Response:
+async def tune_edit(
+    request: Request, tune_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
@@ -483,6 +498,7 @@ async def tune_update(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     title: str = Form(...),
     tune_type: TuneType = Form(...),
     key_root: KeyRoot = Form(...),
@@ -512,7 +528,9 @@ async def tune_update(
 
 
 @router.delete("/{tune_id}")
-async def tune_delete(tune_id: int, db: AsyncSession = Depends(get_db)) -> Response:
+async def tune_delete(
+    tune_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
     deleted = await delete_tune(db, tune_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Tune not found")
@@ -524,6 +542,7 @@ async def alias_add(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     name: str = Form(...),
     notes: str = Form(default=""),
 ) -> Response:
@@ -540,6 +559,7 @@ async def alias_remove(
     tune_id: int,
     alias_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> Response:
     removed = await remove_alias(db, alias_id)
     if not removed:
