@@ -1,6 +1,6 @@
 [project]
 name = "the-cairn"
-version = "0.1.3"
+version = "0.1.4"
 description = "Web app for learning and retaining traditional Irish music tunes"
 requires-python = ">=3.12"
 dependencies = [
