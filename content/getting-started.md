@@ -18,7 +18,7 @@ Tunes are stored as [ABC notation](https://abcnotation.com/) and rendered into r
 
 - **Playback** at an adjustable tempo, so you can hear a tune before you can play it up to speed.
 - **A metronome and drone**, with your tempo history tracked over time so you can see yourself speeding up.
-- **Live transpose**, shifting a tune into a different key on the fly — handy for checking whether it sits better on your instrument a step up or down.
+- **Live transpose**, shifting a tune into a different key on the fly — Now you can bump that D minor tune setting to E minor to better suite your instrument and still be able to play along (on your C Whistle) with those people who aren't playing on a diatonic instrument. 
 - **A built-in chromatic tuner**, tuned (pun intended) to hold up on the messy, harmonic-rich tone of instruments like flute and whistle.
 
 ## Organized your way
