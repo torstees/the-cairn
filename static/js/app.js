@@ -1226,41 +1226,83 @@
 
   var TUNER_NOTES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 
+  // McLeod Pitch Method (MPM): Normalized Square Difference Function (NSDF)
+  // plus threshold-based peak picking. Replaces a fixed-threshold
+  // autocorrelation that mistook a harmonic's taller correlation peak for
+  // the fundamental on flute recordings (messy overtones -> octave errors).
+  // MPM's fix is to accept the *first* (shortest-lag) NSDF peak that comes
+  // within TUNER_MPM_THRESHOLD of the tallest one, rather than the tallest
+  // peak outright — see https://docs.rs/pitch-detection (McLeod detector)
+  // for the reference algorithm this was ported from.
+  var TUNER_MPM_THRESHOLD = 0.8;
+  var TUNER_MPM_CLARITY_MIN = 0.3;
+
+  function tunerNsdf(buffer, maxLag) {
+    var size = buffer.length;
+    var out = new Float32Array(maxLag);
+    for (var lag = 0; lag < maxLag; lag++) {
+      var acf = 0, m = 0;
+      for (var i = 0; i < size - lag; i++) {
+        acf += buffer[i] * buffer[i + lag];
+        m += buffer[i] * buffer[i] + buffer[i + lag] * buffer[i + lag];
+      }
+      out[lag] = m > 0 ? (2 * acf) / m : 0;
+    }
+    return out;
+  }
+
+  // Local maxima of the NSDF, one per positive-going lobe (the "key maxima"
+  // MPM picks among) — skips the trivial lobe around lag 0.
+  function tunerNsdfKeyMaxima(nsdf) {
+    var size = nsdf.length;
+    var maxPositions = [];
+    var pos = 0;
+    while (pos < size - 1 && nsdf[pos] > 0) pos++;
+    while (pos < size - 1) {
+      while (pos < size - 1 && nsdf[pos] <= 0) pos++;
+      var curMaxPos = 0;
+      while (pos < size - 1 && nsdf[pos] > 0) {
+        if (nsdf[pos] > nsdf[pos - 1] && nsdf[pos] >= nsdf[pos + 1]) {
+          if (curMaxPos === 0 || nsdf[pos] > nsdf[curMaxPos]) curMaxPos = pos;
+        }
+        pos++;
+      }
+      if (curMaxPos !== 0) maxPositions.push(curMaxPos);
+    }
+    return maxPositions;
+  }
+
+  function tunerParabolicShift(vals, pos) {
+    if (pos <= 0 || pos >= vals.length - 1) return 0;
+    var y0 = vals[pos - 1], y1 = vals[pos], y2 = vals[pos + 1];
+    var denom = 2 * y1 - y0 - y2;
+    return denom !== 0 ? (y2 - y0) / (2 * denom) : 0;
+  }
+
   function tunerDetectPitch(buffer, sampleRate) {
     var SIZE = buffer.length;
-    var HALF = Math.floor(SIZE / 2);
     var rms = 0;
     for (var i = 0; i < SIZE; i++) rms += buffer[i] * buffer[i];
     rms = Math.sqrt(rms / SIZE);
     if (rms < 0.01) return null;
 
-    var best = -1, bestCorr = 0, lastCorr = 1, foundGood = false;
-    var corrs = new Float32Array(HALF);
-    for (var offset = 1; offset < HALF; offset++) {
-      var c = 0;
-      for (var i = 0; i < HALF; i++) c += Math.abs(buffer[i] - buffer[i + offset]);
-      c = 1 - c / HALF;
-      corrs[offset] = c;
-      if (c > 0.9 && c > lastCorr) {
-        foundGood = true;
-        if (c > bestCorr) { bestCorr = c; best = offset; }
-      } else if (foundGood) {
-        var shift = 0;
-        if (best > 1 && best < HALF - 1) {
-          var y0 = corrs[best - 1], y1 = corrs[best], y2 = corrs[best + 1];
-          var denom = 2 * y1 - y0 - y2;
-          if (denom !== 0) shift = (y2 - y0) / (2 * denom);
-        }
-        var freq = sampleRate / (best + shift);
-        return (freq >= 60 && freq <= 2100) ? freq : null;
-      }
-      lastCorr = c;
+    var maxLag = Math.floor(SIZE / 2);
+    var nsdf = tunerNsdf(buffer, maxLag);
+    var maxPositions = tunerNsdfKeyMaxima(nsdf);
+    if (maxPositions.length === 0) return null;
+
+    var highest = -Infinity;
+    for (var i = 0; i < maxPositions.length; i++) highest = Math.max(highest, nsdf[maxPositions[i]]);
+    var cutoff = TUNER_MPM_THRESHOLD * highest;
+    var best = -1;
+    for (var i = 0; i < maxPositions.length; i++) {
+      if (nsdf[maxPositions[i]] >= cutoff) { best = maxPositions[i]; break; }
     }
-    if (bestCorr > 0.01 && best !== -1) {
-      var freq = sampleRate / best;
-      return (freq >= 60 && freq <= 2100) ? freq : null;
-    }
-    return null;
+    if (best === -1 || nsdf[best] < TUNER_MPM_CLARITY_MIN) return null;
+
+    var shift = tunerParabolicShift(nsdf, best);
+    var freq = sampleRate / (best + shift);
+    return (freq >= 60 && freq <= 2100) ? freq : null;
   }
 
   function tunerFreqToNote(freq, a4) {
