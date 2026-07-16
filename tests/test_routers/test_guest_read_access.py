@@ -41,6 +41,16 @@ async def _tune(db: AsyncSession, visibility: ContentVisibility = ContentVisibil
     )
 
 
+# ── nav ─────────────────────────────────────────────────────────────────────
+
+
+async def test_guest_sees_sign_in_link_in_nav(unauthenticated_client: AsyncClient) -> None:
+    resp = await unauthenticated_client.get("/warmups")
+    assert resp.status_code == 200
+    assert 'href="/auth/login"' in resp.text
+    assert "Log out" not in resp.text
+
+
 # ── tunes ───────────────────────────────────────────────────────────────────
 
 
