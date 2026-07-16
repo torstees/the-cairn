@@ -51,6 +51,13 @@
                   class="text-xs border border-stone-300 text-stone-600 hover:bg-stone-100 px-2 py-1 rounded">
             Edit
           </button>
+          <button @click.stop
+                  hx-post="/tunes/{{ tune.id }}/settings/{{ setting.id }}/share-links"
+                  hx-target="#share-links-section"
+                  hx-swap="outerHTML"
+                  class="text-xs border border-stone-300 text-stone-600 hover:bg-stone-100 px-2 py-1 rounded">
+            Share
+          </button>
           <button @click.stop="expanded = !expanded"
                   class="text-stone-400 hover:text-stone-600 text-xs w-5 text-center transition-colors"
                   :aria-label="expanded ? 'Collapse notation' : 'Expand notation'">

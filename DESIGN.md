@@ -229,6 +229,20 @@ Content                    standalone; created_by FK → users.id is nullable
   Role (`teacher` vs `student`) is assigned manually (no self-service UI);
   every new Google-provisioned account defaults to `student`.
 
+  **ShareLink (unauthenticated view-only sharing)**: the one deliberate
+  bypass of "every router requires login" beyond `HEAD /` (see above) —
+  `routers/shared.py` is registered in `main.py` with no
+  `dependencies=[Depends(get_current_user)]`, since a `ShareLink.token`
+  (`secrets.token_urlsafe(24)`, via `services/share_links.py`) is itself the
+  credential for exactly the one tune or setting it points at. A `ShareLink`
+  row has exactly one of `tune_id`/`setting_id` set (DB check constraint) —
+  "share the whole tune" vs "share one specific setting" — created from a
+  button on `tune_detail` or next to a setting in `_settings.html`, listed
+  and revocable from the `_share_links.html` partial. `GET /shared/{token}`
+  renders a standalone `shared/detail.html` that does not extend `base.html`
+  (an anonymous visitor shouldn't see the logged-in nav) and 404s on an
+  unknown or revoked token, never leaking whether a token ever existed.
+
 ---
 
 ## Key Patterns

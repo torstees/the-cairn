@@ -1,0 +1,39 @@
+<section id="share-links-section" class="mb-8">
+  <div class="flex items-center gap-2 mb-3">
+    <h2 class="text-xl font-semibold text-stone-700">Shared Links</h2>
+    <button type="button"
+            hx-post="/tunes/{{ tune.id }}/share-links"
+            hx-target="#share-links-section"
+            hx-swap="outerHTML"
+            class="text-xs border border-stone-300 text-stone-600 hover:bg-stone-50 px-3 py-1.5 rounded-lg">
+      + Share this tune
+    </button>
+  </div>
+
+  {% if share_links %}
+  <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100">
+    {% for link in share_links %}
+    <div class="flex items-center justify-between gap-3 px-4 py-3">
+      <div class="min-w-0">
+        <span class="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">
+          {% if link.setting_id %}{{ link.setting.label }}{% else %}Whole tune{% endif %}
+        </span>
+        <input readonly value="{{ request.url_for('shared_detail', token=link.token) }}"
+               onclick="this.select()"
+               class="mt-1 block w-full bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs text-stone-500 font-mono">
+      </div>
+      <button type="button"
+              hx-delete="/tunes/{{ tune.id }}/share-links/{{ link.id }}"
+              hx-target="#share-links-section"
+              hx-swap="outerHTML"
+              hx-confirm="Revoke this shared link? Anyone with the link will lose access."
+              class="shrink-0 text-xs text-stone-400 hover:text-red-600">
+        Revoke
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-stone-400 text-sm">No shared links yet — anyone with a link can view this tune without an account.</p>
+  {% endif %}
+</section>

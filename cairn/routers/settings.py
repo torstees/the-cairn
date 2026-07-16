@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.dependencies import get_db
-from cairn.models import ContentVisibility, Instrument, OrnamentationLevel
+from cairn.dependencies import get_current_user, get_db
+from cairn.models import ContentVisibility, Instrument, OrnamentationLevel, User
 from cairn.schemas import TuneSettingCreate, TuneSettingUpdate
 from cairn.services.abc_utils import build_abc
+from cairn.services.share_links import create_share_link, list_share_links_for_tune
 from cairn.services.tunes import create_setting, get_tune, set_core_setting, update_setting
 from cairn.templating import templates
 
@@ -105,3 +106,22 @@ async def setting_set_core(
         raise HTTPException(status_code=404, detail="Setting not found")
     tune = await get_tune(db, tune_id)
     return templates.TemplateResponse(request, "tunes/partials/_settings.html", _settings_ctx(tune))
+
+
+@router.post("/{tune_id}/settings/{setting_id}/share-links")
+async def setting_share_link_create(
+    request: Request,
+    tune_id: int,
+    setting_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    tune = await get_tune(db, tune_id)
+    if tune is None or not any(s.id == setting_id for s in tune.settings):
+        raise HTTPException(status_code=404, detail="Setting not found")
+    await create_share_link(db, user.id, tune_id, setting_id=setting_id)
+    setting_ids = [s.id for s in tune.settings]
+    share_links = await list_share_links_for_tune(db, tune_id, setting_ids)
+    return templates.TemplateResponse(
+        request, "tunes/partials/_share_links.html", {"tune": tune, "share_links": share_links}
+    )

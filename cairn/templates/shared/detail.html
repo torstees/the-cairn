@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ tune.title }} — The Cairn</title>
+  <!-- Tailwind CSS v3.4.16 -->
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <!-- abcjs v6.4.4 -->
+  <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+  <nav class="bg-stone-800 text-stone-100 px-6 py-3 flex items-center gap-6">
+    <span class="font-semibold tracking-wide">The Cairn</span>
+    <span class="text-xs text-stone-400">Shared tune — view only</span>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8 max-w-2xl">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h1 class="text-2xl font-bold text-stone-800 mb-1">{{ tune.title }}</h1>
+      <p class="text-sm text-stone-500 mb-4">
+        {{ tune.tune_type.label }} &middot; {{ tune.key_root.label }} {{ tune.key_mode.label }}
+        {% if setting and setting.label != 'Standard' %} &middot; {{ setting.label }}{% endif %}
+      </p>
+
+      {% if abc %}
+      <div id="abc-render"></div>
+      <template id="abc-source">{{ abc }}</template>
+      <script>
+        ABCJS.renderAbc("abc-render", document.getElementById("abc-source").content.textContent.trim(), { responsive: "resize" });
+      </script>
+      {% else %}
+      <p class="text-stone-400 text-sm">No notation available for this setting.</p>
+      {% endif %}
+    </div>
+
+    <p class="text-center text-xs text-stone-400 mt-6">
+      Shared from <a href="/" class="underline hover:text-stone-600">The Cairn</a> — v{{ app_version }}
+    </p>
+  </main>
+</body>
+</html>

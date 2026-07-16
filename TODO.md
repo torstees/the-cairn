@@ -1445,7 +1445,7 @@ these; no routes/UI yet):
   accept screen) and a student-facing pending-invitations view;
   `enrolled`-visibility content filtered to the enrolled roster.
 
-- [ ] **11.10 — ShareLink UI**
+- [x] **11.10 — ShareLink UI**
   A "get a shareable link" action on a private tune/setting, and a public
   (unauthenticated) `/shared/{token}` view route — the one deliberate
   exception to "everything requires auth" from 11.3, scoped narrowly to
