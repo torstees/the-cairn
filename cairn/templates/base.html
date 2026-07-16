@@ -73,6 +73,8 @@
         <form method="post" action="/auth/logout">
           <button type="submit" class="text-sm text-stone-300 hover:text-white transition-colors">Log out</button>
         </form>
+        {% else %}
+        <a href="/auth/login" class="text-sm text-stone-300 hover:text-white transition-colors">Sign in with Google</a>
         {% endif %}
         <button @click="toggleTuner()"
                 :class="tunerOpen ? 'text-white border-stone-400' : 'text-stone-300 border-stone-600'"
