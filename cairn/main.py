@@ -23,6 +23,7 @@ from cairn.routers import lists as lists_router
 from cairn.routers import practice as practice_router
 from cairn.routers import progress as progress_router
 from cairn.routers import settings as settings_router
+from cairn.routers import shared as shared_router
 from cairn.routers import thesession_link as thesession_link_router
 from cairn.routers import tune_sets as tune_sets_router
 from cairn.routers import tunes as tunes_router
@@ -68,6 +69,9 @@ async def handle_not_authenticated(request: Request, exc: NotAuthenticatedError)
 app.mount("/static", StaticFiles(directory=BASE_DIR.parent / "static"), name="static")
 
 app.include_router(auth_router.router)
+# Deliberate exception to "everything requires login" (see TODO 11.3): a
+# ShareLink token is itself the credential for exactly the one shared item.
+app.include_router(shared_router.router)
 _login_required = [Depends(get_current_user)]
 app.include_router(tunes_router.router, dependencies=_login_required)
 app.include_router(thesession_link_router.router, dependencies=_login_required)

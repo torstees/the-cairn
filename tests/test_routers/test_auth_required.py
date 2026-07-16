@@ -1,23 +1,4 @@
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from cairn.dependencies import get_db
-from cairn.main import app
-
-
-@pytest_asyncio.fixture
-async def unauthenticated_client(db: AsyncSession):
-    """A client with no session cookie and no get_current_user override — exercises
-    the real dependency, unlike the `client` fixture (which always logs in)."""
-
-    async def _override_db():
-        yield db
-
-    app.dependency_overrides[get_db] = _override_db
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        yield c
-    app.dependency_overrides.clear()
+from httpx import AsyncClient
 
 
 async def test_unauthenticated_request_redirects_to_login(unauthenticated_client: AsyncClient) -> None:

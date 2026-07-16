@@ -54,3 +54,17 @@ async def client(db, user):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def unauthenticated_client(db: AsyncSession):
+    """A client with no session cookie and no get_current_user override — exercises
+    the real dependency, unlike the `client` fixture (which always logs in)."""
+
+    async def _override_db():
+        yield db
+
+    app.dependency_overrides[get_db] = _override_db
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        yield c
+    app.dependency_overrides.clear()

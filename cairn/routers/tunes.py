@@ -22,6 +22,7 @@ from cairn.services.abc_utils import KEY_ROOT_MAP, build_abc, shortest_semitones
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
 from cairn.services.enrollments import get_active_enrollment_partner_ids
 from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
+from cairn.services.share_links import create_share_link, list_share_links_for_tune, revoke_share_link
 from cairn.services.tune_sets import list_sets_for_tune
 from cairn.services.tunes import (
     FAMILY_LABELS,
@@ -266,6 +267,9 @@ async def tune_detail(
         other_params.append(f"from={from_}")
     base_qs_prefix = "&".join(other_params) + ("&" if other_params else "")
 
+    setting_ids = [s.id for s in tune.settings]
+    share_links = await list_share_links_for_tune(db, tune_id, setting_ids)
+
     selected_key = target_root.value if target_root else tune.key_root.value
     key_param = f"key={selected_key}&" if key_shift else ""
     # Listed highest root first (descending) so scrolling toward the top of
@@ -310,6 +314,7 @@ async def tune_detail(
             "non_core_settings": [s for s in tune.settings if not s.is_core],
             "lists_by_box_id": lists_by_box_id,
             "active_list_id": active_list.id if active_list else None,
+            "share_links": share_links,
             **_SETTINGS_CTX,
         },
     )
@@ -541,3 +546,39 @@ async def alias_remove(
         raise HTTPException(status_code=404, detail="Alias not found")
     tune = await get_tune(db, tune_id)
     return templates.TemplateResponse(request, "tunes/partials/_aliases.html", {"tune": tune})
+
+
+async def _share_links_ctx(db: AsyncSession, tune: Tune) -> dict:
+    setting_ids = [s.id for s in tune.settings]
+    share_links = await list_share_links_for_tune(db, tune.id, setting_ids)
+    return {"tune": tune, "share_links": share_links}
+
+
+@router.post("/{tune_id}/share-links")
+async def tune_share_link_create(
+    request: Request,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    tune = await get_tune(db, tune_id)
+    if tune is None:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    await create_share_link(db, user.id, tune_id)
+    return templates.TemplateResponse(request, "tunes/partials/_share_links.html", await _share_links_ctx(db, tune))
+
+
+@router.delete("/{tune_id}/share-links/{share_link_id}")
+async def tune_share_link_revoke(
+    request: Request,
+    tune_id: int,
+    share_link_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    tune = await get_tune(db, tune_id)
+    if tune is None:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    if not await revoke_share_link(db, share_link_id, user.id):
+        raise HTTPException(status_code=404, detail="Share link not found")
+    return templates.TemplateResponse(request, "tunes/partials/_share_links.html", await _share_links_ctx(db, tune))
