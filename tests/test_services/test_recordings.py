@@ -284,15 +284,21 @@ async def test_thesession_suggestions_json_none_matching(db: AsyncSession) -> No
 async def test_thesession_suggestions_json_includes_artist_when_a_name(db: AsyncSession) -> None:
     await _thesession_recording(db, tune_id=14408, artist="Dervish", recording_name="Cast A Bell", track_number=1)
     result = json.loads(await thesession_suggestions_json(db, 14408))
-    assert result == [
-        {
-            "artist": "Dervish",
-            "title": "Cast A Bell",
-            "track_number": 1,
-            "position": 1,
-            "label": "Cast A Bell (track 1)",
-        }
-    ]
+    assert len(result) == 1
+    item = result[0]
+    assert item["artist"] == "Dervish"
+    assert item["title"] == "Cast A Bell"
+    assert item["track_number"] == 1
+    assert item["position"] == 1
+    assert item["label"] == "Cast A Bell (track 1)"
+    assert "Dervish" in item["tooltip"]
+    assert "Cast A Bell" in item["tooltip"]
+
+
+async def test_thesession_suggestions_json_tooltip_unknown_artist(db: AsyncSession) -> None:
+    await _thesession_recording(db, tune_id=14408, artist="1651")
+    item = json.loads(await thesession_suggestions_json(db, 14408))[0]
+    assert "Unknown artist" in item["tooltip"]
 
 
 async def test_thesession_suggestions_json_blanks_legacy_numeric_artist(db: AsyncSession) -> None:

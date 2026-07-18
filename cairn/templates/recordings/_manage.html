@@ -179,7 +179,7 @@
         <p class="mb-1">Suggestions from TheSession.org:</p>
         <div class="flex flex-wrap gap-1.5">
           <template x-for="(s, index) in suggestions" :key="index">
-            <button type="button" @click="applySuggestion(s, $el)"
+            <button type="button" @click="applySuggestion(s, $el)" :title="s.tooltip"
                     class="border border-stone-300 rounded-full px-2 py-0.5 hover:bg-stone-100 text-stone-600"
                     x-text="s.label"></button>
           </template>

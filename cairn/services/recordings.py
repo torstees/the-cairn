@@ -54,18 +54,25 @@ async def thesession_suggestions_json(db: AsyncSession, thesession_tune_id: int 
         .limit(_MAX_THESESSION_SUGGESTIONS)
     )
     suggestions = result.scalars().all()
-    return json.dumps(
-        [
+    items = []
+    for r in suggestions:
+        artist_display = "" if r.artist.strip().isdigit() else r.artist
+        tooltip = (
+            f"{artist_display or 'Unknown artist'} — {r.recording_name}\n"
+            f"Track {r.track_number}, position {r.position}\n"
+            f'Listed on TheSession.org as "{r.tune_name}"'
+        )
+        items.append(
             {
-                "artist": "" if r.artist.strip().isdigit() else r.artist,
+                "artist": artist_display,
                 "title": r.recording_name,
                 "track_number": r.track_number,
                 "position": r.position,
                 "label": f"{r.recording_name} (track {r.track_number})",
+                "tooltip": tooltip,
             }
-            for r in suggestions
-        ]
-    )
+        )
+    return json.dumps(items)
 
 
 async def add_reference(
