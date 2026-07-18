@@ -1,0 +1,111 @@
+<section id="tunings-section" class="mb-8">
+  {# Read by app.js's htmx:afterSwap listener to refresh the tablature
+     tuning <select> on this same page after an add/delete -- a plain data
+     blob (not an executable script), so it works regardless of whether
+     inline <script> tags in swapped HTMX content get re-run. #}
+  <script type="application/json" id="my-tunings-data">{{ tunings_json | safe }}</script>
+  <h2 class="text-xl font-semibold text-stone-700 mb-3">My Instrument Tunings</h2>
+
+  {% if error %}
+  <p class="text-sm text-red-600 mb-2">{{ error }}</p>
+  {% endif %}
+
+  {% if tunings %}
+  <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100 mb-3">
+    {% for tuning in tunings %}
+    <div class="flex items-center justify-between gap-3 px-4 py-3">
+      <div class="min-w-0">
+        <span class="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">{{ tuning.instrument.label }}</span>
+        <span class="ml-2 text-sm text-stone-700">{{ tuning.name }}</span>
+        <span class="ml-2 text-xs text-stone-400 font-mono">{{ tuning.strings | join(" ") }}</span>
+      </div>
+      <button type="button"
+              hx-delete="/tunings/{{ tuning.id }}"
+              hx-target="#tunings-section"
+              hx-swap="outerHTML"
+              hx-confirm="Delete this tuning?"
+              class="shrink-0 text-xs text-stone-400 hover:text-red-600">
+        Delete
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-stone-400 text-sm mb-3">
+    No saved tunings yet — add one below to enable tablature for guitar, banjo, mandolin, or bouzouki.
+  </p>
+  {% endif %}
+
+  <details>
+    <summary class="text-sm font-medium text-stone-500 cursor-pointer select-none hover:text-stone-700">
+      + Add a tuning
+    </summary>
+    <form hx-post="/tunings" hx-target="#tunings-section" hx-swap="outerHTML"
+          class="mt-3 flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs text-stone-500 mb-1" for="tuning-instrument">Instrument</label>
+        <select id="tuning-instrument" name="instrument" onchange="cairnUpdateTuningPresets()"
+                class="text-sm border border-stone-300 rounded-md px-2 py-1.5 bg-white text-stone-700">
+          {% for instrument in fretted_instruments %}
+          <option value="{{ instrument.value }}">{{ instrument.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-stone-500 mb-1" for="tuning-preset">Start from a preset</label>
+        <select id="tuning-preset" onchange="cairnApplyTuningPreset()"
+                class="text-sm border border-stone-300 rounded-md px-2 py-1.5 bg-white text-stone-700">
+          <option value="">Custom&hellip;</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-stone-500 mb-1" for="tuning-name">Name</label>
+        <input id="tuning-name" name="name" type="text" placeholder="e.g. DADGAD" required
+               class="text-sm border border-stone-300 rounded-md px-2 py-1.5 w-32">
+      </div>
+      <div>
+        <label class="block text-xs text-stone-500 mb-1" for="tuning-strings">
+          Tuning (ABC pitches, space-separated, low string first)
+        </label>
+        <input id="tuning-strings" name="strings_raw" type="text" placeholder="D, A, D G A d" required
+               class="text-sm border border-stone-300 rounded-md px-2 py-1.5 font-mono w-56">
+      </div>
+      <button type="submit"
+              class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-1.5 rounded-lg text-sm font-medium">
+        Save
+      </button>
+    </form>
+  </details>
+</section>
+
+<script type="application/json" id="tuning-presets-data">{{ presets_json | safe }}</script>
+<script>
+  (function () {
+    function presets() {
+      var el = document.getElementById("tuning-presets-data");
+      return el ? JSON.parse(el.textContent) : {};
+    }
+    window.cairnUpdateTuningPresets = function () {
+      var instrument = document.getElementById("tuning-instrument").value;
+      var presetSelect = document.getElementById("tuning-preset");
+      var forInstrument = presets()[instrument] || {};
+      presetSelect.innerHTML = '<option value="">Custom&hellip;</option>';
+      Object.keys(forInstrument).forEach(function (name) {
+        var opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        presetSelect.appendChild(opt);
+      });
+    };
+    window.cairnApplyTuningPreset = function () {
+      var instrument = document.getElementById("tuning-instrument").value;
+      var presetName = document.getElementById("tuning-preset").value;
+      if (!presetName) return;
+      var strings = (presets()[instrument] || {})[presetName];
+      if (!strings) return;
+      document.getElementById("tuning-name").value = presetName;
+      document.getElementById("tuning-strings").value = strings.join(" ");
+    };
+    if (document.getElementById("tuning-instrument")) cairnUpdateTuningPresets();
+  })();
+</script>

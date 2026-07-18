@@ -77,6 +77,19 @@ async def test_guest_cannot_view_private_tune(unauthenticated_client: AsyncClien
     assert tune.title not in resp.text
 
 
+async def test_guest_tune_detail_tablature_controls_render_with_no_saved_tunings(
+    unauthenticated_client: AsyncClient, db: AsyncSession
+) -> None:
+    # A guest (see #233) has no InstrumentTuning rows of their own -- the
+    # tablature controls should still render, with an empty tunings list
+    # rather than crashing on a None user.
+    tune = await _tune(db)
+    resp = await unauthenticated_client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert 'id="tablature-toggle"' in resp.text
+    assert "window.__cairnTunings = [];" in resp.text
+
+
 async def test_guest_cannot_view_enrolled_tune(unauthenticated_client: AsyncClient, db: AsyncSession) -> None:
     owner = await _other_user(db)
     tune = await _tune(db, visibility=ContentVisibility.enrolled, created_by=owner.id)
