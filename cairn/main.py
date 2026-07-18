@@ -22,6 +22,7 @@ from cairn.routers import enrollments as enrollments_router
 from cairn.routers import lists as lists_router
 from cairn.routers import practice as practice_router
 from cairn.routers import progress as progress_router
+from cairn.routers import recordings as recordings_router
 from cairn.routers import settings as settings_router
 from cairn.routers import shared as shared_router
 from cairn.routers import thesession_link as thesession_link_router
@@ -83,6 +84,7 @@ app.include_router(lists_router.router, dependencies=_login_required)
 app.include_router(practice_router.router, dependencies=_login_required)
 app.include_router(enrollments_router.router, dependencies=_login_required)
 app.include_router(tunings_router.router, dependencies=_login_required)
+app.include_router(recordings_router.router, dependencies=_login_required)
 # tunes/warmups/sets/content are NOT gated at the router level (see #225): each
 # lets a guest browse its public-catalog view routes (list/detail), while every
 # mutation route declares its own Depends(get_current_user) individually.

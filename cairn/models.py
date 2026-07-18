@@ -653,3 +653,43 @@ class InstrumentTuning(TimestampMixin, Base):
     __table_args__ = (UniqueConstraint("user_id", "instrument", "name", name="uq_instrument_tuning_name"),)
 
     user: Mapped["User"] = relationship(back_populates="instrument_tunings")
+
+
+class Recording(TimestampMixin, Base):
+    """A physical/digital recording a user learned a tune from (#186) —
+    artist/title entered once, linked to as many tunes/sets as apply via
+    RecordingReference. Not ownership-gated — a shared catalog, like
+    TuneSetting/TuneSet themselves."""
+
+    __tablename__ = "recordings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    artist: Mapped[str] = mapped_column(String(200), nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    # e.g. {"youtube": "...", "spotify": "...", "bandcamp": "..."} — same
+    # nullable-JSON-dict pattern as Content.metadata_.
+    links: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    references: Mapped[list["RecordingReference"]] = relationship(
+        back_populates="recording", cascade="all, delete-orphan"
+    )
+
+
+class RecordingReference(TimestampMixin, Base):
+    """Links a Recording to one TuneSetting or one TuneSet — exactly one of
+    setting_id/set_id is set, enforced at the service layer (mirroring
+    PracticeSessionItem.tune_id/warmup_id's construction discipline, not
+    ShareLink's DB CheckConstraint variant)."""
+
+    __tablename__ = "recording_references"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    recording_id: Mapped[int] = mapped_column(ForeignKey("recordings.id"), nullable=False)
+    setting_id: Mapped[int | None] = mapped_column(ForeignKey("tune_settings.id"), nullable=True)
+    set_id: Mapped[int | None] = mapped_column(ForeignKey("tune_sets.id"), nullable=True)
+    track_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    position: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    recording: Mapped["Recording"] = relationship(back_populates="references")
+    setting: Mapped["TuneSetting | None"] = relationship()
+    tune_set: Mapped["TuneSet | None"] = relationship()

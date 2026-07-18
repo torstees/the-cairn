@@ -463,6 +463,39 @@ recognizes a few fixed layouts (`guitar`, `mandolin`/`violin`/`fiddle`,
 count rather than the Cairn instrument name, since neither bouzouki nor
 banjo has a dedicated abcjs preset.
 
+### Recording References (`Recording` / `RecordingReference`)
+
+Lets a user tag a `TuneSetting` or a `TuneSet` with a specific recording
+("I learned this off Kevin Burke's Sweeney's Dream") plus optional
+streaming links (#186/#187). Two tables, not full Artist/Album/Track
+normalization and not a bare link field: `Recording` (`artist`, `title`,
+`links` — a nullable JSON dict like `Content.metadata_`, e.g. `{"youtube":
+"..."}`) holds the recording's own facts once; `RecordingReference` links
+it to as many settings/sets as apply, each with its own `track_number`/
+`position`. Neither model has an ownership column — like `TuneSetting`/
+`TuneSet` themselves, this is a shared catalog, not per-creator like
+`ShareLink`/`InstrumentTuning`.
+
+"Exactly one of `setting_id`/`set_id`" is enforced only at the service
+layer (`cairn/services/recordings.py`'s `add_reference`), mirroring
+`PracticeSessionItem.tune_id`/`warmup_id`'s construction-discipline
+pattern rather than `ShareLink`'s DB `CheckConstraint` — a deliberate
+choice for this one, not an oversight.
+
+One shared HTMX partial, `cairn/templates/recordings/_manage.html`,
+renders on both `tunes/detail.html` (scoped to the whole tune — every
+`RecordingReference` across all of its settings, since the issue's "per
+setting" requirement is met by a `<select>` in the add-form rather than a
+separate section per setting card, which would have meant growing
+`_settings.html`'s already-dense per-card Alpine state machine) and
+`sets/detail.html` (scoped to that one set, no setting-picker needed).
+Both routes land in `cairn/routers/recordings.py`, keyed by `owner_kind`
+in the shared context. The "pick an existing Recording" search box mirrors
+`sets/form.html`'s tune-picker combobox (`x-model` query + filtered
+`<template x-for>` dropdown over an embedded JSON blob), scoped to just
+the add-form via its own `x-data="recordingPicker()"` rather than a
+whole-page Alpine root.
+
 ### Alphabetical Sort Without Leading Articles
 
 Any field that is displayed in sorted order stores a companion `sort_*` column:
