@@ -1042,23 +1042,25 @@ sibling file (e.g. `cairn/models_thesession_tunes.py` and
   flagged this as a required-by-AGENTS.md Domain Rule #18 gap in the 8.2
   diff itself, so it was fixed there rather than left for a separate PR).
 
-- [ ] **8.4 — Side-table models + import for community data (deferred, optional)**
+- [x] **8.4 — Side-table models + import for community data (deferred, optional)**
 
-  Not needed by 8.2/8.3 or anything else in the app yet — do this whenever
-  it's actually useful, or skip it entirely. Exists to have the rest of
-  TheSession-data available to query without a later re-import project.
+  Not needed by 8.2/8.3 or anything else in the app yet — done anyway since
+  it's a small, self-contained extension of 8.1's existing import script.
+  Exists to have the rest of TheSession-data available to query without a
+  later re-import project; nothing in the app browses these tables yet.
 
-  **New models**, one per CSV, in a new `cairn/models_thesession_community.py`:
+  **New models**, one per CSV, in `cairn/models_thesession_community.py`:
 
-  - `TheSessionSet` (from `sets.csv`, header fields) — `tuneset_id` (PK),
+  - `TheSessionSet` (from `sets.csv`, header fields, deduplicated to one row
+    per `tuneset` — see `import_sets()`) — `tuneset_id` (PK),
     `submitted_date`, `member_id`, `username`, `name`
   - `TheSessionSetMember` (from `sets.csv`, one row per member) — surrogate
     `id` (PK), `tuneset_id` (FK → `TheSessionSet`), `position`
-    (`settingorder`), `tune_id`, `setting_id` — don't duplicate
-    name/type/meter/mode/abc here, join to `TheSessionSetting` (8.1) via
+    (`settingorder`), `tune_id`, `setting_id` — doesn't duplicate
+    name/type/meter/mode/abc; join to `TheSessionSetting` (8.1) via
     `setting_id` when needed
   - `TheSessionRecording` (from `recordings.csv`) — surrogate `id` (PK),
-    `recording_id` (the CSV's own `id`, not unique per row), `artist_id`,
+    `recording_id` (the CSV's own `id`, not unique per row), `artist`,
     `recording_name`, `track_number`, `position`, `tune_name`, `tune_id`
     (nullable — blank in some source rows)
   - `TheSessionVenue` (from `sessions.csv`, named to avoid confusion with our
@@ -1068,13 +1070,30 @@ sibling file (e.g. `cairn/models_thesession_tunes.py` and
     column), `starts_at` (`dtstart`), `ends_at` (`dtend`), `venue_name`,
     `address`, `town`, `area`, `country`, `latitude`, `longitude`
 
-  Extend `scripts/import_thesession.py` (from 8.1) with these four CSVs
-  rather than writing a second script — same bulk-insert,
-  delete-then-reinsert approach.
+  **Correction from this task's original spec, found via a live import
+  against the real, current CSV**: `recordings.csv`'s `artist` column was
+  assumed to be a bare opaque numeric id (no accompanying name data). Real
+  current data disagrees — 201,448 of 201,581 rows (~99.93%) hold the
+  artist's actual name as a plain string; only 133 rows (3 distinct values)
+  still hold a bare legacy numeric id, never backfilled with a name when
+  TheSession-data's schema evidently changed upstream. Field renamed
+  `artist_id` → `artist` (still just a `String`, stored as-is either way —
+  a faithful mirror, not a cleaned-up view). See 9.2's note, corrected
+  the same way.
 
-  Write tests in `tests/test_scripts/test_import_thesession.py` alongside
-  the 8.1 tests, covering the same concerns (parsing per table, re-running
-  doesn't duplicate rows) for these four CSVs.
+  Extended `scripts/import_thesession.py` (from 8.1) with these four CSVs
+  rather than a second script — same bulk-insert, delete-then-reinsert
+  approach. `sets.csv`'s dual-table split (one row per member, deduplicated
+  down to one `TheSessionSet` header per `tuneset`) is the one CSV that
+  doesn't map 1:1 to a single table — `import_sets()` flushes header rows
+  ahead of each member batch (and once more at the end) so a set's header
+  is always inserted before its own members.
+
+  Tests in `tests/test_scripts/test_import_thesession.py`, alongside the
+  8.1 tests, covering the same concerns (parsing per table, re-running
+  doesn't duplicate rows, stale rows dropped on re-run) for all four CSVs,
+  plus `TheSessionRecording`'s duplicate-`recording_id`-across-tracks case
+  and the legacy-numeric-`artist` case.
 
 ---
 
@@ -1135,14 +1154,24 @@ compilations, singles, and session-video-only references, not just albums.
   When adding a recording for a tune that has `thesession_tune_id` set,
   additionally query `TheSessionRecording` for
   `tune_id == tune.thesession_tune_id` and offer each match as a
-  pre-fillable suggestion (recording title, track number, position). **This
-  is a pre-fill, not a full auto-import**: `recordings.csv`'s `artist`
-  column is a bare numeric id with no accompanying name data anywhere in
-  TheSession-data's CSV export (no `artists.csv` exists in the dataset), so
-  the artist field is left blank for the user to fill in — same for
-  streaming links, which aren't part of TheSession's data at all. Confirmed
-  against real sample rows (`id,artist,recording,track,number,tune,tune_id`
-  → `3720,1651,"Cast A Bell",1,1,Kettledrum,14408` — `1651` is opaque).
+  pre-fillable suggestion (recording title, track number, position, and —
+  see below — artist). **This is a pre-fill, not a full auto-import**:
+  streaming links aren't part of TheSession's data at all, so those stay
+  blank for the user to fill in regardless.
+
+  Correction from this section's original note (written before 8.4 was
+  actually implemented): `recordings.csv`'s `artist` column was assumed to
+  be a bare opaque numeric id. A live import against the real, current CSV
+  (done as part of 8.4) shows this is stale — 201,448 of 201,581 rows
+  (~99.93%) now hold the artist's actual name as a plain string (e.g.
+  `Dervish`), not a numeric id; only a small legacy fraction (133 rows, 3
+  distinct values: `422`, `1651`, `1691`) still hold a bare leftover numeric
+  id, presumably never backfilled with a name when TheSession-data's own
+  schema changed upstream. `TheSessionRecording.artist` (8.4) stores
+  whichever it is, as-is. So the pre-fill suggestion here **can** include
+  the artist field directly in the near-universal case — only fall back to
+  leaving it blank when the stored value is purely numeric (i.e. still one
+  of those legacy rows).
 
 ---
 
