@@ -8,34 +8,115 @@
   {% if references %}
   <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100 mb-3">
     {% for ref in references %}
-    <div class="flex items-center justify-between gap-3 px-4 py-3">
-      <div class="min-w-0">
-        {% if owner_kind == "tune" and ref.setting %}
-        <span class="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">{{ ref.setting.label }}</span>
-        {% endif %}
-        <span class="text-sm text-stone-700">{{ ref.recording.artist }} &mdash; {{ ref.recording.title }}</span>
-        {% if ref.track_number %}
-        <span class="text-xs text-stone-400">
-          Track {{ ref.track_number }}{% if ref.position %}, #{{ ref.position }}{% endif %}
-        </span>
-        {% endif %}
-        {% if ref.recording.links %}
-        <div class="mt-1 flex gap-3">
-          {% for key, url in ref.recording.links.items() %}
-          <a href="{{ url }}" target="_blank" rel="noopener noreferrer"
-             class="text-xs text-stone-500 hover:text-stone-700 underline capitalize">{{ key }}</a>
-          {% endfor %}
+    <div x-data="{ editing: false }" class="px-4 py-3">
+      <div class="flex items-center justify-between gap-3" x-show="!editing">
+        <div class="min-w-0">
+          {% if owner_kind == "tune" and ref.setting %}
+          <span class="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">{{ ref.setting.label }}</span>
+          {% endif %}
+          <span class="text-sm text-stone-700">{{ ref.recording.artist }} &mdash; {{ ref.recording.title }}</span>
+          {% if ref.track_number %}
+          <span class="text-xs text-stone-400">
+            Track {{ ref.track_number }}{% if ref.position %}, #{{ ref.position }}{% endif %}
+          </span>
+          {% endif %}
+          {% if ref.recording.links %}
+          <div class="mt-1 flex gap-3">
+            {% for key, url in ref.recording.links.items() %}
+            <a href="{{ url }}" target="_blank" rel="noopener noreferrer"
+               class="text-xs text-stone-500 hover:text-stone-700 underline capitalize">{{ key }}</a>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
+        <div class="shrink-0 flex items-center gap-2">
+          <button type="button" @click="editing = true"
+                  class="text-xs border border-stone-300 text-stone-600 hover:bg-stone-100 px-2 py-1 rounded">
+            Edit
+          </button>
+          <button type="button"
+                  hx-delete="/recordings/references/{{ ref.id }}"
+                  hx-target="#recordings-section"
+                  hx-swap="outerHTML"
+                  hx-confirm="Remove this recording reference?"
+                  class="text-xs text-stone-400 hover:text-red-600">
+            Remove
+          </button>
+        </div>
       </div>
-      <button type="button"
-              hx-delete="/recordings/references/{{ ref.id }}"
+
+      {# ── inline edit form ── #}
+      <div x-show="editing" x-cloak class="pt-1">
+        <form hx-post="/recordings/references/{{ ref.id }}"
               hx-target="#recordings-section"
               hx-swap="outerHTML"
-              hx-confirm="Remove this recording reference?"
-              class="shrink-0 text-xs text-stone-400 hover:text-red-600">
-        Remove
-      </button>
+              class="space-y-3">
+
+          {% if owner_kind == "tune" and ref.setting %}
+          <div>
+            <label class="block text-xs font-medium text-stone-600 mb-1">Setting</label>
+            <select name="setting_id" required
+                    class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
+              {% for setting in tune.settings %}
+              <option value="{{ setting.id }}" {% if setting.id == ref.setting_id %}selected{% endif %}>{{ setting.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-stone-600 mb-1">Artist</label>
+              <input name="artist" type="text" value="{{ ref.recording.artist }}"
+                     class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-stone-600 mb-1">Title</label>
+              <input name="title" type="text" value="{{ ref.recording.title }}"
+                     class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-stone-600 mb-1">YouTube link</label>
+              <input name="link_youtube" type="url" value="{{ (ref.recording.links or {}).get('youtube', '') }}"
+                     class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-stone-600 mb-1">Spotify link</label>
+              <input name="link_spotify" type="url" value="{{ (ref.recording.links or {}).get('spotify', '') }}"
+                     class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-stone-600 mb-1">Bandcamp link</label>
+              <input name="link_bandcamp" type="url" value="{{ (ref.recording.links or {}).get('bandcamp', '') }}"
+                     class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-stone-600 mb-1">Track #</label>
+              <input name="track_number" type="number" min="1" value="{{ ref.track_number or '' }}"
+                     class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-stone-600 mb-1">Position in track</label>
+              <input name="position" type="number" min="1" value="{{ ref.position or '' }}"
+                     class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="submit"
+                    class="bg-stone-700 hover:bg-stone-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
+              Save
+            </button>
+            <button type="button" @click="editing = false"
+                    class="px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 text-sm font-medium">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
     {% endfor %}
   </div>
@@ -170,4 +251,11 @@
       },
     };
   }
+
+  // Re-sync the "Setting" <select>s here (add-form and each reference's
+  // edit form) whenever #settings-section changes -- see the one-time
+  // htmx:afterSwap listener registered in app.js (registering it here
+  // instead would re-add a duplicate listener on every recordings-section
+  // swap). Harmless no-op on set_detail.html, which has no settings-section.
+  if (window.refreshRecordingSettingSelects) window.refreshRecordingSettingSelects();
 </script>

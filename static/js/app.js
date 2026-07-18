@@ -1961,6 +1961,33 @@
       if (window.__cairnRefreshTuningSelect) window.__cairnRefreshTuningSelect();
     });
 
+    // Recordings' "Setting" <select>s (recordings/_manage.html, #187) are
+    // rendered from tune.settings at the time that section last rendered --
+    // adding a new setting only swaps #settings-section, so without this a
+    // freshly added setting wouldn't show up in the recordings add/edit
+    // forms until a full page reload. Registered once here (not inside the
+    // swapped recordings partial itself) so repeated recordings-section
+    // swaps don't stack up duplicate listeners.
+    window.refreshRecordingSettingSelects = function () {
+      var settingsSection = document.getElementById("settings-section");
+      if (!settingsSection) return;
+      var cards = settingsSection.querySelectorAll("[data-setting-id]");
+      document.querySelectorAll('#recordings-section select[name="setting_id"]').forEach(function (select) {
+        var current = select.value;
+        select.innerHTML = "";
+        cards.forEach(function (card) {
+          var opt = document.createElement("option");
+          opt.value = card.dataset.settingId;
+          opt.textContent = card.dataset.settingLabel;
+          select.appendChild(opt);
+        });
+        if (current && select.querySelector('option[value="' + current + '"]')) select.value = current;
+      });
+    };
+    document.addEventListener("htmx:afterSwap", function (e) {
+      if (e.detail.target && e.detail.target.id === "settings-section") window.refreshRecordingSettingSelects();
+    });
+
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { clearCairnModal(); closeTheSessionWizard(); }
     });

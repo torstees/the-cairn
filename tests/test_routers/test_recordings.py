@@ -2,10 +2,10 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, TuneType
-from cairn.schemas import TuneCreate
+from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.recordings import add_reference, create_recording, list_recordings
 from cairn.services.tune_sets import create_set
-from cairn.services.tunes import create_tune, get_tune
+from cairn.services.tunes import create_setting, create_tune, get_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA:|"
 
@@ -106,6 +106,73 @@ async def test_recording_create_new_for_set(client: AsyncClient, db: AsyncSessio
 async def test_recording_create_404_for_unknown_set(client: AsyncClient) -> None:
     resp = await client.post("/recordings/sets/9999", data={"artist": "x", "title": "y"})
     assert resp.status_code == 404
+
+
+# ── update (edit) ─────────────────────────────────────────────────────────────
+
+
+async def test_recording_reference_update_edits_artist_and_title(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _tune(db)
+    core = tune.settings[0]
+    recording = await create_recording(db, "Kevin Burke", "Sweeney's Dream")
+    reference = await add_reference(db, recording.id, setting_id=core.id)
+
+    resp = await client.post(
+        f"/recordings/references/{reference.id}",
+        data={"setting_id": str(core.id), "artist": "Kevin Burke Band", "title": "Sweeney's Dream (Live)"},
+    )
+    assert resp.status_code == 200
+    assert "Kevin Burke Band" in resp.text
+    assert "Sweeney's Dream (Live)" in resp.text
+
+
+async def test_recording_reference_update_repoints_to_different_setting(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _tune(db)
+    core = tune.settings[0]
+    other_setting = await create_setting(
+        db, tune.id, TuneSettingCreate(tune_id=tune.id, label="Alt", abc_notation="|:GABc defg|GABc defg:|")
+    )
+    # This test's fixture shares one AsyncSession across setup and the
+    # simulated HTTP request, unlike production (a fresh session per
+    # request) -- tune.settings was already eager-loaded before the second
+    # setting existed, and selectinload doesn't refresh an already-loaded
+    # collection on the same identity-mapped object. Expire it so the
+    # route's own get_tune() call sees both settings, matching what a real,
+    # separate request would see.
+    db.expire(tune, ["settings"])
+    recording = await create_recording(db, "Kevin Burke", "Sweeney's Dream")
+    reference = await add_reference(db, recording.id, setting_id=core.id)
+
+    resp = await client.post(
+        f"/recordings/references/{reference.id}",
+        data={"setting_id": str(other_setting.id)},
+    )
+    assert resp.status_code == 200
+    assert "Alt" in resp.text
+
+
+async def test_recording_reference_update_for_set(client: AsyncClient, db: AsyncSession) -> None:
+    tune_set = await create_set(db, title="Evening Jigs")
+    recording = await create_recording(db, "Dervish", "Live in Palma")
+    reference = await add_reference(db, recording.id, set_id=tune_set.id)
+
+    resp = await client.post(
+        f"/recordings/references/{reference.id}",
+        data={"artist": "Dervish", "title": "Live in Palma (Remastered)"},
+    )
+    assert resp.status_code == 200
+    assert "Remastered" in resp.text
+
+
+async def test_recording_reference_update_404_for_unknown_id(client: AsyncClient) -> None:
+    resp = await client.post("/recordings/references/9999", data={})
+    assert resp.status_code == 404
+
+
+async def test_unauthenticated_update_redirects_to_login(unauthenticated_client: AsyncClient) -> None:
+    resp = await unauthenticated_client.post("/recordings/references/1", data={}, follow_redirects=False)
+    assert resp.status_code == 307
+    assert resp.headers["location"].startswith("/auth/login")
 
 
 # ── delete ────────────────────────────────────────────────────────────────────

@@ -11,6 +11,8 @@ from cairn.services.recordings import (
     list_recordings_for_tune,
     recordings_to_json,
     remove_reference,
+    update_recording,
+    update_reference,
 )
 from cairn.services.tune_sets import get_set
 from cairn.services.tunes import get_tune
@@ -155,6 +157,57 @@ async def recording_create_for_set(
         track_number=_parse_int(track_number),
         position=_parse_int(position),
     )
+    return templates.TemplateResponse(request, "recordings/_manage.html", await _set_recordings_ctx(db, tune_set))
+
+
+@router.post("/references/{reference_id}")
+async def recording_reference_update(
+    reference_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    setting_id: str = Form(default=""),
+    artist: str = Form(default=""),
+    title: str = Form(default=""),
+    track_number: str = Form(default=""),
+    position: str = Form(default=""),
+    link_youtube: str = Form(default=""),
+    link_spotify: str = Form(default=""),
+    link_bandcamp: str = Form(default=""),
+) -> Response:
+    """Edit a reference in place: the underlying Recording's artist/title/
+    links (shared everywhere it's tagged), plus this one reference's
+    setting (if setting-scoped — re-pointing it at a different setting of
+    the same tune) and track_number/position."""
+    reference = await db.get(RecordingReference, reference_id)
+    if reference is None:
+        raise HTTPException(status_code=404, detail="Recording reference not found")
+
+    artist, title = artist.strip(), title.strip()
+    if artist and title:
+        await update_recording(
+            db, reference.recording_id, artist, title, _links_from_form(link_youtube, link_spotify, link_bandcamp)
+        )
+
+    setting_id_int = _parse_int(setting_id)
+    await update_reference(
+        db,
+        reference_id,
+        setting_id=setting_id_int,
+        track_number=_parse_int(track_number),
+        position=_parse_int(position),
+    )
+
+    if reference.setting_id is not None:
+        setting = await db.get(TuneSetting, reference.setting_id)
+        tune = await get_tune(db, setting.tune_id) if setting else None
+        if tune is None:
+            raise HTTPException(status_code=404, detail="Tune not found")
+        return templates.TemplateResponse(request, "recordings/_manage.html", await _tune_recordings_ctx(db, tune))
+
+    tune_set = await get_set(db, reference.set_id)
+    if tune_set is None:
+        raise HTTPException(status_code=404, detail="Set not found")
     return templates.TemplateResponse(request, "recordings/_manage.html", await _set_recordings_ctx(db, tune_set))
 
 

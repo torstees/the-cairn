@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, TuneType
-from cairn.schemas import TuneCreate
+from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.recordings import (
     add_reference,
     create_recording,
@@ -12,9 +12,11 @@ from cairn.services.recordings import (
     list_recordings_for_tune,
     recordings_to_json,
     remove_reference,
+    update_recording,
+    update_reference,
 )
 from cairn.services.tune_sets import create_set
-from cairn.services.tunes import create_tune, get_tune
+from cairn.services.tunes import create_setting, create_tune, get_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA:|"
 
@@ -169,3 +171,77 @@ async def test_remove_reference_does_not_delete_recording_with_other_references(
     result = await list_recordings(db)
     assert len(result) == 1
     assert (await list_recordings_for_set(db, tune_set.id))[0].recording.id == recording.id
+
+
+# ── update_recording / update_reference ──────────────────────────────────────
+
+
+async def test_update_recording(db: AsyncSession) -> None:
+    recording = await create_recording(db, "Kevin Burke", "Sweeney's Dream")
+    updated = await update_recording(db, recording.id, "Kevin Burke Band", "Sweeney's Dream (Live)", {"youtube": "x"})
+    assert updated is not None
+    assert updated.artist == "Kevin Burke Band"
+    assert updated.title == "Sweeney's Dream (Live)"
+    assert updated.links == {"youtube": "x"}
+
+
+async def test_update_recording_unknown_id_returns_none(db: AsyncSession) -> None:
+    assert await update_recording(db, 9999, "x", "y") is None
+
+
+async def test_update_recording_applies_to_every_reference(db: AsyncSession) -> None:
+    tune = await _tune(db)
+    core = tune.settings[0]
+    tune_set = await create_set(db, title="Evening Jigs")
+    recording = await create_recording(db, "Kevin Burke", "Sweeney's Dream")
+    await add_reference(db, recording.id, setting_id=core.id)
+    await add_reference(db, recording.id, set_id=tune_set.id)
+
+    await update_recording(db, recording.id, "Kevin Burke Band", "Sweeney's Dream (Live)")
+
+    setting_refs = await list_recordings_for_setting(db, core.id)
+    set_refs = await list_recordings_for_set(db, tune_set.id)
+    assert setting_refs[0].recording.artist == "Kevin Burke Band"
+    assert set_refs[0].recording.artist == "Kevin Burke Band"
+
+
+async def test_update_reference_track_number_and_position(db: AsyncSession) -> None:
+    tune = await _tune(db)
+    core = tune.settings[0]
+    recording = await create_recording(db, "Kevin Burke", "Sweeney's Dream")
+    reference = await add_reference(db, recording.id, setting_id=core.id)
+
+    updated = await update_reference(db, reference.id, track_number=4, position=2)
+    assert updated is not None
+    assert updated.track_number == 4
+    assert updated.position == 2
+
+
+async def test_update_reference_repoints_to_different_setting_of_same_tune(db: AsyncSession) -> None:
+    tune = await _tune(db)
+    core = tune.settings[0]
+    other_setting = await create_setting(
+        db, tune.id, TuneSettingCreate(tune_id=tune.id, label="Alt", abc_notation="|:GABc defg|GABc defg:|")
+    )
+    recording = await create_recording(db, "Kevin Burke", "Sweeney's Dream")
+    reference = await add_reference(db, recording.id, setting_id=core.id)
+
+    updated = await update_reference(db, reference.id, setting_id=other_setting.id)
+    assert updated.setting_id == other_setting.id
+    assert await list_recordings_for_setting(db, core.id) == []
+    assert len(await list_recordings_for_setting(db, other_setting.id)) == 1
+
+
+async def test_update_reference_ignores_setting_id_for_set_scoped_reference(db: AsyncSession) -> None:
+    tune_set = await create_set(db, title="Evening Jigs")
+    recording = await create_recording(db, "Dervish", "Live in Palma")
+    reference = await add_reference(db, recording.id, set_id=tune_set.id)
+
+    updated = await update_reference(db, reference.id, setting_id=999, track_number=1)
+    assert updated.setting_id is None
+    assert updated.set_id == tune_set.id
+    assert updated.track_number == 1
+
+
+async def test_update_reference_unknown_id_returns_none(db: AsyncSession) -> None:
+    assert await update_reference(db, 9999, track_number=1) is None

@@ -54,6 +54,46 @@ async def add_reference(
     return reference
 
 
+async def update_recording(
+    db: AsyncSession, recording_id: int, artist: str, title: str, links: dict | None = None
+) -> Recording | None:
+    """Edit a Recording's own facts — applies everywhere it's referenced,
+    since it's entered once and shared across every tune/set it's tagged on."""
+    recording = await db.get(Recording, recording_id)
+    if recording is None:
+        return None
+    recording.artist = artist
+    recording.title = title
+    recording.links = links or None
+    await db.commit()
+    await db.refresh(recording)
+    return recording
+
+
+async def update_reference(
+    db: AsyncSession,
+    reference_id: int,
+    *,
+    setting_id: int | None = None,
+    track_number: int | None = None,
+    position: int | None = None,
+) -> RecordingReference | None:
+    """Edit a reference's own fields — track_number/position always, and
+    setting_id only for a setting-scoped reference (re-pointing it at a
+    different setting of the same tune; never changes set_id/setting_id's
+    presence, just which one)."""
+    reference = await db.get(RecordingReference, reference_id)
+    if reference is None:
+        return None
+    if reference.setting_id is not None and setting_id is not None:
+        reference.setting_id = setting_id
+    reference.track_number = track_number
+    reference.position = position
+    await db.commit()
+    await db.refresh(reference)
+    return reference
+
+
 async def list_recordings_for_setting(db: AsyncSession, setting_id: int) -> list[RecordingReference]:
     result = await db.execute(
         select(RecordingReference)
