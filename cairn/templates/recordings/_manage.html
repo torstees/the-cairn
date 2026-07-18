@@ -1,0 +1,173 @@
+<section id="recordings-section" class="mb-8">
+  <h2 class="text-xl font-semibold text-stone-700 mb-3">Recordings</h2>
+
+  {% if error %}
+  <p class="text-sm text-red-600 mb-2">{{ error }}</p>
+  {% endif %}
+
+  {% if references %}
+  <div class="bg-white rounded-lg shadow-sm divide-y divide-stone-100 mb-3">
+    {% for ref in references %}
+    <div class="flex items-center justify-between gap-3 px-4 py-3">
+      <div class="min-w-0">
+        {% if owner_kind == "tune" and ref.setting %}
+        <span class="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">{{ ref.setting.label }}</span>
+        {% endif %}
+        <span class="text-sm text-stone-700">{{ ref.recording.artist }} &mdash; {{ ref.recording.title }}</span>
+        {% if ref.track_number %}
+        <span class="text-xs text-stone-400">
+          Track {{ ref.track_number }}{% if ref.position %}, #{{ ref.position }}{% endif %}
+        </span>
+        {% endif %}
+        {% if ref.recording.links %}
+        <div class="mt-1 flex gap-3">
+          {% for key, url in ref.recording.links.items() %}
+          <a href="{{ url }}" target="_blank" rel="noopener noreferrer"
+             class="text-xs text-stone-500 hover:text-stone-700 underline capitalize">{{ key }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <button type="button"
+              hx-delete="/recordings/references/{{ ref.id }}"
+              hx-target="#recordings-section"
+              hx-swap="outerHTML"
+              hx-confirm="Remove this recording reference?"
+              class="shrink-0 text-xs text-stone-400 hover:text-red-600">
+        Remove
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-stone-400 text-sm mb-3">No recordings tagged yet.</p>
+  {% endif %}
+
+  <details>
+    <summary class="text-sm font-medium text-stone-500 cursor-pointer select-none hover:text-stone-700">
+      + Add a recording
+    </summary>
+    <form hx-post="{% if owner_kind == 'tune' %}/recordings/tunes/{{ tune.id }}{% else %}/recordings/sets/{{ tune_set.id }}{% endif %}"
+          hx-target="#recordings-section"
+          hx-swap="outerHTML"
+          x-data="recordingPicker()"
+          class="mt-3 space-y-3 bg-white rounded-lg shadow-sm p-4">
+
+      {% if owner_kind == "tune" %}
+      <div>
+        <label class="block text-xs font-medium text-stone-600 mb-1">Setting</label>
+        <select name="setting_id" required
+                class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400">
+          {% for setting in tune.settings %}
+          <option value="{{ setting.id }}">{{ setting.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div class="flex gap-4 text-sm text-stone-600">
+        <label class="flex items-center gap-1.5">
+          <input type="radio" name="_mode" value="existing" x-model="mode" checked>
+          Pick existing recording
+        </label>
+        <label class="flex items-center gap-1.5">
+          <input type="radio" name="_mode" value="new" x-model="mode">
+          Add new recording
+        </label>
+      </div>
+
+      <div x-show="mode === 'existing'" x-cloak @click.outside="open=false">
+        <label class="block text-xs font-medium text-stone-600 mb-1">Recording</label>
+        <div class="relative">
+          <input type="text" x-model="query" @focus="open=true" @input="open=true; selectedId=''"
+                 @keydown.escape="open=false" autocomplete="off"
+                 placeholder="Search recordings&hellip;"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+          <input type="hidden" name="recording_id" :value="mode === 'existing' ? selectedId : ''">
+          <ul x-show="open && filtered.length > 0" x-cloak
+              class="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+            <template x-for="r in filtered" :key="r.id">
+              <li @click="select(r)" class="px-3 py-2 text-sm text-stone-800 hover:bg-stone-100 cursor-pointer" x-text="r.label"></li>
+            </template>
+          </ul>
+        </div>
+      </div>
+
+      <div x-show="mode === 'new'" x-cloak class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-stone-600 mb-1">Artist</label>
+          <input name="artist" type="text"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-stone-600 mb-1">Title</label>
+          <input name="title" type="text"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-stone-600 mb-1">YouTube link <span class="text-stone-400 font-normal">(optional)</span></label>
+          <input name="link_youtube" type="url"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-stone-600 mb-1">Spotify link <span class="text-stone-400 font-normal">(optional)</span></label>
+          <input name="link_spotify" type="url"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-stone-600 mb-1">Bandcamp link <span class="text-stone-400 font-normal">(optional)</span></label>
+          <input name="link_bandcamp" type="url"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-stone-600 mb-1">
+            Track # <span class="text-stone-400 font-normal">(optional)</span>
+          </label>
+          <input name="track_number" type="number" min="1"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-stone-600 mb-1">
+            Position in track <span class="text-stone-400 font-normal">(optional, for medleys)</span>
+          </label>
+          <input name="position" type="number" min="1"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+      </div>
+
+      <button type="submit"
+              class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium">
+        Add Recording
+      </button>
+    </form>
+  </details>
+</section>
+
+<script type="application/json" id="recordings-data">{{ recordings_json | safe }}</script>
+<script>
+  function recordingPicker() {
+    return {
+      mode: 'existing',
+      query: '',
+      open: false,
+      selectedId: '',
+      recordings: (function () {
+        var el = document.getElementById('recordings-data');
+        try { return el ? JSON.parse(el.textContent) : []; } catch (e) { return []; }
+      })(),
+      get filtered() {
+        var q = this.query.toLowerCase();
+        var list = q ? this.recordings.filter(function (r) { return r.label.toLowerCase().includes(q); }) : this.recordings;
+        return list.slice(0, 50);
+      },
+      select(r) {
+        this.selectedId = r.id;
+        this.query = r.label;
+        this.open = false;
+      },
+    };
+  }
+</script>

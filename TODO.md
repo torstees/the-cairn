@@ -1115,7 +1115,7 @@ tunes/settings as apply, each with its own track position. Call it
 "Recording," not "Album" — matches TheSession's own terminology and covers
 compilations, singles, and session-video-only references, not just albums.
 
-- [ ] **9.1 — Recording model + tune/set linking**
+- [x] **9.1 — Recording model + tune/set linking**
 
   **New models** in `cairn/models.py`:
   ```

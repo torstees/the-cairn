@@ -10,6 +10,7 @@ from cairn.dependencies import get_current_user, get_current_user_optional, get_
 from cairn.models import ProgressStatus, StudentProgress, TuneSetting, TuneType, User
 from cairn.services.abc_utils import build_set_abc
 from cairn.services.boxes import get_box
+from cairn.services.recordings import list_recordings, list_recordings_for_set, recordings_to_json
 from cairn.services.tune_sets import (
     create_set,
     delete_set,
@@ -289,6 +290,9 @@ async def set_detail(
             "tune_aliases_by_id": tune_aliases_by_id,
             "box_id": box_id,
             "last_tempo": last_tempo,
+            "owner_kind": "set",
+            "references": await list_recordings_for_set(db, set_id),
+            "recordings_json": recordings_to_json(await list_recordings(db)),
         },
     )
 

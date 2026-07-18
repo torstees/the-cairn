@@ -22,6 +22,7 @@ from cairn.services.abc_utils import KEY_ROOT_MAP, build_abc, shortest_semitones
 from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
 from cairn.services.enrollments import get_active_enrollment_partner_ids
 from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
+from cairn.services.recordings import list_recordings, list_recordings_for_tune, recordings_to_json
 from cairn.services.share_links import create_share_link, list_share_links_for_tune, revoke_share_link
 from cairn.services.tune_sets import list_sets_for_tune
 from cairn.services.tunes import (
@@ -287,6 +288,8 @@ async def tune_detail(
 
     setting_ids = [s.id for s in tune.settings]
     share_links = await list_share_links_for_tune(db, tune_id, setting_ids)
+    recording_references = await list_recordings_for_tune(db, setting_ids)
+    all_recordings_json = recordings_to_json(await list_recordings(db))
 
     selected_key = target_root.value if target_root else tune.key_root.value
     key_param = f"key={selected_key}&" if key_shift else ""
@@ -337,6 +340,9 @@ async def tune_detail(
             "tunings_json": my_tunings_json,
             "fretted_instruments": sorted(FRETTED_INSTRUMENTS, key=lambda i: i.label),
             "presets_json": PRESET_TUNINGS_JSON,
+            "owner_kind": "tune",
+            "references": recording_references,
+            "recordings_json": all_recordings_json,
             **_SETTINGS_CTX,
         },
     )
