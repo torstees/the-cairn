@@ -337,6 +337,7 @@ class User(TimestampMixin, Base):
         back_populates="student", foreign_keys="Enrollment.student_id"
     )
     share_links: Mapped[list["ShareLink"]] = relationship(back_populates="created_by_user")
+    instrument_tunings: Mapped[list["InstrumentTuning"]] = relationship(back_populates="user")
 
 
 class TuneBox(TimestampMixin, Base):
@@ -633,3 +634,22 @@ class ShareLink(TimestampMixin, Base):
     tune: Mapped["Tune | None"] = relationship()
     setting: Mapped["TuneSetting | None"] = relationship()
     created_by_user: Mapped["User"] = relationship(back_populates="share_links")
+
+
+class InstrumentTuning(TimestampMixin, Base):
+    """A user's named string tuning for a fretted instrument (e.g. guitar
+    DADGAD) — feeds abcjs's tablature rendering on tune_detail. Not tied to
+    any one tune; reusable across every tune on that instrument."""
+
+    __tablename__ = "instrument_tunings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    instrument: Mapped[Instrument] = mapped_column(Enum(Instrument), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    # ABC pitch notation, low to high (e.g. ["D,", "A,", "D", "G", "A", "d"] for guitar DADGAD).
+    strings: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+
+    __table_args__ = (UniqueConstraint("user_id", "instrument", "name", name="uq_instrument_tuning_name"),)
+
+    user: Mapped["User"] = relationship(back_populates="instrument_tunings")

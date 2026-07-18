@@ -142,6 +142,21 @@
             &#9834; Drone
           </button>
         </div>
+        <div class="flex items-center gap-1.5">
+          <label for="tablature-toggle" class="text-sm text-stone-500 select-none flex items-center gap-1">
+            <input type="checkbox" id="tablature-toggle" class="accent-stone-600">
+            Tablature
+          </label>
+          <select id="tablature-instrument" disabled
+                  class="text-sm border border-stone-300 rounded-md px-2 py-1.5 bg-white text-stone-700 disabled:opacity-50">
+            {% for instrument in fretted_instruments %}
+            <option value="{{ instrument.value }}">{{ instrument.label }}</option>
+            {% endfor %}
+          </select>
+          <select id="tablature-tuning" disabled
+                  class="text-sm border border-stone-300 rounded-md px-2 py-1.5 bg-white text-stone-700 disabled:opacity-50">
+          </select>
+        </div>
       </div>
       <details class="mt-4">
         <summary class="text-sm font-medium text-stone-500 cursor-pointer select-none hover:text-stone-700">
@@ -169,11 +184,14 @@
     {% if last_tempo %}window.__cairnLastTempo = {{ last_tempo }};{% endif %}
     {% if box_id %}window.__cairnBoxId = {{ box_id }};{% endif %}
     {% if active_setting_id %}window.__cairnActiveSettingId = {{ active_setting_id }};{% endif %}
+    window.__cairnTunings = {{ tunings_json | safe }};
   </script>
 
   {% include "tunes/partials/_aliases.html" %}
 
   {% include "tunes/partials/_settings.html" %}
+
+  {% include "tunings/_manage.html" %}
 
   {% include "tunes/partials/_difficulty.html" %}
 

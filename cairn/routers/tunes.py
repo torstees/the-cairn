@@ -39,6 +39,7 @@ from cairn.services.tunes import (
     resolve_display_context,
     update_tune,
 )
+from cairn.services.tunings import FRETTED_INSTRUMENTS, PRESET_TUNINGS_JSON, list_tunings, tunings_to_json
 from cairn.templating import templates
 
 router = APIRouter(prefix="/tunes", tags=["tunes"])
@@ -252,12 +253,14 @@ async def tune_detail(
         settings_abc = {sid: transpose_abc(abc, transpose) for sid, abc in settings_abc.items()}
     beats_per_bar = int(tune.time_signature.split("/")[0])
 
-    # A guest (see #225) has no tempo history, boxes, or lists of their own.
+    # A guest (see #225) has no tempo history, boxes, lists, or saved
+    # instrument tunings of their own.
     if user is None:
         min_tempo, tempo_records = None, []
         boxes: list = []
         lists_by_box_id: dict[int, list] = {}
         active_list = None
+        my_tunings = []
     else:
         min_tempo, tempo_records = await get_tempo_history(db, user.id, tune_id)
         boxes = await list_boxes(db, user.id)
@@ -265,6 +268,8 @@ async def tune_detail(
         for practice_list in await list_lists(db, user.id):
             lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
         active_list = await get_active_list(db, user.id)
+        my_tunings = await list_tunings(db, user.id)
+    my_tunings_json = tunings_to_json(my_tunings)
     box_entries = {b.id: next((e for e in b.entries if e.tune_id == tune_id), None) for b in boxes}
     member_sets = await list_sets_for_tune(db, tune_id)
 
@@ -328,6 +333,10 @@ async def tune_detail(
             "lists_by_box_id": lists_by_box_id,
             "active_list_id": active_list.id if active_list else None,
             "share_links": share_links,
+            "tunings": my_tunings,
+            "tunings_json": my_tunings_json,
+            "fretted_instruments": sorted(FRETTED_INSTRUMENTS, key=lambda i: i.label),
+            "presets_json": PRESET_TUNINGS_JSON,
             **_SETTINGS_CTX,
         },
     )

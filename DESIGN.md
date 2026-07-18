@@ -422,6 +422,47 @@ standard headers (`T:`, `K:`, `M:`, `R:`, etc.) are assembled from DB fields
 at render time. Headers in the mapped set that appear in `abc_notation` are
 silently dropped (DB value takes precedence).
 
+### Tablature Rendering (`InstrumentTuning`)
+
+Optional guitar/banjo/mandolin/bouzouki tablature alongside standard
+notation on `tunes/detail.html` (#233) — purely a client-side abcjs
+rendering option (its `tablature` visual param), never touching
+`build_abc()` or the stored ABC string. `InstrumentTuning` (`user_id`,
+`instrument`, `name`, `strings`: an ordered list of ABC pitches, low to
+high) lets a user save named tunings like DADGAD per fretted instrument —
+`cairn/services/tunings.py`'s `PRESET_TUNINGS` offers well-known ones
+(Standard, Drop D, DADGAD, etc.) as a starting point so raw ABC pitch
+notation is rarely typed by hand. `FRETTED_INSTRUMENTS` restricts which of
+the `Instrument` enum's members this applies to — no DB constraint, just a
+service-layer check, since abcjs's fret-position math has no meaning for
+the rest of the enum (fiddle, whistle, etc.).
+
+Managed inline on `tune_detail` via `cairn/routers/tunings.py` (`POST
+/tunings`, `DELETE /tunings/{id}`, both login-gated — not one of the
+guest-open routers from #225) returning the `tunings/_manage.html` HTMX
+partial, even though a tuning itself isn't tune-scoped (it's reusable
+across every tune on that instrument) — surfaced there purely for
+convenience, matching where `_share_links.html` already does the same
+thing for a genuinely tune-scoped resource. Duplicate `(user, instrument,
+name)` is checked with a pre-query rather than catching the DB's
+`IntegrityError` after a failed commit — recovering an `AsyncSession` after
+a failed flush to immediately query it again inside the same request hit
+`MissingGreenlet`, the same class of async/greenlet trap this codebase has
+run into before.
+
+`window.__cairnTunings` (set from `tune_detail`'s own context on page load)
+is the tablature `<select>`'s data source; adding/deleting a tuning via the
+partial re-embeds a fresh `<script type="application/json">` blob inside
+`#tunings-section` (not an executable `window.__cairnTunings = ...`
+assignment, since relying on inline `<script>` tags re-running inside
+HTMX-swapped content is unnecessary risk) that a `htmx:afterSwap` listener
+in `app.js` reads to update the global and repopulate the dropdown —
+without a full page reload. abcjs's own `instrument` tablature option only
+recognizes a few fixed layouts (`guitar`, `mandolin`/`violin`/`fiddle`,
+`fiveString`); `tablatureLayoutFor()` derives it from the tuning's string
+count rather than the Cairn instrument name, since neither bouzouki nor
+banjo has a dedicated abcjs preset.
+
 ### Alphabetical Sort Without Leading Articles
 
 Any field that is displayed in sorted order stores a companion `sort_*` column:

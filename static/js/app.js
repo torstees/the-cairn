@@ -31,6 +31,29 @@
   var cursorHighlightEl = null;
   var rebuildMapTimer = null;
 
+  // ── tablature (guitar/banjo/mandolin/bouzouki) ─────────────────────────────
+  // Rendering-only — never touches the stored ABC string. See #233.
+  var currentTablature = null;
+
+  // Always-available "Standard" tuning per instrument, with no saved-tunings
+  // round trip needed. Bouzouki and (tenor) banjo share mandolin's 4-string
+  // GDAE layout, matching services/tunings.py's PRESET_TUNINGS.
+  var TABLATURE_STANDARD_TUNINGS = {
+    guitar: ["E,", "A,", "D", "G", "B", "e"],
+    mandolin: ["G,", "D", "A", "e"],
+    bouzouki: ["G,", "D", "A", "e"],
+    banjo: ["G,", "D", "A", "e"],
+  };
+
+  // abcjs's own `instrument` option only recognizes a handful of layouts —
+  // derived from string count, not from the Cairn instrument name, so a
+  // custom tuning with an unexpected string count still renders sensibly.
+  function tablatureLayoutFor(stringCount) {
+    if (stringCount === 6) return "guitar";
+    if (stringCount === 5) return "fiveString";
+    return "mandolin";
+  }
+
   // Shared AudioContext — drone and metronome use the same context to avoid
   // browser volume normalisation side-effects from concurrent contexts.
   var sharedAudioCtx = null;
@@ -252,7 +275,8 @@
     // it never updates when the slider moves. Audio uses currentAbcString.
     // Global flag: a combined set ABC concatenates one Q: line per member tune.
     var displayAbc = abcString.replace(/^Q:[^\n]*\n?/gm, "");
-    visualObj = ABCJS.renderAbc("abc-render", displayAbc, RENDER_OPTS);
+    var opts = currentTablature ? Object.assign({}, RENDER_OPTS, { tablature: [currentTablature] }) : RENDER_OPTS;
+    visualObj = ABCJS.renderAbc("abc-render", displayAbc, opts);
     positionOctaveOverlays();
     if (visualObj && visualObj[0]) {
       charMap = buildCharMap(visualObj[0], "abc-render");
@@ -334,6 +358,107 @@
 
     initDrone();
     initMetronome();
+    initTablatureControls();
+  }
+
+  // Wires the "Show tablature" checkbox + instrument/tuning <select>s on
+  // tunes/detail.html (see #233) -- a pure client-side re-render, no HTMX
+  // round trip, since tablature is only an abcjs rendering option. Restores
+  // the last-used instrument/tuning from localStorage so it's remembered
+  // across tunes without any new server-side state.
+  function initTablatureControls() {
+    var toggle = document.getElementById("tablature-toggle");
+    var instrumentSelect = document.getElementById("tablature-instrument");
+    var tuningSelect = document.getElementById("tablature-tuning");
+    if (!toggle || !instrumentSelect || !tuningSelect) return;
+
+    // Read fresh each call, not snapshotted -- window.__cairnTunings is
+    // reassigned after an add/delete via the tunings-section HTMX partial
+    // (see the htmx:afterSwap listener below), and this needs to see that.
+    function tuningsForInstrument(instrument) {
+      var myTunings = window.__cairnTunings || [];
+      return myTunings.filter(function (t) { return t.instrument === instrument; });
+    }
+
+    function populateTuningSelect() {
+      var instrument = instrumentSelect.value;
+      tuningSelect.innerHTML = "";
+      var standardOpt = document.createElement("option");
+      standardOpt.value = "__standard__";
+      standardOpt.textContent = "Standard";
+      tuningSelect.appendChild(standardOpt);
+      tuningsForInstrument(instrument).forEach(function (t) {
+        var opt = document.createElement("option");
+        opt.value = t.name;
+        opt.textContent = t.name;
+        tuningSelect.appendChild(opt);
+      });
+    }
+
+    function currentStrings() {
+      var instrument = instrumentSelect.value;
+      var name = tuningSelect.value;
+      if (name && name !== "__standard__") {
+        var match = tuningsForInstrument(instrument).filter(function (t) { return t.name === name; })[0];
+        if (match) return match.strings;
+      }
+      return TABLATURE_STANDARD_TUNINGS[instrument] || TABLATURE_STANDARD_TUNINGS.guitar;
+    }
+
+    function savePreference() {
+      try {
+        localStorage.setItem("cairnTablature", JSON.stringify({
+          on: toggle.checked, instrument: instrumentSelect.value, tuning: tuningSelect.value,
+        }));
+      } catch (e) {
+        // localStorage unavailable (private browsing etc.) -- just skip persistence.
+      }
+    }
+
+    function applyTablature() {
+      if (!toggle.checked) {
+        currentTablature = null;
+      } else {
+        var strings = currentStrings();
+        var instrumentLabel = instrumentSelect.options[instrumentSelect.selectedIndex].text;
+        currentTablature = {
+          instrument: tablatureLayoutFor(strings.length),
+          tuning: strings,
+          label: instrumentLabel + " (%T)",
+        };
+      }
+      render(currentAbcString);
+      savePreference();
+    }
+
+    instrumentSelect.addEventListener("change", function () { populateTuningSelect(); applyTablature(); });
+    tuningSelect.addEventListener("change", applyTablature);
+    toggle.addEventListener("change", function () {
+      instrumentSelect.disabled = !toggle.checked;
+      tuningSelect.disabled = !toggle.checked;
+      applyTablature();
+    });
+
+    // Refreshed via the htmx:afterSwap listener below whenever the
+    // tunings-section partial reloads (a tuning was added/deleted) --
+    // repopulates the <select> from the now-current window.__cairnTunings.
+    window.__cairnRefreshTuningSelect = populateTuningSelect;
+
+    var restored = null;
+    try {
+      restored = JSON.parse(localStorage.getItem("cairnTablature") || "null");
+    } catch (e) {
+      // Ignore -- treat as no saved preference.
+    }
+    if (restored && restored.instrument) instrumentSelect.value = restored.instrument;
+    populateTuningSelect();
+    if (restored && restored.tuning) tuningSelect.value = restored.tuning;
+    if (restored && restored.on) {
+      toggle.checked = true;
+      instrumentSelect.disabled = false;
+      tuningSelect.disabled = false;
+      applyTablature();
+    }
   }
 
   function handlePlayStop() {
@@ -1819,6 +1944,22 @@
 
     initColumnPreviewObserver();
     document.addEventListener("htmx:afterSwap", observeColumnPreviews);
+
+    // Tablature tuning <select> needs to know about a tuning just
+    // added/deleted via the tunings-section partial (#233) -- re-read the
+    // fresh data blob it just swapped in and repopulate the dropdown.
+    document.addEventListener("htmx:afterSwap", function (e) {
+      if (!e.detail.target || e.detail.target.id !== "tunings-section") return;
+      var dataEl = document.getElementById("my-tunings-data");
+      if (dataEl) {
+        try {
+          window.__cairnTunings = JSON.parse(dataEl.textContent);
+        } catch (err) {
+          window.__cairnTunings = [];
+        }
+      }
+      if (window.__cairnRefreshTuningSelect) window.__cairnRefreshTuningSelect();
+    });
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { clearCairnModal(); closeTheSessionWizard(); }
