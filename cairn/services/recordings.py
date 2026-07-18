@@ -30,15 +30,20 @@ def recordings_to_json(recordings: list[Recording]) -> str:
 
 
 # A well-known session tune can have hundreds of TheSessionRecording rows
-# (one per track it appears on across many albums) -- capped to a browsable
-# handful of suggestion chips rather than dumping the entire list on the page.
-_MAX_THESESSION_SUGGESTIONS = 25
+# (one per track it appears on across many albums). The client-side search
+# box filters the full list by artist/title, so this is a defensive sanity
+# cap only (guards against a truly pathological case), not a UX-visibility
+# cap -- the real-world max seen so far is ~281 rows for one very popular reel.
+_MAX_THESESSION_SUGGESTIONS = 500
 
 
 async def thesession_suggestions_json(db: AsyncSession, thesession_tune_id: int | None) -> str:
     """JSON blob of TheSession-sourced recording suggestions (TODO 9.2) to
     pre-fill the "add new recording" form — a pre-fill, not an auto-import.
-    Empty if the tune isn't linked to TheSession.org, or has none.
+    Empty if the tune isn't linked to TheSession.org, or has none. Ordered
+    by artist so the (usually short, occasionally very long) list is at
+    least browsable/searchable in a sensible order rather than arbitrary
+    insertion order.
 
     recordings.csv's `artist` column holds the artist's actual name in the
     near-universal case (verified during #185/8.4's import), but a small
@@ -51,6 +56,7 @@ async def thesession_suggestions_json(db: AsyncSession, thesession_tune_id: int 
     result = await db.execute(
         select(TheSessionRecording)
         .where(TheSessionRecording.tune_id == thesession_tune_id)
+        .order_by(TheSessionRecording.artist, TheSessionRecording.track_number)
         .limit(_MAX_THESESSION_SUGGESTIONS)
     )
     suggestions = result.scalars().all()

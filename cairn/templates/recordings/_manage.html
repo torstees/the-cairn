@@ -177,12 +177,16 @@
       {% if owner_kind == "tune" %}
       <div x-show="mode === 'new' && suggestions.length > 0" x-cloak class="text-xs text-stone-500">
         <p class="mb-1">Suggestions from TheSession.org:</p>
-        <div class="flex flex-wrap gap-1.5">
-          <template x-for="(s, index) in suggestions" :key="index">
+        <input type="text" x-model="suggestionQuery" x-show="suggestions.length > 8" x-cloak
+               placeholder="Search by artist or title&hellip;" autocomplete="off"
+               class="w-full border border-stone-300 rounded-lg px-2 py-1 text-xs mb-1.5 focus:outline-none focus:ring-2 focus:ring-stone-400">
+        <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+          <template x-for="(s, index) in filteredSuggestions" :key="index">
             <button type="button" @click="applySuggestion(s, $el)" :title="s.tooltip"
-                    class="border border-stone-300 rounded-full px-2 py-0.5 hover:bg-stone-100 text-stone-600"
+                    class="border border-stone-300 rounded-full px-2 py-0.5 hover:bg-stone-100 text-stone-600 shrink-0"
                     x-text="s.label"></button>
           </template>
+          <p x-show="filteredSuggestions.length === 0" class="text-stone-400 italic">No matches.</p>
         </div>
       </div>
       {% endif %}
@@ -259,10 +263,22 @@
         var el = document.getElementById('thesession-recording-suggestions');
         try { return el ? JSON.parse(el.textContent) : []; } catch (e) { return []; }
       })(),
+      suggestionQuery: '',
       get filtered() {
         var q = this.query.toLowerCase();
         var list = q ? this.recordings.filter(function (r) { return r.label.toLowerCase().includes(q); }) : this.recordings;
         return list.slice(0, 50);
+      },
+      // Filters suggestions by artist or title -- ordered by artist server-side
+      // (see thesession_suggestions_json), searched here rather than capped
+      // down to an arbitrary handful, since a well-known tune can have
+      // hundreds of these.
+      get filteredSuggestions() {
+        var q = this.suggestionQuery.toLowerCase();
+        if (!q) return this.suggestions;
+        return this.suggestions.filter(function (s) {
+          return s.artist.toLowerCase().includes(q) || s.title.toLowerCase().includes(q);
+        });
       },
       select(r) {
         this.selectedId = r.id;

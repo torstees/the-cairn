@@ -312,3 +312,10 @@ async def test_thesession_suggestions_json_multiple_tracks(db: AsyncSession) -> 
     await _thesession_recording(db, tune_id=14408, track_number=2, tune_name="Maiden Lane")
     result = json.loads(await thesession_suggestions_json(db, 14408))
     assert len(result) == 2
+
+
+async def test_thesession_suggestions_json_ordered_by_artist(db: AsyncSession) -> None:
+    await _thesession_recording(db, tune_id=14408, artist="Zebra Band", recording_name="Z Album")
+    await _thesession_recording(db, tune_id=14408, artist="Altan", recording_name="A Album")
+    result = json.loads(await thesession_suggestions_json(db, 14408))
+    assert [r["artist"] for r in result] == ["Altan", "Zebra Band"]
