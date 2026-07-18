@@ -1146,7 +1146,7 @@ compilations, singles, and session-video-only references, not just albums.
 
   Write tests in `tests/test_services/test_recordings.py`.
 
-- [ ] **9.2 — Optional: suggest recordings from TheSession data**
+- [x] **9.2 — Optional: suggest recordings from TheSession data**
 
   Depends on TODO 8.4 (`TheSessionRecording`) having been done — this piece
   doesn't apply otherwise.

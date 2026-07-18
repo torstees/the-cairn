@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from cairn.models import Recording, RecordingReference
+from cairn.models_thesession_community import TheSessionRecording
 
 
 async def create_recording(db: AsyncSession, artist: str, title: str, links: dict | None = None) -> Recording:
@@ -25,6 +26,45 @@ def recordings_to_json(recordings: list[Recording]) -> str:
     existing recording" search box on recordings/_manage.html."""
     return json.dumps(
         [{"id": r.id, "artist": r.artist, "title": r.title, "label": f"{r.artist} — {r.title}"} for r in recordings]
+    )
+
+
+# A well-known session tune can have hundreds of TheSessionRecording rows
+# (one per track it appears on across many albums) -- capped to a browsable
+# handful of suggestion chips rather than dumping the entire list on the page.
+_MAX_THESESSION_SUGGESTIONS = 25
+
+
+async def thesession_suggestions_json(db: AsyncSession, thesession_tune_id: int | None) -> str:
+    """JSON blob of TheSession-sourced recording suggestions (TODO 9.2) to
+    pre-fill the "add new recording" form — a pre-fill, not an auto-import.
+    Empty if the tune isn't linked to TheSession.org, or has none.
+
+    recordings.csv's `artist` column holds the artist's actual name in the
+    near-universal case (verified during #185/8.4's import), but a small
+    legacy fraction still holds a bare numeric id never backfilled with a
+    name — left blank for the user to fill in rather than suggesting a
+    meaningless number.
+    """
+    if thesession_tune_id is None:
+        return "[]"
+    result = await db.execute(
+        select(TheSessionRecording)
+        .where(TheSessionRecording.tune_id == thesession_tune_id)
+        .limit(_MAX_THESESSION_SUGGESTIONS)
+    )
+    suggestions = result.scalars().all()
+    return json.dumps(
+        [
+            {
+                "artist": "" if r.artist.strip().isdigit() else r.artist,
+                "title": r.recording_name,
+                "track_number": r.track_number,
+                "position": r.position,
+                "label": f"{r.recording_name} (track {r.track_number})",
+            }
+            for r in suggestions
+        ]
     )
 
 
