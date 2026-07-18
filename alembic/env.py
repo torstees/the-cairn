@@ -10,6 +10,7 @@ from alembic import context
 
 from cairn.database import Base
 import cairn.models  # noqa: F401 — ensures all models are registered with Base.metadata
+import cairn.models_thesession_community  # noqa: F401 — ditto, TODO 8.4's side tables
 import cairn.models_thesession_tunes  # noqa: F401 — ditto, TODO 8.1's side tables
 
 config = context.config
