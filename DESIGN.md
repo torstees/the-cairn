@@ -450,21 +450,27 @@ a failed flush to immediately query it again inside the same request hit
 `MissingGreenlet`, the same class of async/greenlet trap this codebase has
 run into before.
 
-An "Auto-drop octave" checkbox (#239) computes a per-tune, per-tuning shift
-instead of requiring a fully hand-typed shifted tuning: `shift =
-clamp(lowestMelodyNote - lowestOpenString, 0, 12)`, applied by shifting
-every string in the selected tuning up by that many semitones (raising the
-tuning's pitch makes abcjs's fret math reflect the tune being played that
-many semitones lower, without touching the rendered notation). A single
-fixed shift doesn't work across tunes — some have much more headroom above
-the tuning's lowest string than others — so `app.js` parses the ABC itself
-to find both numbers rather than hardcoding one. This needs two separate
-tokenizers, not one: tuning-string tokens (`InstrumentTuning.strings`, e.g.
-`"F#"` in the Open D preset) use suffix accidentals per
-`routers/tunings.py`'s `_PITCH_RE`, while the melody body uses real ABC
-prefix-accidental syntax (`^`/`_`/`=`). Finding the melody's lowest note
-also has to drop every header-*line* (not just the leading block) before
-scanning, since a standalone inline key change mid-setting (e.g.
+An "Auto-drop octave" checkbox (#239) computes, per tune per selected
+tuning, whether a full octave-down shift is safe: `shift = (lowestMelodyNote
+- lowestOpenString >= 12) ? 12 : 0` — never a partial amount. Shifting by
+anything other than a whole octave changes every string's letter name (not
+just its octave), which would turn e.g. standard guitar's EADGBE into a
+nonsense-looking tuning like ADGCEA; a full 12-semitone shift instead
+always reproduces the *same* letter names (only the octave marks change),
+so applying it stays recognizable as "the same tuning, one octave down".
+Applying the shift means shifting every string in the selected tuning up
+by that many semitones (raising the tuning's pitch makes abcjs's fret math
+reflect the tune being played an octave lower, without touching the
+rendered notation). Whether a tune's lowest note fits varies a lot — some
+tunes have much more headroom above the tuning's lowest string than others
+— so `app.js` parses the ABC itself to find both numbers rather than
+hardcoding one. This needs two separate tokenizers, not one: tuning-string
+tokens (`InstrumentTuning.strings`, e.g. `"F#"` in the Open D preset) use
+suffix accidentals per `routers/tunings.py`'s `_PITCH_RE`, while the melody
+body uses real ABC prefix-accidental syntax (`^`/`_`/`=`). Finding the
+melody's lowest note also has to drop every header-*line* (not just the
+leading block) before scanning, since a standalone inline key change
+mid-setting (e.g.
 `K:Ddor`) would otherwise be misread as spurious low notes.
 
 `window.__cairnTunings` (set from `tune_detail`'s own context on page load)

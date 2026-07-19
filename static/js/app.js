@@ -144,7 +144,10 @@
     var stringPitches = tuningStrings.map(parseTuningToken).filter(function (p) { return p !== null; });
     if (!stringPitches.length) return 0;
     var lowestString = Math.min.apply(null, stringPitches);
-    return Math.max(0, Math.min(12, lowestNote - lowestString));
+    // Only ever a full octave, or nothing -- any other amount changes every
+    // string's letter name (not just its octave), turning e.g. standard
+    // guitar's EADGBE into a nonsense-looking "tuning" like ADGCEA.
+    return lowestNote - lowestString >= 12 ? 12 : 0;
   }
 
   // Shared AudioContext — drone and metronome use the same context to avoid
