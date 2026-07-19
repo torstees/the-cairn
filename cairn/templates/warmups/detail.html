@@ -63,6 +63,12 @@
             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50">
       &#9834; Metro
     </button>
+    <select id="metro-subdivision" class="hidden text-xs border border-stone-300 rounded-md px-1.5 py-1.5 bg-white text-stone-600 focus:outline-none focus:ring-2 focus:ring-stone-400"
+            onchange="setMetroSubdivisionLevel(this.value)" title="Metronome pulse detail">
+      <option value="full">Full</option>
+      <option value="downbeats">Downbeats only</option>
+      <option value="primary">Primary only</option>
+    </select>
     <div class="flex items-center gap-2">
       <label for="abc-tempo" class="text-sm text-stone-500 select-none">Speed</label>
       <input id="abc-tempo" type="range" min="40" max="250" value="100" step="5"
