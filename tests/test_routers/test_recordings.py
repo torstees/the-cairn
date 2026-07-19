@@ -2,6 +2,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, TuneType
+from cairn.models_thesession_community import TheSessionRecording
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.recordings import add_reference, create_recording, list_recordings
 from cairn.services.tune_sets import create_set
@@ -247,3 +248,35 @@ async def test_unauthenticated_create_redirects_to_login(unauthenticated_client:
 async def test_unauthenticated_delete_redirects_to_login(unauthenticated_client: AsyncClient) -> None:
     resp = await unauthenticated_client.delete("/recordings/references/1", follow_redirects=False)
     assert resp.status_code == 307
+
+
+# ── TheSession recording suggestions (#188) ──────────────────────────────────
+
+
+async def test_tune_detail_shows_thesession_suggestion_when_linked(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _tune(db)
+    tune.thesession_tune_id = 14408
+    await db.commit()
+    db.add(
+        TheSessionRecording(
+            recording_id=3720,
+            artist="Dervish",
+            recording_name="Cast A Bell",
+            track_number=1,
+            position=1,
+            tune_name="Kettledrum",
+            tune_id=14408,
+        )
+    )
+    await db.commit()
+
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert "Cast A Bell (track 1)" in resp.text
+
+
+async def test_tune_detail_no_suggestions_when_not_linked(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _tune(db)
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert '"thesession-recording-suggestions">[]' in resp.text

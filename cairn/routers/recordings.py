@@ -11,6 +11,7 @@ from cairn.services.recordings import (
     list_recordings_for_tune,
     recordings_to_json,
     remove_reference,
+    thesession_suggestions_json,
     update_recording,
     update_reference,
 )
@@ -28,6 +29,7 @@ async def _tune_recordings_ctx(db: AsyncSession, tune) -> dict:
         "tune": tune,
         "references": await list_recordings_for_tune(db, setting_ids),
         "recordings_json": recordings_to_json(await list_recordings(db)),
+        "thesession_suggestions_json": await thesession_suggestions_json(db, tune.thesession_tune_id),
     }
 
 

@@ -1,7 +1,10 @@
+import json
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import KeyMode, KeyRoot, TuneType
+from cairn.models_thesession_community import TheSessionRecording
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.recordings import (
     add_reference,
@@ -12,11 +15,30 @@ from cairn.services.recordings import (
     list_recordings_for_tune,
     recordings_to_json,
     remove_reference,
+    thesession_suggestions_json,
     update_recording,
     update_reference,
 )
 from cairn.services.tune_sets import create_set
 from cairn.services.tunes import create_setting, create_tune, get_tune
+
+
+async def _thesession_recording(db: AsyncSession, **overrides) -> TheSessionRecording:
+    defaults = {
+        "recording_id": 3720,
+        "artist": "Dervish",
+        "recording_name": "Cast A Bell",
+        "track_number": 1,
+        "position": 1,
+        "tune_name": "Kettledrum",
+        "tune_id": 14408,
+    }
+    defaults.update(overrides)
+    row = TheSessionRecording(**defaults)
+    db.add(row)
+    await db.flush()
+    return row
+
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA:|"
 
@@ -245,3 +267,55 @@ async def test_update_reference_ignores_setting_id_for_set_scoped_reference(db: 
 
 async def test_update_reference_unknown_id_returns_none(db: AsyncSession) -> None:
     assert await update_reference(db, 9999, track_number=1) is None
+
+
+# ── thesession_suggestions_json ──────────────────────────────────────────────
+
+
+async def test_thesession_suggestions_json_no_thesession_tune_id(db: AsyncSession) -> None:
+    assert await thesession_suggestions_json(db, None) == "[]"
+
+
+async def test_thesession_suggestions_json_none_matching(db: AsyncSession) -> None:
+    await _thesession_recording(db, tune_id=14408)
+    assert await thesession_suggestions_json(db, 99999) == "[]"
+
+
+async def test_thesession_suggestions_json_includes_artist_when_a_name(db: AsyncSession) -> None:
+    await _thesession_recording(db, tune_id=14408, artist="Dervish", recording_name="Cast A Bell", track_number=1)
+    result = json.loads(await thesession_suggestions_json(db, 14408))
+    assert len(result) == 1
+    item = result[0]
+    assert item["artist"] == "Dervish"
+    assert item["title"] == "Cast A Bell"
+    assert item["track_number"] == 1
+    assert item["position"] == 1
+    assert item["label"] == "Cast A Bell (track 1)"
+    assert "Dervish" in item["tooltip"]
+    assert "Cast A Bell" in item["tooltip"]
+
+
+async def test_thesession_suggestions_json_tooltip_unknown_artist(db: AsyncSession) -> None:
+    await _thesession_recording(db, tune_id=14408, artist="1651")
+    item = json.loads(await thesession_suggestions_json(db, 14408))[0]
+    assert "Unknown artist" in item["tooltip"]
+
+
+async def test_thesession_suggestions_json_blanks_legacy_numeric_artist(db: AsyncSession) -> None:
+    await _thesession_recording(db, tune_id=14408, artist="1651")
+    result = json.loads(await thesession_suggestions_json(db, 14408))
+    assert result[0]["artist"] == ""
+
+
+async def test_thesession_suggestions_json_multiple_tracks(db: AsyncSession) -> None:
+    await _thesession_recording(db, tune_id=14408, track_number=1, tune_name="Kettledrum")
+    await _thesession_recording(db, tune_id=14408, track_number=2, tune_name="Maiden Lane")
+    result = json.loads(await thesession_suggestions_json(db, 14408))
+    assert len(result) == 2
+
+
+async def test_thesession_suggestions_json_ordered_by_artist(db: AsyncSession) -> None:
+    await _thesession_recording(db, tune_id=14408, artist="Zebra Band", recording_name="Z Album")
+    await _thesession_recording(db, tune_id=14408, artist="Altan", recording_name="A Album")
+    result = json.loads(await thesession_suggestions_json(db, 14408))
+    assert [r["artist"] for r in result] == ["Altan", "Zebra Band"]

@@ -496,6 +496,26 @@ in the shared context. The "pick an existing Recording" search box mirrors
 the add-form via its own `x-data="recordingPicker()"` rather than a
 whole-page Alpine root.
 
+**TheSession recording suggestions (#188)**: when a tune has
+`thesession_tune_id` set, the "add new recording" mode also shows a row of
+suggestion chips built from `TheSessionRecording` (the 8.4 side table) —
+`cairn/services/recordings.py`'s `thesession_suggestions_json()`, a
+pre-fill only, never an auto-import. Capped at 25 rows
+(`_MAX_THESESSION_SUGGESTIONS`) — a well-known session tune can have
+hundreds of these (one per track it appears on across many albums), and
+dumping all of them as chips isn't browsable. `recordings.csv`'s `artist`
+column holds the real artist name in the near-universal case (verified
+during #185's live import — corrected from that TODO item's original,
+now-stale assumption that it was always a bare numeric id); a suggestion
+whose stored `artist` is still purely numeric (a small unmigrated legacy
+fraction) leaves the artist field blank rather than pre-filling a
+meaningless number. One real Alpine gotcha here: `$el` inside a method
+called from a `<template x-for>`-rendered element resolves to that
+element itself, not the component's root `x-data` node — `applySuggestion`
+takes the clicked button's `$el` as an explicit second argument and
+resolves the form via `.closest('form')`, rather than assuming `this.$el`
+inside the method reaches the form directly.
+
 ### Alphabetical Sort Without Leading Articles
 
 Any field that is displayed in sorted order stores a companion `sort_*` column:
