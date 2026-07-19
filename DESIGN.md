@@ -450,6 +450,23 @@ a failed flush to immediately query it again inside the same request hit
 `MissingGreenlet`, the same class of async/greenlet trap this codebase has
 run into before.
 
+An "Auto-drop octave" checkbox (#239) computes a per-tune, per-tuning shift
+instead of requiring a fully hand-typed shifted tuning: `shift =
+clamp(lowestMelodyNote - lowestOpenString, 0, 12)`, applied by shifting
+every string in the selected tuning up by that many semitones (raising the
+tuning's pitch makes abcjs's fret math reflect the tune being played that
+many semitones lower, without touching the rendered notation). A single
+fixed shift doesn't work across tunes — some have much more headroom above
+the tuning's lowest string than others — so `app.js` parses the ABC itself
+to find both numbers rather than hardcoding one. This needs two separate
+tokenizers, not one: tuning-string tokens (`InstrumentTuning.strings`, e.g.
+`"F#"` in the Open D preset) use suffix accidentals per
+`routers/tunings.py`'s `_PITCH_RE`, while the melody body uses real ABC
+prefix-accidental syntax (`^`/`_`/`=`). Finding the melody's lowest note
+also has to drop every header-*line* (not just the leading block) before
+scanning, since a standalone inline key change mid-setting (e.g.
+`K:Ddor`) would otherwise be misread as spurious low notes.
+
 `window.__cairnTunings` (set from `tune_detail`'s own context on page load)
 is the tablature `<select>`'s data source; adding/deleting a tuning via the
 partial re-embeds a fresh `<script type="application/json">` blob inside
