@@ -516,6 +516,45 @@ takes the clicked button's `$el` as an explicit second argument and
 resolves the form via `.closest('form')`, rather than assuming `this.$el`
 inside the method reaches the form directly.
 
+### Metronome Beat Patterns and Subdivision Levels
+
+`static/js/app.js`'s `METRO_PATTERNS` gives each tune type a repeating
+array of `{freq, gain, level}` beat objects (`H` primary downbeat, `M`
+secondary downbeat, `L` off-beat), indexed by `metroBeatCount %
+metroPattern.length` in `metroSchedule()`. #51 adds a user-selectable
+*subdivision level* on top of that — Full / Downbeats only / Primary
+only — as a **mask**, not a separate pattern set: `maskPattern(pattern,
+level)` replaces `L` (and, for "primary," `M`) slots with `null`, keyed
+off each beat's own `level` field rather than per-tune-type index lists,
+so it stays meaningful for any time signature without special-casing.
+`metroSchedule()` skips creating an oscillator for a `null` slot entirely
+(silence, not a zero-gain beat) while still advancing
+`metroNextBeat`/`metroBeatCount` for it, so beat-phase tracking is
+unaffected by which pulses are silenced.
+
+Persisted per tune type in `localStorage`
+(`cairn.metro.subdivision.<tune_type>`) via `loadSubdivisionLevel()`/
+`saveSubdivisionLevel()`, wrapped in try/catch like the tablature
+feature's `localStorage` usage (#233) for private-browsing safety. Three
+independent call sites resolve a tune type into `metroPattern`/
+`metroSubdivision` — `initMetronome()` (tunes/detail.html, indirectly
+warmups/detail.html), `initSetTools` (sets always resolve the reel-shaped
+default, since a set mixes tune types), and `initSessionTools(opts)`
+(re-resolved per practice-session item) — all three now go through one
+shared `resolveMetroPattern(tuneTypeKey)` rather than setting
+`metroPattern`/`metroSubdivision` directly, so the persisted level is
+loaded and applied consistently everywhere.
+
+The `#metro-subdivision` `<select>` (same markup repeated on all four
+templates that have a `#metro-play` button — no shared partial exists for
+that button area on any of them) starts hidden and is shown/hidden by
+`startMetronome()`/`stopMetronome()` themselves, not by each of the
+several independent `#metro-play` click handlers — every one of them
+already calls those two functions, so this is the one place that
+naturally covers all of them (including `initWarmupTools`'s pre-existing
+quirk of layering its own click handler on top of `initMetronome`'s)
+without duplicating "hide when not running" logic four times over.
+
 ### Alphabetical Sort Without Leading Articles
 
 Any field that is displayed in sorted order stores a companion `sort_*` column:

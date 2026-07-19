@@ -624,11 +624,13 @@
   // ── metronome ──────────────────────────────────────────────────────────────
 
   // Beat patterns keyed by TuneType value.
-  // Each entry is an array of { freq, gain } objects representing one measure.
-  // H = primary downbeat, M = secondary downbeat, L = off-beat subdivision.
-  var H = { freq: 1320, gain: 0.45 };
-  var M = { freq: 1050, gain: 0.32 };
-  var L = { freq:  820, gain: 0.20 };
+  // Each entry is an array of { freq, gain, level } objects representing one
+  // measure. H = primary downbeat, M = secondary downbeat, L = off-beat
+  // subdivision -- `level` (rather than per-tune-type index lists) is what
+  // lets maskPattern() apply a subdivision level to any time signature (#51).
+  var H = { freq: 1320, gain: 0.45, level: "H" };
+  var M = { freq: 1050, gain: 0.32, level: "M" };
+  var L = { freq:  820, gain: 0.20, level: "L" };
 
   var METRO_PATTERNS = {
     // 6/8 — two groups of three: strong, 2 light, medium, 2 light
@@ -663,6 +665,69 @@
     slip_jig: 3,
     slide: 3,
   };
+
+  // ── user-configurable pulse subdivision (#51) ──────────────────────────────
+  // A mask over whichever METRO_PATTERNS entry is active: "downbeats" drops
+  // the L (off-beat) pulses, "primary" keeps only H. A masked slot becomes
+  // null, not a zero-gain beat -- metroSchedule() skips creating an
+  // oscillator for a null slot entirely, per the issue's own spec.
+  var METRO_SUBDIVISION_LEVELS = ["full", "downbeats", "primary"];
+
+  function maskPattern(pattern, level) {
+    if (level === "downbeats") return pattern.map(function (b) { return b.level === "L" ? null : b; });
+    if (level === "primary") return pattern.map(function (b) { return b.level === "H" ? b : null; });
+    return pattern; // "full"
+  }
+
+  function loadSubdivisionLevel(tuneTypeKey) {
+    try {
+      var saved = localStorage.getItem("cairn.metro.subdivision." + tuneTypeKey);
+      return METRO_SUBDIVISION_LEVELS.indexOf(saved) !== -1 ? saved : "full";
+    } catch (e) {
+      return "full"; // localStorage unavailable (private browsing etc.)
+    }
+  }
+
+  function saveSubdivisionLevel(tuneTypeKey, level) {
+    try {
+      localStorage.setItem("cairn.metro.subdivision." + tuneTypeKey, level);
+    } catch (e) {
+      // Ignore -- the level still applies for the rest of this page view.
+    }
+  }
+
+  var metroPatternKey = "reel";        // the tune-type key currently resolved
+  var metroSubdivisionLevel = "full";  // persisted per metroPatternKey
+
+  // Applies metroSubdivisionLevel to whichever pattern metroPatternKey
+  // currently resolves to, and syncs the <select> (if this page has one) to
+  // match -- called on initial resolution and whenever the user changes the
+  // level, so a mid-session change re-masks the *current* pattern without a
+  // metronome restart (same "live change, no restart" spirit as tempo edits).
+  function applyMetroSubdivisionLevel() {
+    var basePattern = METRO_PATTERNS[metroPatternKey] || METRO_PATTERNS.reel;
+    metroPattern = maskPattern(basePattern, metroSubdivisionLevel);
+    var select = document.getElementById("metro-subdivision");
+    if (select) select.value = metroSubdivisionLevel;
+  }
+
+  function resolveMetroPattern(tuneTypeKey) {
+    metroPatternKey = tuneTypeKey || "reel";
+    metroSubdivisionLevel = loadSubdivisionLevel(metroPatternKey);
+    metroSubdivision = METRO_SUBDIVISION[metroPatternKey] || 1;
+    applyMetroSubdivisionLevel();
+    updateTempoGlyph();
+  }
+
+  function setMetroSubdivisionLevel(level) {
+    metroSubdivisionLevel = level;
+    saveSubdivisionLevel(metroPatternKey, level);
+    applyMetroSubdivisionLevel();
+  }
+
+  function metroSubdivisionControl() {
+    return document.getElementById("metro-subdivision");
+  }
 
   var metroPattern = METRO_PATTERNS.reel;  // resolved in initMetronome
   var metroSubdivision = 1;                // resolved alongside metroPattern
@@ -704,28 +769,34 @@
     while (metroNextBeat < ctx.currentTime + METRO_SCHEDULE) {
       var t = Math.max(metroNextBeat, ctx.currentTime + 0.005);
       var beat = metroPattern[metroBeatCount % metroPattern.length];
-      var osc = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.frequency.value = beat.freq;
-      // 2 ms linear ramp from 0 avoids the onset click from a hard gain step.
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(beat.gain, t + 0.002);
-      gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.02);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + 0.1);
-      // Disconnect both nodes when done — zombie gain nodes left in the graph
-      // accumulate across beats and cause volume drift and render-thread pressure.
-      (function(node, gainNode) {
-        node.onended = function() {
-          try { gainNode.disconnect(); } catch (e) {}
-          var i = metroNodes.indexOf(node);
-          if (i !== -1) { metroNodes.splice(i, 1); metroGains.splice(i, 1); }
-        };
-      }(osc, gain));
-      metroNodes.push(osc);
-      metroGains.push(gain);
+      // A masked-out slot (subdivision level below "full", #51) is null --
+      // skip creating any sound for it, rather than a beat, but still
+      // advance metroNextBeat/metroBeatCount below so phase tracking (and
+      // re-applying a less restrictive level later) is unaffected.
+      if (beat) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.frequency.value = beat.freq;
+        // 2 ms linear ramp from 0 avoids the onset click from a hard gain step.
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(beat.gain, t + 0.002);
+        gain.gain.setTargetAtTime(0.0001, t + 0.002, 0.02);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.1);
+        // Disconnect both nodes when done — zombie gain nodes left in the graph
+        // accumulate across beats and cause volume drift and render-thread pressure.
+        (function(node, gainNode) {
+          node.onended = function() {
+            try { gainNode.disconnect(); } catch (e) {}
+            var i = metroNodes.indexOf(node);
+            if (i !== -1) { metroNodes.splice(i, 1); metroGains.splice(i, 1); }
+          };
+        }(osc, gain));
+        metroNodes.push(osc);
+        metroGains.push(gain);
+      }
       metroNextBeat += interval;
       metroBeatCount++;
     }
@@ -740,6 +811,12 @@
     metroBeatCount = 0;
     metroBpm = bpm;
     metroSchedule();
+    // The subdivision-level control (#51) is only relevant while a click is
+    // actually running -- shown/hidden here rather than in each of the
+    // several independent #metro-play click handlers, since every one of
+    // them already calls startMetronome()/stopMetronome().
+    var select = metroSubdivisionControl();
+    if (select) select.classList.remove("hidden");
   }
 
   function stopMetronome() {
@@ -748,6 +825,8 @@
     metroGains.forEach(function(g) { try { g.disconnect(); } catch(e) {} });
     metroNodes = [];
     metroGains = [];
+    var select = metroSubdivisionControl();
+    if (select) select.classList.add("hidden");
   }
 
   // __cairnBeatsPerBar is the time signature's numerator (e.g. 6 for a 6/8
@@ -839,9 +918,7 @@
     var btn = document.getElementById("metro-play");
     if (!btn) return;
 
-    metroPattern = METRO_PATTERNS[window.__cairnTuneType] || METRO_PATTERNS.reel;
-    metroSubdivision = METRO_SUBDIVISION[window.__cairnTuneType] || 1;
-    updateTempoGlyph();
+    resolveMetroPattern(window.__cairnTuneType);
 
     if (window.__cairnLastTempo) {
       var slider = document.getElementById("abc-tempo");
@@ -1197,11 +1274,11 @@
     renderCombined();
     initDrone();
 
-    // A set mixes tune types with no single subdivision, so metroPattern/
-    // metroSubdivision are left at their module defaults (reel / 1) rather
-    // than resolved per-member — updateTempoGlyph() just confirms the label
-    // matches that default rather than leaving it unset.
-    updateTempoGlyph();
+    // A set mixes tune types with no single subdivision, so this always
+    // resolves the reel-shaped default pattern rather than per-member --
+    // resolveMetroPattern() still loads that tune type's own saved
+    // subdivision level and updates the tempo-unit glyph.
+    resolveMetroPattern("reel");
 
     var playBtn     = document.getElementById("abc-play");
     var tempoSlider = document.getElementById("abc-tempo");
@@ -1617,9 +1694,7 @@
     window.__cairnLastTempo   = opts.lastTempo || null;
     window.__cairnBoxId       = opts.boxId || null;
 
-    metroPattern = METRO_PATTERNS[opts.tuneType] || METRO_PATTERNS.reel;
-    metroSubdivision = METRO_SUBDIVISION[opts.tuneType] || 1;
-    updateTempoGlyph();
+    resolveMetroPattern(opts.tuneType);
 
     var slider = document.getElementById("abc-tempo");
     var label  = document.getElementById("abc-tempo-label");
@@ -1671,6 +1746,7 @@
   window.tunerToggle = tunerToggle;
   window.startTuner  = startTuner;
   window.stopTuner   = stopTuner;
+  window.setMetroSubdivisionLevel = setMetroSubdivisionLevel;
 
   // ── tune list hover preview ──────────────────────────────────────────────
   // Shows a small popover with an ABCJS rendering of a tune's opening bars
