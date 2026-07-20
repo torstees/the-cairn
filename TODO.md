@@ -1501,6 +1501,185 @@ these; no routes/UI yet):
 
 ---
 
+### 12. Practice Session Focus & Rotation
+
+A Repertoire `PracticeList` today is used both as a long-term "tunes I'm
+working toward" record *and* as the direct source of the session-planner's
+learning queue — every list entry below `progress_goal` is a learning
+candidate, every time. That conflates two different sizes: a list can (and
+should) be allowed to grow much larger than what one person can actively
+work in rotation at once. This section adds a smaller, explicit **focus**
+subset on top of an existing list — a per-user star/checkbox on individual
+`TuneListEntry` rows, expected to land around 8–12 tunes but with no hard
+cap — and makes the session planner draw its learning queue from that
+subset instead of the full list, rotating through it so tunes that haven't
+been touched recently get picked first.
+
+**Behavior change — Domain Rule 14 is revised.** Today, `record_practice`/
+`set_status` silently call `remove_tune_from_list` the moment a Repertoire
+entry's effective status reaches `progress_goal` — the entry is deleted
+from the list outright (`cairn/services/spaced_rep.py`). That destroys the
+list's value as a durable record once a tune "graduates," which conflicts
+with treating the list as the larger pool focus is drawn from. Going
+forward: reaching goal never deletes a `TuneListEntry`. If the entry is
+focused, it instead flags a pending prompt so the user can *choose* to
+un-focus it (the "uncheck" from the original ask) while it stays a
+permanent list member. Non-focused entries need no action at all — they
+were never surfaced as learning candidates once 12.3 lands. The existing
+retention queries already read from the full `TuneBox`, not from list
+membership, so this change has no effect on retention. `remove_tune_from_list`
+itself stays available for the explicit, user-initiated "remove from list"
+action — only the automatic call site goes away.
+
+**New "review" queue**, distinct from the existing retention queue: a
+brief (~2 min) touch on a focused tune that *was* a learning-queue item in
+a recent session but didn't get picked for today's rotation, so progress
+isn't lost between rotation cycles. Prefer the most recent session's
+learning tunes first; if the review budget (count or time) isn't full yet,
+reach into earlier sessions before giving up.
+
+**New per-list session-shape preferences**, replacing the current
+"greedily fill remaining minutes" approach: a tune-count target for each
+of learning / review / retention, plus a time-percentage split across
+warmup / review / learning / retention. Defaults when a list hasn't set
+its own: warmup 10–20%, review ~10%, retention 0–30% (only meaningful once
+retention tunes are opted in), learning ~50% (only when there are still
+tunes to learn). These live on `PracticeList` so different lists can shape
+sessions differently; sessions built with no active list keep today's
+time-fill behavior unchanged.
+
+- [ ] **12.1 — Schema: focus flag, review item type, session preferences**
+  **`TuneListEntry`** — add:
+  - `is_focus: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)`
+  - `focus_goal_reached_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)`
+    Set when a focused entry's effective status reaches its list's
+    `progress_goal` (see 12.2); cleared when the user responds to the
+    resulting prompt, however they respond.
+
+  **`PracticeList`** — add nullable preference overrides, falling back to
+  the hardcoded defaults above when null:
+  - `learning_tune_count: Mapped[int | None]`, `review_tune_count: Mapped[int | None]`,
+    `retention_tune_count: Mapped[int | None]` (all `Integer`, nullable —
+    `None` means "no explicit cap," matching today's fill-by-time behavior
+    for that category)
+  - `warmup_pct: Mapped[int | None]`, `review_pct: Mapped[int | None]`,
+    `learning_pct: Mapped[int | None]`, `retention_pct: Mapped[int | None]`
+    (all `Integer` 0–100, nullable)
+
+  **`SessionItemType`** — add `review = "review"`.
+
+  Generate an Alembic migration covering all of the above. Add the new
+  columns to the relevant `Create`/`Update`/`Read` schemas in `cairn/schemas.py`.
+
+- [ ] **12.2 — Service: focus toggle, and the revised goal-reached behavior**
+  **`cairn/services/lists.py`** — new functions:
+  - `set_focus(db, list_id, tune_id, is_focus: bool) -> TuneListEntry`
+  - `list_focus_entries(db, list_id) -> list[TuneListEntry]` — `is_focus=True`
+    entries, in the order they were focused (`TuneListEntry.updated_at` or
+    similar — pick whichever the model already gives you for free).
+  - `clear_focus_prompt(db, entry_id) -> TuneListEntry` — nulls out
+    `focus_goal_reached_at` without changing `is_focus` (the "keep it
+    focused" response to the prompt).
+
+  **`cairn/services/spaced_rep.py`** — replace the existing
+  Repertoire-auto-removal helper (the function that currently calls
+  `remove_tune_from_list` when effective status ≥ goal): stop deleting the
+  entry. Instead, when the entry's `is_focus` is `True` and effective status
+  has reached `progress_goal`, set `focus_goal_reached_at = now` (only if
+  not already set, so re-practicing after the prompt already fired doesn't
+  keep bumping the timestamp). When `is_focus` is `False`, do nothing — no
+  deletion, no flag. This runs from both `record_practice` and `set_status`,
+  same as today.
+
+  Update `AGENTS.md`'s Domain Rule 14 to describe the new behavior instead
+  of auto-removal, and update the PracticeList section's prose similarly.
+
+  Update the existing tests in `tests/test_services/test_spaced_rep.py` that
+  assert the old delete-on-goal behavior — they should now assert the entry
+  survives and (when focused) `focus_goal_reached_at` gets set. Add tests
+  for `set_focus`, `list_focus_entries`, and `clear_focus_prompt` in
+  `tests/test_services/test_lists.py`.
+
+- [ ] **12.3 — Service: focus-scoped rotation, count/percentage allocation, review queue**
+  Rework `cairn/services/session_plan.py`'s `build_session`:
+
+  **Learning queue** — when the active list is Repertoire or Woodshed and
+  has at least one focused entry, the learning queue is built from
+  `list_focus_entries` only (not the full list as today), ordered by
+  rotation: oldest `StudentProgress.last_practiced` first (nulls — never
+  practiced — sort first), tie-broken by proximity-to-goal as the existing
+  code already does. If the list has zero focused entries, fall back to
+  today's full-list behavior unchanged (so an existing list someone hasn't
+  adopted focus on yet keeps working as before).
+
+  **Review queue** (new) — focused entries *not* selected into today's
+  learning queue, whose tune appears as a `learning`-type
+  `PracticeSessionItem` in a past session for this box. Order candidate
+  sessions most-recent-first; take tunes from the most recent session,
+  and only reach into older sessions if `review_tune_count` (or the
+  review time budget) isn't yet filled. Dedup by tune — once a tune is
+  picked from a more recent session, skip it in older ones. Each review
+  item gets a short fixed allocation (e.g. 2 minutes — reuse
+  `_RETENTION_MINUTES` or add a sibling constant).
+
+  **Minute allocation** — replace the current fixed-10%-warmup /
+  fill-the-rest approach: resolve each of warmup/review/learning/retention's
+  percentage (from the active list's overrides, falling back to this
+  section's defaults; no-active-list sessions keep exactly today's
+  behavior) into a minute budget against `total_minutes`, then within each
+  category select up to that category's tune-count preference (falling
+  back to unlimited/fill-by-time when the count preference is null),
+  stopping early if the category's own minute budget is exhausted first.
+  Retention's existing queue-building functions
+  (`_build_repertoire_retention` / `_build_woodshed_retention` /
+  `_build_no_list_retention`) are unchanged — only add the optional
+  `retention_tune_count` cap on top of what they already return.
+
+  Extend/add tests in `tests/test_services/test_session_plan.py`: focus
+  rotation order (least-recently-practiced first), fallback to full-list
+  when nothing is focused, review queue pulling from the previous session
+  and then an older one when needed, review/learning/retention tune-count
+  caps, and percentage-driven minute budgets against a couple of
+  `total_minutes` values.
+
+- [ ] **12.4 — Routes/templates: focus toggle and goal-reached prompt**
+  `POST /lists/{id}/tunes/{tune_id}/focus` (HTMX) — toggles `is_focus` via
+  `set_focus`, returns the updated entry row partial with its star/checkbox
+  state.
+
+  `lists/detail.html` — a star or checkbox per entry; a small, non-blocking
+  count indicator (e.g. "9 focused") near the top of the list — no hard cap
+  enforced, per-user judgment call as originally scoped.
+
+  Goal-reached prompt — surface entries with `focus_goal_reached_at` set
+  (on `lists/detail.html`, and/or the dashboard if that reads better) as a
+  small banner per entry: "*Tune X* reached its goal — keep practicing it,
+  or remove it from your focus rotation?" with two actions: **Remove from
+  focus** (`set_focus(..., is_focus=False)`, which also clears the prompt)
+  and **Keep focused** (`clear_focus_prompt`, `is_focus` unchanged).
+
+- [ ] **12.5 — Routes/templates: session-shape preferences and review display**
+  `GET /practice/plan` / `POST /practice/plan` — add fields for
+  `learning_tune_count`, `review_tune_count`, `retention_tune_count`, and
+  the four percentages, pre-filled from the active list's stored
+  preferences (or this section's defaults when unset). A "save as this
+  list's default" checkbox persists the submitted values back onto the
+  `PracticeList` via a new `update_list_preferences(db, list_id, **fields)`
+  in `cairn/services/lists.py`.
+
+  `practice/session.html` — render `review` items in their own labeled
+  section, visually distinct from `learning`/`retention` (e.g. a "Quick
+  Review" badge).
+
+  `cairn/services/session_plan.py`'s `rate_item` — completing a `review`
+  item still calls `record_practice` (SM-2 state keeps updating on any
+  touch), but must **not** call `advance_status_one` even at high
+  confidence — a short review touch shouldn't count as the deliberate
+  practice that advances status; that stays earned through a real learning
+  or retention slot.
+
+---
+
 ### Phase 1 Complete Checklist
 
 Before closing Phase 1:
