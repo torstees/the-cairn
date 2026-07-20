@@ -54,6 +54,102 @@
     return "mandolin";
   }
 
+  // ── tablature auto octave-drop (#239) ──────────────────────────────────────
+  // A fixed full-octave shift doesn't fit every tune -- some sit high enough
+  // to take it, others would push their lowest note below the tuning's open
+  // string. Computed as: clamp(lowestMelodyNote - lowestOpenString, 0, 12).
+
+  var NATURAL_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+  // Tuning-string tokens ("E," "F#" "d") use suffix accidentals, matching
+  // routers/tunings.py's _PITCH_RE grammar -- not real ABC prefix-accidental
+  // syntax, which is what the melody-note parser below handles instead.
+  function parseTuningToken(token) {
+    var m = /^([A-Ga-g])([,'#b]*)$/.exec(token);
+    if (!m) return null;
+    var pc = NATURAL_PC[m[1].toUpperCase()];
+    var octave = /[a-g]/.test(m[1]) ? 1 : 0;
+    for (var i = 0; i < m[2].length; i++) {
+      var c = m[2][i];
+      if (c === "'") octave++;
+      else if (c === ",") octave--;
+      else if (c === "#") pc++;
+      else if (c === "b") pc--;
+    }
+    return octave * 12 + pc;
+  }
+
+  // Sharps-preferred re-spelling after a shift -- fret math only cares about
+  // absolute pitch, not "correct" enharmonic spelling.
+  var PC_SPELLING = ["C", "^C", "D", "^D", "E", "F", "^F", "G", "^G", "A", "^A", "B"];
+
+  function encodeTuningToken(absolutePitch) {
+    var octave = Math.floor(absolutePitch / 12);
+    var spelling = PC_SPELLING[((absolutePitch % 12) + 12) % 12];
+    var letter = spelling[spelling.length - 1];
+    var accidental = spelling.length > 1 ? "#" : "";
+    var marks = "";
+    if (octave >= 2) marks = new Array(octave - 1 + 1).join("'");
+    else if (octave <= -1) marks = new Array(-octave + 1).join(",");
+    return (octave >= 1 ? letter.toLowerCase() : letter.toUpperCase()) + accidental + marks;
+  }
+
+  function shiftTuning(strings, semitones) {
+    if (!semitones) return strings;
+    return strings.map(function (t) {
+      var p = parseTuningToken(t);
+      return p === null ? t : encodeTuningToken(p + semitones);
+    });
+  }
+
+  // Drops any line that looks like an ABC header ("K:...", "T:...", etc.),
+  // not just the leading block -- some settings have a standalone inline key
+  // change mid-tune (e.g. "K:Ddor" after the first part) that would otherwise
+  // get mis-scanned by NOTE_TOKEN_RE below (its "D"/"d" read as real notes).
+  function stripAbcHeaderLines(abcString) {
+    return abcString.split("\n").filter(function (line) {
+      return !(line.length >= 2 && line[1] === ":" && /[A-Za-z]/.test(line[0]));
+    }).join("\n");
+  }
+
+  // Matches (in order of precedence): a quoted chord/annotation, a "!...!"
+  // decoration, a bar line, or a real note (optional accidental + letter +
+  // octave marks) -- same shape as abc_utils.py's _TRANSPOSE_TOKEN_RE, so
+  // that quoted/decoration/bar text never gets mis-read as a note letter.
+  var NOTE_TOKEN_RE = /"[^"]*"|![^!]*!|\||(\^{1,2}|_{1,2}|=)?([A-Ga-g])([,']*)/g;
+
+  function lowestMelodyPitch(abcString) {
+    var body = stripAbcHeaderLines(abcString);
+    var lowest = null;
+    var m;
+    NOTE_TOKEN_RE.lastIndex = 0;
+    while ((m = NOTE_TOKEN_RE.exec(body)) !== null) {
+      if (!m[2]) continue; // matched a quoted string / decoration / bar line, not a note
+      // Key-signature-implied accidentals aren't resolved here -- only
+      // explicit ^/_/= markings count. Under-counts by at most one semitone,
+      // only when the single lowest note carries an implied accidental.
+      var acc = m[1] ? (m[1][0] === "^" ? m[1].length : -m[1].length) : 0; // "=" -> 0
+      var pc = NATURAL_PC[m[2].toUpperCase()] + acc;
+      var octave = /[a-g]/.test(m[2]) ? 1 : 0;
+      for (var i = 0; i < m[3].length; i++) octave += m[3][i] === "'" ? 1 : -1;
+      var pitch = octave * 12 + pc;
+      if (lowest === null || pitch < lowest) lowest = pitch;
+    }
+    return lowest;
+  }
+
+  function computeAutoShift(abcString, tuningStrings) {
+    var lowestNote = lowestMelodyPitch(abcString);
+    if (lowestNote === null) return 0;
+    var stringPitches = tuningStrings.map(parseTuningToken).filter(function (p) { return p !== null; });
+    if (!stringPitches.length) return 0;
+    var lowestString = Math.min.apply(null, stringPitches);
+    // Only ever a full octave, or nothing -- any other amount changes every
+    // string's letter name (not just its octave), turning e.g. standard
+    // guitar's EADGBE into a nonsense-looking "tuning" like ADGCEA.
+    return lowestNote - lowestString >= 12 ? 12 : 0;
+  }
+
   // Shared AudioContext — drone and metronome use the same context to avoid
   // browser volume normalisation side-effects from concurrent contexts.
   var sharedAudioCtx = null;
@@ -370,6 +466,7 @@
     var toggle = document.getElementById("tablature-toggle");
     var instrumentSelect = document.getElementById("tablature-instrument");
     var tuningSelect = document.getElementById("tablature-tuning");
+    var autoShiftToggle = document.getElementById("tablature-auto-shift");
     if (!toggle || !instrumentSelect || !tuningSelect) return;
 
     // Read fresh each call, not snapshotted -- window.__cairnTunings is
@@ -409,6 +506,7 @@
       try {
         localStorage.setItem("cairnTablature", JSON.stringify({
           on: toggle.checked, instrument: instrumentSelect.value, tuning: tuningSelect.value,
+          autoShift: !!(autoShiftToggle && autoShiftToggle.checked),
         }));
       } catch (e) {
         // localStorage unavailable (private browsing etc.) -- just skip persistence.
@@ -420,6 +518,9 @@
         currentTablature = null;
       } else {
         var strings = currentStrings();
+        if (autoShiftToggle && autoShiftToggle.checked) {
+          strings = shiftTuning(strings, computeAutoShift(currentAbcString, strings));
+        }
         var instrumentLabel = instrumentSelect.options[instrumentSelect.selectedIndex].text;
         currentTablature = {
           instrument: tablatureLayoutFor(strings.length),
@@ -433,9 +534,11 @@
 
     instrumentSelect.addEventListener("change", function () { populateTuningSelect(); applyTablature(); });
     tuningSelect.addEventListener("change", applyTablature);
+    if (autoShiftToggle) autoShiftToggle.addEventListener("change", applyTablature);
     toggle.addEventListener("change", function () {
       instrumentSelect.disabled = !toggle.checked;
       tuningSelect.disabled = !toggle.checked;
+      if (autoShiftToggle) autoShiftToggle.disabled = !toggle.checked;
       applyTablature();
     });
 
@@ -453,10 +556,12 @@
     if (restored && restored.instrument) instrumentSelect.value = restored.instrument;
     populateTuningSelect();
     if (restored && restored.tuning) tuningSelect.value = restored.tuning;
+    if (restored && restored.autoShift && autoShiftToggle) autoShiftToggle.checked = true;
     if (restored && restored.on) {
       toggle.checked = true;
       instrumentSelect.disabled = false;
       tuningSelect.disabled = false;
+      if (autoShiftToggle) autoShiftToggle.disabled = false;
       applyTablature();
     }
   }
