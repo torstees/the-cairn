@@ -68,6 +68,25 @@ FastAPI + Jinja2 (server-rendered HTML, no SPA) + HTMX/Alpine.js for interactivi
 (async) + Alembic + SQLite (Postgres-compatible schema). No build step, no JS framework, no bundler —
 a deliberate choice to keep the app simple to run, deploy, and hack on.
 
+## Interesting Challenges
+### Tuner Inaccuracies
+The initial algorithm was a very simple looping approach with a short circuit once a valid pitch 
+been identified. I tried this with a couple of quality flutes including both traditional types
+and a concert flute, all from well respected makers, but the number of overtones that are emitted 
+for certain notes on the flute was giving it a lot of trouble. Some notes were acceptable, though 
+not exactly ideally stable. After a bit of research, I found found a more sophisticated algorithm, 
+[McLeod's Pitch Detection](https://docs.rs/pitch-detection/latest/pitch_detection/detector/mcleod/index.html),
+which was designed specifically for this purpose which fixed the problem. 
+
+### Tablature 
+Adding tablature in was done on a whim, since I know a lot of string players don't read music well
+but might like the hints provided by a given setting's notes. I was suprised that the abcjs library
+supported it out of the box. However, some tunes, as written for flute, fiddle and pipe where hitting
+almost entirely on the highest string in the tablature. After some review of a couple of affected tunes,
+I suggested identifying the lowest note and comparing that with the lowest string in the instrument's 
+design and dropping an octave it it was safe to do so (my suggestion was 7 whole steps, which claude 
+revised in semitones.)
+
 ## Running locally
 
 ```bash
