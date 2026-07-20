@@ -113,6 +113,7 @@ class ContentType(LabelledEnum):
 class SessionItemType(LabelledEnum):
     warmup = "warmup"
     learning = "learning"
+    review = "review"
     retention = "retention"
     technique = "technique"
 
@@ -468,6 +469,16 @@ class PracticeList(TimestampMixin, Base):
     target_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Per-list session-shape overrides (#242/TODO 12) -- null means "use the
+    # hardcoded defaults" (see session_plan.py), not "zero"/"none allowed".
+    learning_tune_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    review_tune_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    retention_tune_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    warmup_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    review_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    learning_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    retention_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     user: Mapped["User"] = relationship(back_populates="practice_lists")
     box: Mapped["TuneBox"] = relationship()
     entries: Mapped[list["TuneListEntry"]] = relationship(back_populates="practice_list", cascade="all, delete-orphan")
@@ -486,6 +497,13 @@ class TuneListEntry(TimestampMixin, Base):
     display_alias_id: Mapped[int | None] = mapped_column(ForeignKey("tune_aliases.id"), nullable=True)
     transpose_key_root: Mapped[KeyRoot | None] = mapped_column(Enum(KeyRoot), nullable=True)
     transpose_octave: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    # Focus subset (#242/TODO 12) -- the session planner's learning queue
+    # rotates through focused entries only, not the whole list.
+    is_focus: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, server_default="0")
+    # Set when a focused entry's effective status reaches the list's
+    # progress_goal; cleared when the user responds to the resulting prompt
+    # (see services/spaced_rep.py), whichever way they respond.
+    focus_goal_reached_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     __table_args__ = (UniqueConstraint("tune_id", "list_id", name="uq_tune_list_entry_tune_list"),)
 
