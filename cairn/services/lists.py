@@ -267,3 +267,40 @@ async def remove_tune_from_list(db: AsyncSession, list_id: int, tune_id: int) ->
     await db.delete(entry)
     await db.commit()
     return True
+
+
+async def set_focus(db: AsyncSession, list_id: int, tune_id: int, is_focus: bool) -> TuneListEntry | None:
+    """Toggle the focus subset a session's learning queue rotates through (#241/#243)."""
+    result = await db.execute(
+        select(TuneListEntry).where(TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id)
+    )
+    entry = result.scalar_one_or_none()
+    if entry is None:
+        return None
+    entry.is_focus = is_focus
+    db.add(entry)
+    await db.commit()
+    return await get_list_entry(db, list_id, tune_id)
+
+
+async def list_focus_entries(db: AsyncSession, list_id: int) -> list[TuneListEntry]:
+    """Focused entries for a list, oldest-focused-first (`updated_at` as the best proxy available)."""
+    stmt = (
+        select(TuneListEntry)
+        .where(TuneListEntry.list_id == list_id, TuneListEntry.is_focus.is_(True))
+        .order_by(TuneListEntry.updated_at)
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def clear_focus_prompt(db: AsyncSession, entry_id: int) -> TuneListEntry | None:
+    """Dismiss the goal-reached prompt without changing is_focus (the "keep it focused" response)."""
+    entry = await db.get(TuneListEntry, entry_id)
+    if entry is None:
+        return None
+    entry.focus_goal_reached_at = None
+    db.add(entry)
+    await db.commit()
+    await db.refresh(entry)
+    return entry

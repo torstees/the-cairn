@@ -312,14 +312,23 @@ A tune may appear on multiple lists simultaneously.
 List membership is recorded in `TuneListEntry`, which carries:
 - `setting_id` (nullable) — which setting to display during sessions using this
   list; also determines which `SettingProgress` record to use for effective status.
+- `is_focus` — a smaller, explicit subset (#241) the session planner's learning
+  queue rotates through, once it does (#244); expected to land around 8-12
+  tunes but with no hard cap.
+- `focus_goal_reached_at` (nullable) — set once a focused entry's effective
+  status reaches the list's `progress_goal`; cleared when the user responds to
+  the resulting prompt, however they respond (`set_focus`/`clear_focus_prompt`
+  in `cairn/services/lists.py`).
 
 **Two list types:**
 
-*Repertoire* — goal-driven learning list. Auto-removes a tune's `TuneListEntry`
-when its effective status reaches or exceeds the list's `progress_goal`. This check
-runs against **every** Repertoire list the tune belongs to whenever progress changes;
-a tune may be removed from multiple lists in a single operation. Woodshed entries
-are never auto-removed.
+*Repertoire* — goal-driven learning list. Reaching a tune's `progress_goal`
+never deletes its `TuneListEntry` (Domain Rule 14, revised for #241/#243) — the
+list stays a durable record even after a tune "graduates". If the entry is
+focused, `focus_goal_reached_at` is set once instead, so the session UI can
+prompt the user to choose whether to un-focus it; non-focused entries need no
+action at all. This check runs against the user's *active* Repertoire list
+only, whenever effective status changes.
 
 *Woodshed* — intensive focus list. Tunes are never auto-removed. Once a tune's
 effective status reaches `progress_goal` it leaves the learning queue but becomes
@@ -444,10 +453,14 @@ pedagogy leaves implicit but that adult learners benefit from having made explic
 13. **Only one PracticeList per user may be `is_active = True` at any time.**
     Enforce at the application layer when activating a list.
 
-14. **Repertoire auto-removal is triggered by any effective-status change**,
-    not only explicit manual status updates. When `record_practice` or
-    `set_status` is called, check every Repertoire list the tune belongs to
-    (within the same box) and remove entries whose goal is now met.
+14. **Reaching a Repertoire goal never deletes a `TuneListEntry`** (revised
+    for #241/#243) — the list stays a durable record even after a tune
+    "graduates". When `record_practice`, `set_status`, or `advance_status_one`
+    changes a tune's effective status, check the user's *active* Repertoire
+    list (within the same box): if the tune's entry is focused (`is_focus`)
+    and effective status has reached the list's `progress_goal`, set
+    `focus_goal_reached_at` once (don't re-bump it on later practice). A
+    non-focused entry needs no action.
 
 15. **`SettingProgress.status` is always ≤ `StudentProgress.status`** for the
     same `(user, tune, box)`. A `SettingProgress` record that has caught up to
