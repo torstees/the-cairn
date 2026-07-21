@@ -270,7 +270,11 @@ async def remove_tune_from_list(db: AsyncSession, list_id: int, tune_id: int) ->
 
 
 async def set_focus(db: AsyncSession, list_id: int, tune_id: int, is_focus: bool) -> TuneListEntry | None:
-    """Toggle the focus subset a session's learning queue rotates through (#241/#243)."""
+    """Toggle the focus subset a session's learning queue rotates through (#241/#243).
+
+    Turning focus off also clears any pending goal-reached prompt (#245) --
+    the prompt only makes sense for a still-focused entry.
+    """
     result = await db.execute(
         select(TuneListEntry).where(TuneListEntry.list_id == list_id, TuneListEntry.tune_id == tune_id)
     )
@@ -278,6 +282,8 @@ async def set_focus(db: AsyncSession, list_id: int, tune_id: int, is_focus: bool
     if entry is None:
         return None
     entry.is_focus = is_focus
+    if not is_focus:
+        entry.focus_goal_reached_at = None
     db.add(entry)
     await db.commit()
     return await get_list_entry(db, list_id, tune_id)

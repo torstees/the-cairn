@@ -320,6 +320,22 @@ async def test_set_focus_missing_entry_returns_none(db: AsyncSession) -> None:
     assert result is None
 
 
+async def test_set_focus_off_clears_pending_goal_reached_prompt(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    entry = await add_tune_to_list(db, pl.id, tune.id)
+    await set_focus(db, pl.id, tune.id, True)
+    entry.focus_goal_reached_at = datetime.now(UTC)
+    db.add(entry)
+    await db.commit()
+
+    unfocused = await set_focus(db, pl.id, tune.id, False)
+    assert unfocused is not None
+    assert unfocused.focus_goal_reached_at is None
+
+
 async def test_list_focus_entries_returns_only_focused(db: AsyncSession) -> None:
     u = await _user(db)
     box = await _box(db, u.id)

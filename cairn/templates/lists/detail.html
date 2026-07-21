@@ -144,9 +144,37 @@
 
     {# ── Tune list ────────────────────────────────────────────────────────────── #}
     <section class="mb-8">
+      {% set focused_count = practice_list.entries | selectattr('is_focus') | list | length %}
       <h2 class="text-xl font-semibold text-stone-700 mb-3">
         Tunes <span class="text-stone-400 font-normal text-base">({{ practice_list.entries | length }})</span>
+        {% if focused_count %}
+        <span class="text-stone-400 font-normal text-base">&middot; {{ focused_count }} focused</span>
+        {% endif %}
       </h2>
+
+      {% for entry in practice_list.entries if entry.focus_goal_reached_at %}
+      <div id="focus-prompt-{{ entry.tune_id }}"
+           class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-3 text-sm text-amber-800 flex items-center justify-between gap-3">
+        <span>
+          <span class="font-semibold">{{ entry.display_alias.name if entry.display_alias else entry.tune.title }}</span>
+          reached its goal &mdash; keep practicing it, or remove it from your focus rotation?
+        </span>
+        <span class="flex gap-2 shrink-0">
+          <button type="button"
+                  hx-post="/lists/{{ practice_list.id }}/tunes/{{ entry.tune_id }}/focus"
+                  hx-swap="none"
+                  class="px-3 py-1.5 text-sm font-medium text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50 bg-white">
+            Remove from focus
+          </button>
+          <button type="button"
+                  hx-post="/lists/{{ practice_list.id }}/tunes/{{ entry.tune_id }}/focus/keep"
+                  hx-swap="none"
+                  class="px-3 py-1.5 text-sm font-medium text-white bg-stone-700 rounded-lg hover:bg-stone-600">
+            Keep focused
+          </button>
+        </span>
+      </div>
+      {% endfor %}
 
       <div class="bg-white rounded-lg shadow-sm text-sm" role="table" aria-label="Tunes in this list">
         <div role="rowgroup">
