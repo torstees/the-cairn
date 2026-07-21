@@ -357,9 +357,9 @@ async def test_review_queue_prefers_recent_session_and_reaches_into_older_one(db
     )
     await db.commit()
 
-    # 60 min: default 50% learning budget = 30 min, fits tune_a + tune_b (24 min,
+    # 40 min: default 50% learning budget = 20 min, fits tune_a + tune_b (16 min,
     # focus order) but not a third -- tune_c/tune_d are bumped.
-    session = await build_session(db, user.id, box.id, 60)
+    session = await build_session(db, user.id, box.id, 40)
 
     learning_ids = {i.tune_id for i in session.items if i.item_type == SessionItemType.learning}
     assert learning_ids == {tune_a, tune_b}

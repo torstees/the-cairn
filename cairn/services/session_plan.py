@@ -26,13 +26,12 @@ logger = logging.getLogger(__name__)
 
 _STATUS_ORDER = list(ProgressStatus)
 
-# Minutes to allocate per learning item, by effective status.
-_LEARNING_MINUTES: dict[ProgressStatus, int] = {
-    ProgressStatus.just_learning: 12,
-    ProgressStatus.getting_there: 7,
-    ProgressStatus.nearly_there: 4,
-    ProgressStatus.session_ready: 2,
-}
+# Minutes to allocate per learning item, regardless of status -- flattened
+# from an earlier per-status schedule (12/7/4/2) as a stopgap: at a 50%
+# learning budget, that per-status cost meant a session mostly full of
+# just_learning tunes (12 min each) could only ever fit one, leaving most
+# of the budget unused. Revisit with a real per-status schedule later.
+_LEARNING_MINUTES_PER_TUNE = 8
 
 _RETENTION_MINUTES = 2
 _REVIEW_MINUTES = 2
@@ -442,10 +441,10 @@ async def build_session(
     selected_learning_ids: set[int] = set()
     if active_list is not None:
         learning_count_cap = _resolve_count(learning_tune_count, active_list.learning_tune_count)
-        for tune_id, status, _setting_id in learning_queue:
+        for tune_id, _status, _setting_id in learning_queue:
             if learning_count_cap is not None and len(selected_learning_ids) >= learning_count_cap:
                 break
-            minutes = _LEARNING_MINUTES.get(status, _RETENTION_MINUTES)
+            minutes = _LEARNING_MINUTES_PER_TUNE
             if learning_minutes < minutes:
                 break
             items.append(
@@ -460,8 +459,8 @@ async def build_session(
             learning_minutes -= minutes
             selected_learning_ids.add(tune_id)
     else:
-        for tune_id, status, _setting_id in learning_queue:
-            minutes = _LEARNING_MINUTES.get(status, _RETENTION_MINUTES)
+        for tune_id, _status, _setting_id in learning_queue:
+            minutes = _LEARNING_MINUTES_PER_TUNE
             if remaining < minutes:
                 break
             items.append(
