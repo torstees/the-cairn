@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,11 +8,14 @@ from cairn.services.boxes import create_box
 from cairn.services.lists import (
     activate_list,
     add_tune_to_list,
+    clear_focus_prompt,
     create_list,
     deactivate_list,
     get_active_list,
     get_list_entry,
+    list_focus_entries,
     remove_tune_from_list,
+    set_focus,
     update_list_entry_display_alias,
     update_list_entry_transpose,
 )
@@ -287,3 +290,90 @@ async def test_get_active_list_eager_loads_entries(db: AsyncSession) -> None:
     await activate_list(db, u.id, pl.id)
     active = await get_active_list(db, u.id)
     assert len(active.entries) == 1
+
+
+# ── focus (#241/#243) ────────────────────────────────────────────────────────
+
+
+async def test_set_focus_toggles_and_returns_entry(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    await add_tune_to_list(db, pl.id, tune.id)
+
+    focused = await set_focus(db, pl.id, tune.id, True)
+    assert focused is not None
+    assert focused.is_focus is True
+
+    unfocused = await set_focus(db, pl.id, tune.id, False)
+    assert unfocused is not None
+    assert unfocused.is_focus is False
+
+
+async def test_set_focus_missing_entry_returns_none(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    result = await set_focus(db, pl.id, tune.id, True)
+    assert result is None
+
+
+async def test_list_focus_entries_returns_only_focused(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune_a = await _tune(db, title="Tune A")
+    tune_b = await _tune(db, title="Tune B")
+    await add_tune_to_list(db, pl.id, tune_a.id)
+    await add_tune_to_list(db, pl.id, tune_b.id)
+    await set_focus(db, pl.id, tune_a.id, True)
+
+    entries = await list_focus_entries(db, pl.id)
+    assert [e.tune_id for e in entries] == [tune_a.id]
+
+
+async def test_list_focus_entries_orders_oldest_focused_first(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune_a = await _tune(db, title="Tune A")
+    tune_b = await _tune(db, title="Tune B")
+    await add_tune_to_list(db, pl.id, tune_a.id)
+    await add_tune_to_list(db, pl.id, tune_b.id)
+
+    entry_a = await set_focus(db, pl.id, tune_a.id, True)
+    entry_b = await set_focus(db, pl.id, tune_b.id, True)
+    # Force a deterministic ordering independent of the DB's timestamp
+    # resolution -- two set_focus calls in a test can land in the same
+    # onupdate=func.now() tick.
+    entry_a.updated_at = datetime.now(UTC) - timedelta(minutes=5)
+    entry_b.updated_at = datetime.now(UTC)
+    db.add_all([entry_a, entry_b])
+    await db.commit()
+
+    entries = await list_focus_entries(db, pl.id)
+    assert [e.tune_id for e in entries] == [tune_a.id, tune_b.id]
+
+
+async def test_clear_focus_prompt_nulls_timestamp_without_changing_focus(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    tune = await _tune(db)
+    entry = await add_tune_to_list(db, pl.id, tune.id)
+    await set_focus(db, pl.id, tune.id, True)
+    entry.focus_goal_reached_at = datetime.now(UTC)
+    db.add(entry)
+    await db.commit()
+
+    cleared = await clear_focus_prompt(db, entry.id)
+    assert cleared is not None
+    assert cleared.focus_goal_reached_at is None
+    assert cleared.is_focus is True
+
+
+async def test_clear_focus_prompt_missing_entry_returns_none(db: AsyncSession) -> None:
+    result = await clear_focus_prompt(db, 9999)
+    assert result is None

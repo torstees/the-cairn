@@ -17,7 +17,7 @@ from cairn.models import (
 )
 from cairn.schemas import TuneCreate
 from cairn.services.boxes import create_box
-from cairn.services.lists import activate_list, add_tune_to_list, create_list
+from cairn.services.lists import activate_list, add_tune_to_list, create_list, set_focus
 from cairn.services.spaced_rep import (
     _INITIAL_EASE_FACTOR,
     MIN_EASE_FACTOR,
@@ -617,10 +617,10 @@ async def test_record_practice_no_setting_progress_when_list_entry_has_no_settin
     assert result.scalar_one_or_none() is None
 
 
-# ── Repertoire auto-removal ────────────────────────────────────────────────────
+# ── Repertoire goal-reached (focus prompt, #241/#243) ──────────────────────────
 
 
-async def test_set_status_removes_from_repertoire_list_when_goal_met(db: AsyncSession) -> None:
+async def test_set_status_survives_in_repertoire_list_when_goal_met_and_not_focused(db: AsyncSession) -> None:
     from sqlalchemy import select as sa_select
 
     from cairn.models import TuneListEntry
@@ -637,7 +637,60 @@ async def test_set_status_removes_from_repertoire_list_when_goal_met(db: AsyncSe
     result = await db.execute(
         sa_select(TuneListEntry).where(TuneListEntry.list_id == pl.id, TuneListEntry.tune_id == t.id)
     )
-    assert result.scalar_one_or_none() is None
+    entry = result.scalar_one_or_none()
+    assert entry is not None
+    assert entry.focus_goal_reached_at is None
+
+
+async def test_set_status_sets_focus_goal_reached_when_focused_and_goal_met(db: AsyncSession) -> None:
+    from sqlalchemy import select as sa_select
+
+    from cairn.models import TuneListEntry
+
+    u = await _user(db)
+    b = await _box(db, u.id)
+    t = await _tune(db)
+    pl = await create_list(
+        db, u.id, b.id, "Repertoire", PracticeListType.repertoire, progress_goal=ProgressStatus.committed
+    )
+    await add_tune_to_list(db, pl.id, t.id)
+    await set_focus(db, pl.id, t.id, True)
+    await activate_list(db, u.id, pl.id)
+    await set_status(db, u.id, b.id, t.id, ProgressStatus.committed)
+    result = await db.execute(
+        sa_select(TuneListEntry).where(TuneListEntry.list_id == pl.id, TuneListEntry.tune_id == t.id)
+    )
+    entry = result.scalar_one_or_none()
+    assert entry is not None
+    assert entry.focus_goal_reached_at is not None
+
+
+async def test_set_status_does_not_rebump_focus_goal_reached_on_later_practice(db: AsyncSession) -> None:
+    from sqlalchemy import select as sa_select
+
+    from cairn.models import TuneListEntry
+
+    u = await _user(db)
+    b = await _box(db, u.id)
+    t = await _tune(db)
+    pl = await create_list(
+        db, u.id, b.id, "Repertoire", PracticeListType.repertoire, progress_goal=ProgressStatus.committed
+    )
+    await add_tune_to_list(db, pl.id, t.id)
+    await set_focus(db, pl.id, t.id, True)
+    await activate_list(db, u.id, pl.id)
+    await set_status(db, u.id, b.id, t.id, ProgressStatus.committed)
+    result = await db.execute(
+        sa_select(TuneListEntry).where(TuneListEntry.list_id == pl.id, TuneListEntry.tune_id == t.id)
+    )
+    first_timestamp = result.scalar_one().focus_goal_reached_at
+    assert first_timestamp is not None
+
+    await set_status(db, u.id, b.id, t.id, ProgressStatus.committed)
+    result = await db.execute(
+        sa_select(TuneListEntry).where(TuneListEntry.list_id == pl.id, TuneListEntry.tune_id == t.id)
+    )
+    assert result.scalar_one().focus_goal_reached_at == first_timestamp
 
 
 async def test_set_status_does_not_remove_when_below_goal(db: AsyncSession) -> None:

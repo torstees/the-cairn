@@ -163,27 +163,37 @@ async def _advance_setting_progress(
     await db.commit()
 
 
-async def _check_repertoire_removal(
+async def _check_focus_goal_reached(
     db: AsyncSession,
     user_id: int,
     tune_id: int,
     box_id: int,
 ) -> None:
-    """Remove a tune from the active Repertoire list if its effective status meets the goal."""
-    from cairn.services.lists import get_active_list, remove_tune_from_list
+    """Flag a focused Repertoire entry once its effective status reaches the list's goal.
+
+    Domain Rule 14, revised (#241/#243): reaching goal never deletes the
+    `TuneListEntry` -- the list is a durable record even after a tune
+    "graduates". A focused entry gets `focus_goal_reached_at` set once (not
+    re-bumped on every later practice) so the user can choose whether to
+    un-focus it; a non-focused entry needs no action at all, since it isn't
+    surfaced as a learning candidate once #244 lands.
+    """
+    from cairn.services.lists import get_active_list
 
     active_list = await get_active_list(db, user_id)
     if active_list is None or active_list.box_id != box_id or active_list.list_type != PracticeListType.repertoire:
         return
 
     list_entry = next((e for e in active_list.entries if e.tune_id == tune_id), None)
-    if list_entry is None:
+    if list_entry is None or not list_entry.is_focus or list_entry.focus_goal_reached_at is not None:
         return
 
     effective = await get_effective_status(db, user_id, tune_id, box_id, list_entry.setting_id)
     goal_idx = _STATUS_ORDER.index(active_list.progress_goal)
     if _STATUS_ORDER.index(effective) >= goal_idx:
-        await remove_tune_from_list(db, active_list.id, tune_id)
+        list_entry.focus_goal_reached_at = datetime.now(UTC)
+        db.add(list_entry)
+        await db.commit()
 
 
 async def record_practice(
@@ -201,7 +211,7 @@ async def record_practice(
     only manages the spaced-repetition fields.
 
     Also advances SettingProgress when the active list has a setting entry for
-    this tune, and checks Repertoire auto-removal.
+    this tune, and flags a focused Repertoire entry that just reached goal.
     """
     result = await db.execute(
         select(StudentProgress).where(
@@ -250,7 +260,7 @@ async def record_practice(
         if list_entry is not None:
             await _advance_setting_progress(db, user_id, list_entry.setting_id, box_id, confidence, record.status)
 
-        await _check_repertoire_removal(db, user_id, tune_id, box_id)
+        await _check_focus_goal_reached(db, user_id, tune_id, box_id)
 
     return record
 
@@ -306,7 +316,7 @@ async def advance_status_one(
         record.status = _STATUS_ORDER[current_idx + 1]
         await db.commit()
         await db.refresh(record)
-        await _check_repertoire_removal(db, user_id, tune_id, box_id)
+        await _check_focus_goal_reached(db, user_id, tune_id, box_id)
 
     return record
 
@@ -321,7 +331,7 @@ async def set_status(
     """Manually set the ProgressStatus for a (user, box, tune) triple.
 
     Creates a StudentProgress row with sensible defaults if one doesn't exist yet.
-    Checks Repertoire auto-removal after updating.
+    Flags a focused Repertoire entry that just reached goal, after updating.
     """
     result = await db.execute(
         select(StudentProgress).where(
@@ -347,6 +357,6 @@ async def set_status(
     await db.commit()
     await db.refresh(record)
 
-    await _check_repertoire_removal(db, user_id, tune_id, box_id)
+    await _check_focus_goal_reached(db, user_id, tune_id, box_id)
 
     return record
