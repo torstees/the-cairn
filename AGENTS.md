@@ -342,7 +342,12 @@ A Repertoire/Woodshed list also carries nullable session-shape overrides
 (#241/#242): `warmup_pct`/`review_pct`/`learning_pct`/`retention_pct` (0-100,
 null → this section's defaults) and `learning_tune_count`/
 `review_tune_count`/`retention_tune_count` (null → unlimited, i.e. today's
-fill-by-time behavior for that category).
+fill-by-time behavior for that category). Set from the `/practice/plan`
+form's "Session Shape" section (#246) — submitted values always shape that
+one session (`build_session`'s per-call overrides, resolved ahead of the
+list's own stored value), and only get written back onto the list itself
+when "Save as this list's default" is checked
+(`update_list_preferences`, `cairn/services/lists.py`).
 
 **Session queue logic** (all scoped to the active TuneBox; #244):
 

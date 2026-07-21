@@ -23,7 +23,7 @@ from cairn.models import (
 from cairn.schemas import TuneCreate
 from cairn.services.boxes import add_tune, create_box
 from cairn.services.lists import activate_list, add_tune_to_list, create_list, set_focus
-from cairn.services.session_plan import build_session
+from cairn.services.session_plan import build_session, rate_item
 from cairn.services.tunes import create_tune
 
 _ABC = "|:DEFA BAFA|DEFA BAFA:|"
@@ -357,9 +357,9 @@ async def test_review_queue_prefers_recent_session_and_reaches_into_older_one(db
     )
     await db.commit()
 
-    # 60 min: default 50% learning budget = 30 min, fits tune_a + tune_b (24 min,
+    # 40 min: default 50% learning budget = 20 min, fits tune_a + tune_b (16 min,
     # focus order) but not a third -- tune_c/tune_d are bumped.
-    session = await build_session(db, user.id, box.id, 60)
+    session = await build_session(db, user.id, box.id, 40)
 
     learning_ids = {i.tune_id for i in session.items if i.item_type == SessionItemType.learning}
     assert learning_ids == {tune_a, tune_b}
@@ -497,3 +497,111 @@ async def test_percentage_driven_warmup_budget(db: AsyncSession):
         session = await build_session(db, user.id, box.id, total_minutes)
         warmup_item = next(i for i in session.items if i.item_type == SessionItemType.warmup)
         assert warmup_item.minutes_allocated == round(total_minutes * 0.25)
+
+
+# ── per-call preference overrides (#246) ────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_build_session_pct_override_beats_list_stored_value(db: AsyncSession):
+    """An explicit warmup_pct kwarg shapes just this session, regardless of
+    what the list itself has stored -- "use these values for just this
+    session" independent of persisting anything."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    plist.warmup_pct = 25
+    db.add(plist)
+    await db.commit()
+    await activate_list(db, user.id, plist.id)
+
+    session = await build_session(db, user.id, box.id, 100, warmup_pct=40)
+    warmup_item = next(i for i in session.items if i.item_type == SessionItemType.warmup)
+    assert warmup_item.minutes_allocated == 40
+
+    # The list's own stored value is untouched by the override.
+    assert plist.warmup_pct == 25
+
+
+@pytest.mark.asyncio
+async def test_build_session_pct_override_falls_back_to_list_value_when_none(db: AsyncSession):
+    """No override supplied: falls back to the list's own stored value, exactly as before #246."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    plist.warmup_pct = 25
+    db.add(plist)
+    await db.commit()
+    await activate_list(db, user.id, plist.id)
+
+    session = await build_session(db, user.id, box.id, 100)
+    warmup_item = next(i for i in session.items if i.item_type == SessionItemType.warmup)
+    assert warmup_item.minutes_allocated == 25
+
+
+@pytest.mark.asyncio
+async def test_build_session_count_override_beats_list_stored_value(db: AsyncSession):
+    """learning_tune_count override caps the session even when the list's own stored cap is higher (or unset)."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+
+    tune_ids = []
+    for title in ["Tune A", "Tune B", "Tune C"]:
+        tid = await _tune(db, title)
+        await add_tune(db, box.id, tid)
+        await _progress(db, user.id, tid, box.id, ProgressStatus.session_ready)  # 2 min each
+        tune_ids.append(tid)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    for tid in tune_ids:
+        await add_tune_to_list(db, plist.id, tid)
+    await activate_list(db, user.id, plist.id)
+
+    session = await build_session(db, user.id, box.id, 60, learning_tune_count=1)
+    learning_ids = {i.tune_id for i in session.items if i.item_type == SessionItemType.learning}
+    assert len(learning_ids) == 1
+
+
+# ── rate_item review exemption (#246) ───────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_rate_item_review_does_not_advance_status_even_at_high_confidence(db: AsyncSession):
+    """A review item still updates SM-2 state via record_practice, but a high
+    confidence rating must never call advance_status_one -- that stays
+    earned through a real learning or retention slot."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    tune_id = await _tune(db, "Reviewed Tune")
+    await add_tune(db, box.id, tune_id)
+
+    session = PracticeSession(user_id=user.id, box_id=box.id, started_at=datetime.now(UTC))
+    db.add(session)
+    await db.flush()
+    item = PracticeSessionItem(
+        session_id=session.id,
+        item_type=SessionItemType.review,
+        tune_id=tune_id,
+        minutes_allocated=2,
+        completed=False,
+    )
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+
+    rated = await rate_item(db, session.id, item.id, user.id, confidence=5)
+    assert rated is not None
+
+    from sqlalchemy import select as sa_select
+
+    result = await db.execute(
+        sa_select(StudentProgress).where(StudentProgress.user_id == user.id, StudentProgress.tune_id == tune_id)
+    )
+    progress = result.scalar_one()
+    assert progress.status == ProgressStatus.just_learning  # never advanced
+    assert progress.last_practiced is not None  # record_practice still ran
