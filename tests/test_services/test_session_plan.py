@@ -274,8 +274,9 @@ async def test_focus_rotation_orders_least_recently_practiced_first(db: AsyncSes
     await set_focus(db, plist.id, stale_tune, True)
     await activate_list(db, user.id, plist.id)
 
-    # 24 min: default 50% learning budget = 12 min, exactly one just_learning tune.
-    session = await build_session(db, user.id, box.id, 24)
+    # All budget to learning (no review/retention share to reallocate back
+    # in, #253) sized to fit exactly one tune (8 min) and not two (16 min).
+    session = await build_session(db, user.id, box.id, 15, learning_pct=100, review_pct=0, retention_pct=0)
 
     learning_ids = {i.tune_id for i in session.items if i.item_type == SessionItemType.learning}
     assert learning_ids == {stale_tune}
@@ -605,3 +606,229 @@ async def test_rate_item_review_does_not_advance_status_even_at_high_confidence(
     progress = result.scalar_one()
     assert progress.status == ProgressStatus.just_learning  # never advanced
     assert progress.last_practiced is not None  # record_practice still ran
+
+
+# ── cross-category budget reallocation (#253) ───────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_retention_shortfall_reallocates_to_learning(db: AsyncSession):
+    """Zero retention candidates: its unused budget cascades back to let
+    MORE learning tunes through than learning's own base budget would
+    allow alone."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+
+    tune_ids = []
+    for title in ["Tune A", "Tune B", "Tune C"]:
+        tid = await _tune(db, title)
+        await add_tune(db, box.id, tid)
+        await _progress(db, user.id, tid, box.id, ProgressStatus.just_learning)
+        tune_ids.append(tid)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    for tid in tune_ids:
+        await add_tune_to_list(db, plist.id, tid)
+    await activate_list(db, user.id, plist.id)
+
+    # 30 min: default 50% learning budget = 15 min -- fits only 1 of 3
+    # tunes (8 min each) on its own. Nothing is committed+, so retention has
+    # zero candidates and its ~9-minute share has nowhere to go but back to
+    # learning (through review, which also has no candidates yet).
+    session = await build_session(db, user.id, box.id, 30)
+
+    learning_ids = {i.tune_id for i in session.items if i.item_type == SessionItemType.learning}
+    assert learning_ids == set(tune_ids)
+    # Total time used should land much closer to the 30-minute target than
+    # the ~10 minutes (warmup + one tune) a non-reallocating build would give.
+    assert sum(i.minutes_allocated for i in session.items) >= 27
+
+
+@pytest.mark.asyncio
+async def test_reallocated_items_are_grouped_with_their_own_category(db: AsyncSession):
+    """A learning tune that only fit because of retention's reallocated
+    leftover still appears grouped with the other learning items (not
+    tacked on after retention's, which is simply when that top-up pass
+    runs) -- items are ordered warmup, learning, review, retention
+    regardless of which pass produced any given one."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+
+    tune_ids = []
+    for title in ["Tune A", "Tune B", "Tune C"]:
+        tid = await _tune(db, title)
+        await add_tune(db, box.id, tid)
+        await _progress(db, user.id, tid, box.id, ProgressStatus.just_learning)
+        tune_ids.append(tid)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    for tid in tune_ids:
+        await add_tune_to_list(db, plist.id, tid)
+    await activate_list(db, user.id, plist.id)
+
+    # Same shortfall scenario as above: only 1 of 3 learning tunes fits
+    # learning's own budget, so the other 2 arrive via the retention
+    # top-up pass, which runs *after* retention in the code.
+    session = await build_session(db, user.id, box.id, 30)
+
+    type_sequence = [i.item_type for i in session.items]
+    learning_positions = [idx for idx, t in enumerate(type_sequence) if t == SessionItemType.learning]
+    retention_positions = [idx for idx, t in enumerate(type_sequence) if t == SessionItemType.retention]
+    assert len(learning_positions) == 3
+    # Every learning item comes before every retention item, and the
+    # learning items are contiguous (no retention/review item interleaved).
+    assert learning_positions == list(range(learning_positions[0], learning_positions[0] + 3))
+    assert all(lp < rp for lp in learning_positions for rp in retention_positions) or not retention_positions
+
+
+@pytest.mark.asyncio
+async def test_missing_warmup_item_reallocates_to_learning(db: AsyncSession):
+    """No WarmupItem exists at all: its whole share cascades to learning
+    instead of silently vanishing."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    # Deliberately no _warmup(db) call -- no WarmupItem exists.
+
+    tune_ids = []
+    for title in ["Tune A", "Tune B"]:
+        tid = await _tune(db, title)
+        await add_tune(db, box.id, tid)
+        await _progress(db, user.id, tid, box.id, ProgressStatus.just_learning)
+        tune_ids.append(tid)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    for tid in tune_ids:
+        await add_tune_to_list(db, plist.id, tid)
+    await activate_list(db, user.id, plist.id)
+
+    # 20 min, warmup_pct=90/learning_pct=10: learning's own budget (2 min)
+    # can't afford even one 8-minute tune -- only the cascaded warmup share
+    # (18 min, unused since no WarmupItem exists) makes both tunes fit.
+    session = await build_session(
+        db, user.id, box.id, 20, warmup_pct=90, learning_pct=10, review_pct=0, retention_pct=0
+    )
+
+    learning_ids = {i.tune_id for i in session.items if i.item_type == SessionItemType.learning}
+    assert learning_ids == set(tune_ids)
+    assert not any(i.item_type == SessionItemType.warmup for i in session.items)
+
+
+@pytest.mark.asyncio
+async def test_no_focus_entries_review_share_cascades_to_retention(db: AsyncSession):
+    """No focused entries: review's phase never runs at all, so its whole
+    share cascades on to retention rather than vanishing."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+    past = datetime.now(UTC) - timedelta(days=1)
+
+    tune_ids = []
+    for title in ["Tune A", "Tune B", "Tune C", "Tune D"]:
+        tid = await _tune(db, title)
+        await add_tune(db, box.id, tid)
+        await _progress(db, user.id, tid, box.id, ProgressStatus.committed, next_suggested=past)
+        tune_ids.append(tid)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    for tid in tune_ids:
+        await add_tune_to_list(db, plist.id, tid)
+    # Deliberately no set_focus calls -- zero focused entries.
+    await activate_list(db, user.id, plist.id)
+
+    # 20 min: retention's own 30% budget (6 min) fits only 3 of the 4 due
+    # tunes (2 min each) -- learning has zero below-goal candidates (all 4
+    # are already committed) and review never runs (no focus subset), so
+    # both shares cascade forward and retention picks up all 4.
+    session = await build_session(db, user.id, box.id, 20)
+
+    retention_ids = {i.tune_id for i in session.items if i.item_type == SessionItemType.retention}
+    assert retention_ids == set(tune_ids)
+
+
+@pytest.mark.asyncio
+async def test_learning_tune_count_cap_holds_even_with_reallocated_budget(db: AsyncSession):
+    """A learning_tune_count cap still binds even when retention's unused
+    share cascades back with plenty of extra budget."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+
+    tune_ids = []
+    for title in ["Tune A", "Tune B", "Tune C"]:
+        tid = await _tune(db, title)
+        await add_tune(db, box.id, tid)
+        await _progress(db, user.id, tid, box.id, ProgressStatus.just_learning)
+        tune_ids.append(tid)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    for tid in tune_ids:
+        await add_tune_to_list(db, plist.id, tid)
+    plist.learning_tune_count = 1
+    db.add(plist)
+    await db.commit()
+    await activate_list(db, user.id, plist.id)
+
+    # 60 min: plenty of budget, and since nothing is committed+, all of
+    # retention's share cascades back too -- but the cap still stops it at 1.
+    session = await build_session(db, user.id, box.id, 60)
+
+    learning_ids = {i.tune_id for i in session.items if i.item_type == SessionItemType.learning}
+    assert len(learning_ids) == 1
+
+
+@pytest.mark.asyncio
+async def test_no_tune_is_scheduled_in_two_categories_at_once(db: AsyncSession):
+    """A tune bumped into review must never also be picked up by a later
+    top-up pass into learning (or vice versa) -- regression for a real bug
+    caught while building the reallocation above (the "already selected"
+    tracking must be shared across categories, not tracked separately per
+    category, or a tune can get double-booked)."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+
+    tune_ids = []
+    for title in ["Tune A", "Tune B", "Tune C", "Tune D"]:
+        tid = await _tune(db, title)
+        await add_tune(db, box.id, tid)
+        await _progress(db, user.id, tid, box.id, ProgressStatus.just_learning)
+        tune_ids.append(tid)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    for tid in tune_ids:
+        await add_tune_to_list(db, plist.id, tid)
+        await set_focus(db, plist.id, tid, True)
+    await activate_list(db, user.id, plist.id)
+
+    past_session = PracticeSession(user_id=user.id, box_id=box.id, started_at=datetime.now(UTC) - timedelta(days=1))
+    db.add(past_session)
+    await db.flush()
+    db.add_all(
+        [
+            PracticeSessionItem(
+                session_id=past_session.id,
+                item_type=SessionItemType.learning,
+                tune_id=tid,
+                minutes_allocated=8,
+                completed=True,
+            )
+            for tid in tune_ids
+        ]
+    )
+    await db.commit()
+
+    # 40 min: learning fits 2 (tune_a, tune_b); the other 2 qualify for
+    # review via the past session. Nothing is committed+, so retention has
+    # zero candidates and plenty cascades back to a learning top-up --
+    # tune_c/tune_d must not end up in BOTH review and learning.
+    session = await build_session(db, user.id, box.id, 40)
+
+    scheduled_by_type: dict[SessionItemType, set[int]] = {}
+    for item in session.items:
+        if item.tune_id is not None:
+            scheduled_by_type.setdefault(item.item_type, set()).add(item.tune_id)
+
+    all_scheduled = [tid for ids in scheduled_by_type.values() for tid in ids]
+    assert len(all_scheduled) == len(set(all_scheduled))  # no tune double-booked across categories
