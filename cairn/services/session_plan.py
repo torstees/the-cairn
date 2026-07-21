@@ -37,6 +37,16 @@ _LEARNING_MINUTES_PER_TUNE = 8
 _RETENTION_MINUTES = 2
 _REVIEW_MINUTES = 2
 
+# Session-flow order items are grouped into before persisting (#253) --
+# warm up, then new material, then a quick touch on recently-bumped
+# tunes, then reinforcing older ones.
+_ITEM_TYPE_ORDER = {
+    SessionItemType.warmup: 0,
+    SessionItemType.learning: 1,
+    SessionItemType.review: 2,
+    SessionItemType.retention: 3,
+}
+
 # Default per-list session-shape percentages (#241/TODO 12), used when a
 # PracticeList's own warmup_pct/review_pct/learning_pct/retention_pct is
 # None. Sum to exactly 100; warmup is pinned to the bottom of its stated
@@ -642,6 +652,15 @@ async def build_session(
                 )
             )
             remaining -= _RETENTION_MINUTES
+
+    # Group by category before persisting (#253) -- the reallocation top-up
+    # above appends any extra learning/review items *after* retention's,
+    # since that's simply when that pass runs; sorting here (stable, so
+    # each category's own internal order -- e.g. first-pass learning tunes
+    # before top-up ones -- is preserved) keeps a session reading as
+    # "warmup, then all learning, then all review, then all retention"
+    # regardless of which pass produced any given item.
+    items.sort(key=lambda item: _ITEM_TYPE_ORDER.get(item.item_type, len(_ITEM_TYPE_ORDER)))
 
     for item in items:
         db.add(item)

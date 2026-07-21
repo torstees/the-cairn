@@ -646,6 +646,44 @@ async def test_retention_shortfall_reallocates_to_learning(db: AsyncSession):
 
 
 @pytest.mark.asyncio
+async def test_reallocated_items_are_grouped_with_their_own_category(db: AsyncSession):
+    """A learning tune that only fit because of retention's reallocated
+    leftover still appears grouped with the other learning items (not
+    tacked on after retention's, which is simply when that top-up pass
+    runs) -- items are ordered warmup, learning, review, retention
+    regardless of which pass produced any given one."""
+    user = await _user(db)
+    box = await _box(db, user.id)
+    await _warmup(db)
+
+    tune_ids = []
+    for title in ["Tune A", "Tune B", "Tune C"]:
+        tid = await _tune(db, title)
+        await add_tune(db, box.id, tid)
+        await _progress(db, user.id, tid, box.id, ProgressStatus.just_learning)
+        tune_ids.append(tid)
+
+    plist = await create_list(db, user.id, box.id, "List", PracticeListType.repertoire, ProgressStatus.committed)
+    for tid in tune_ids:
+        await add_tune_to_list(db, plist.id, tid)
+    await activate_list(db, user.id, plist.id)
+
+    # Same shortfall scenario as above: only 1 of 3 learning tunes fits
+    # learning's own budget, so the other 2 arrive via the retention
+    # top-up pass, which runs *after* retention in the code.
+    session = await build_session(db, user.id, box.id, 30)
+
+    type_sequence = [i.item_type for i in session.items]
+    learning_positions = [idx for idx, t in enumerate(type_sequence) if t == SessionItemType.learning]
+    retention_positions = [idx for idx, t in enumerate(type_sequence) if t == SessionItemType.retention]
+    assert len(learning_positions) == 3
+    # Every learning item comes before every retention item, and the
+    # learning items are contiguous (no retention/review item interleaved).
+    assert learning_positions == list(range(learning_positions[0], learning_positions[0] + 3))
+    assert all(lp < rp for lp in learning_positions for rp in retention_positions) or not retention_positions
+
+
+@pytest.mark.asyncio
 async def test_missing_warmup_item_reallocates_to_learning(db: AsyncSession):
     """No WarmupItem exists at all: its whole share cascades to learning
     instead of silently vanishing."""
