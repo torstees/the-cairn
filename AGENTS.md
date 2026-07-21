@@ -356,9 +356,17 @@ With an active Repertoire/Woodshed list, `cairn/services/session_plan.py`'s
 into its own minute budget against `total_minutes` (defaults `warmup=10,
 review=10, learning=50, retention=30`, summing to 100), then fills each
 category up to its budget *and* its tune-count override (whichever binds
-first) — no reallocation of one category's unused budget to another. With
-no active list, the session keeps its original fixed-10%-warmup /
-fill-remaining-time behavior unchanged.
+first). Unused budget cascades forward instead of vanishing (#253) —
+warmup (if no `WarmupItem` exists at all) → learning → review (skipped
+entirely, its whole share cascading, when the list has no focused entries)
+→ retention — plus a single backward top-up of whatever retention still
+can't spend, back into learning then review (retention running dry is the
+only way anything survives the whole forward pass, so it's the only
+source for that last step). A tune-count cap always binds, regardless of
+whether the budget funding an item came from that category's own share or
+from elsewhere. With no active list, the session keeps its original
+fixed-10%-warmup / fill-remaining-time behavior unchanged, with no
+reallocation.
 
 If the active list has at least one focused entry, its learning queue
 rotates through that subset only — oldest `StudentProgress.last_practiced`

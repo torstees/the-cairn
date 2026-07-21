@@ -1,5 +1,6 @@
 import logging
 import math
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -60,6 +61,46 @@ def _resolve_count(override: int | None, list_value: int | None) -> int | None:
     """Same precedence as _resolve_pct, for the nullable tune-count caps
     (None always means "unlimited", at every level)."""
     return override if override is not None else list_value
+
+
+def _consume(
+    candidates: list[int],
+    already_used: set[int],
+    cost: int,
+    budget: int,
+    count_cap: int | None,
+    selected_count: int,
+    make_item: Callable[[int], PracticeSessionItem],
+) -> tuple[list[PracticeSessionItem], int, int]:
+    """Greedily build items for candidates not already in `already_used`, up
+    to `count_cap` and a flat per-item `cost` against `budget` (#253).
+
+    `already_used` is a single set shared across *every* category (learning/
+    review/retention) and mutated in place, so the same tune can never be
+    scheduled twice in one session -- e.g. a tune bumped into `review` must
+    stay out of a later top-up pass's `learning` consideration, even though
+    it's a different category with its own budget and cap. `selected_count`
+    is tracked separately per category (threaded through explicitly rather
+    than derived from `len(already_used)`, which would conflate categories)
+    so a count_cap only ever counts that category's own picks, across both
+    a first pass and any later top-up pass. Returns (new_items,
+    leftover_budget, new_selected_count) -- leftover is only nonzero when
+    `candidates` ran out before `budget` did, since every remaining
+    candidate costs the same.
+    """
+    new_items: list[PracticeSessionItem] = []
+    for tune_id in candidates:
+        if tune_id in already_used:
+            continue
+        if count_cap is not None and selected_count >= count_cap:
+            break
+        if budget < cost:
+            break
+        new_items.append(make_item(tune_id))
+        already_used.add(tune_id)
+        selected_count += 1
+        budget -= cost
+    return new_items, budget, selected_count
 
 
 # Bars shown per status in the practice session view.
@@ -364,6 +405,14 @@ async def build_session(
     session. Zero focused entries falls back to the full-list learning
     queue, with no review queue.
 
+    Unused budget cascades forward -- warmup (if no WarmupItem exists) →
+    learning → review (skipped entirely, whole share cascading, when there's
+    no focus subset) → retention -- plus one backward top-up from whatever
+    retention still can't spend back into learning then review, since
+    retention running dry is the only way anything survives that whole
+    forward pass (#253). Tune-count caps always bind, regardless of how
+    much of a category's budget came from its own share or from elsewhere.
+
     Queue strategy depends on whether an active PracticeList exists for this box:
       Repertoire list → learning from focus subset (or full list); box tunes at/above goal + due for retention
       Woodshed list   → same learning rule; woodshed tunes bypass SM-2 in retention
@@ -402,6 +451,11 @@ async def build_session(
         remaining = total_minutes - warmup_minutes
 
     # ── warmup ─────────────────────────────────────────────────────────────
+    # carry: unused budget cascading forward (active-list branch only,
+    # #253) -- starts with warmup's own budget if there was no WarmupItem
+    # to spend it on, since a single optional item (not a queue) can't
+    # partially consume it.
+    carry = 0
     warmup = await _pick_warmup(db)
     if warmup:
         items.append(
@@ -413,6 +467,8 @@ async def build_session(
                 completed=False,
             )
         )
+    elif active_list is not None:
+        carry += warmup_minutes
 
     focus_entries: list[TuneListEntry] = []
     if active_list is not None:
@@ -437,27 +493,34 @@ async def build_session(
         learning_ids = {t for t, _, _ in learning_queue}
         retention_queue = await _build_no_list_retention(db, user_id, box_id, learning_ids, now)
 
+    # already_used: every tune scheduled so far this session, regardless of
+    # category (#253) -- shared across learning/review/retention so the
+    # same tune can never end up double-booked (e.g. bumped into review,
+    # then also picked up by learning's second-chance top-up).
+    already_used: set[int] = set()
+
     # ── learning items ──────────────────────────────────────────────────────
-    selected_learning_ids: set[int] = set()
+    learning_candidates = [t for t, _, _ in learning_queue]
+    learning_count_cap: int | None = None
+    learning_selected = 0
     if active_list is not None:
         learning_count_cap = _resolve_count(learning_tune_count, active_list.learning_tune_count)
-        for tune_id, _status, _setting_id in learning_queue:
-            if learning_count_cap is not None and len(selected_learning_ids) >= learning_count_cap:
-                break
-            minutes = _LEARNING_MINUTES_PER_TUNE
-            if learning_minutes < minutes:
-                break
-            items.append(
-                PracticeSessionItem(
-                    session_id=session.id,
-                    item_type=SessionItemType.learning,
-                    tune_id=tune_id,
-                    minutes_allocated=minutes,
-                    completed=False,
-                )
-            )
-            learning_minutes -= minutes
-            selected_learning_ids.add(tune_id)
+        new_items, carry, learning_selected = _consume(
+            learning_candidates,
+            already_used,
+            _LEARNING_MINUTES_PER_TUNE,
+            learning_minutes + carry,
+            learning_count_cap,
+            learning_selected,
+            lambda tune_id: PracticeSessionItem(
+                session_id=session.id,
+                item_type=SessionItemType.learning,
+                tune_id=tune_id,
+                minutes_allocated=_LEARNING_MINUTES_PER_TUNE,
+                completed=False,
+            ),
+        )
+        items.extend(new_items)
     else:
         for tune_id, _status, _setting_id in learning_queue:
             minutes = _LEARNING_MINUTES_PER_TUNE
@@ -475,48 +538,96 @@ async def build_session(
             remaining -= minutes
 
     # ── review items (active-list-with-focus only, #241/#244) ──────────────
+    review_queue: list[int] = []
+    review_count_cap: int | None = None
+    review_selected = 0
     if active_list is not None and focus_entries:
-        review_candidates = {tune_id for tune_id, _, _ in learning_queue if tune_id not in selected_learning_ids}
+        review_candidates = {tune_id for tune_id, _, _ in learning_queue if tune_id not in already_used}
         review_queue = await _build_review_queue(db, user_id, box_id, review_candidates)
         review_count_cap = _resolve_count(review_tune_count, active_list.review_tune_count)
-        selected_review = 0
-        for tune_id in review_queue:
-            if review_count_cap is not None and selected_review >= review_count_cap:
-                break
-            if review_minutes < _REVIEW_MINUTES:
-                break
-            items.append(
-                PracticeSessionItem(
+        new_items, carry, review_selected = _consume(
+            review_queue,
+            already_used,
+            _REVIEW_MINUTES,
+            review_minutes + carry,
+            review_count_cap,
+            review_selected,
+            lambda tune_id: PracticeSessionItem(
+                session_id=session.id,
+                item_type=SessionItemType.review,
+                tune_id=tune_id,
+                minutes_allocated=_REVIEW_MINUTES,
+                completed=False,
+            ),
+        )
+        items.extend(new_items)
+    elif active_list is not None:
+        # No focus subset -- review never runs at all, so its whole share
+        # cascades on to retention rather than vanishing.
+        carry += review_minutes
+
+    # ── retention items ─────────────────────────────────────────────────────
+    if active_list is not None:
+        retention_count_cap = _resolve_count(retention_tune_count, active_list.retention_tune_count)
+        retention_candidates = [t for t, _ in retention_queue]
+        retention_selected = 0
+        new_items, carry, retention_selected = _consume(
+            retention_candidates,
+            already_used,
+            _RETENTION_MINUTES,
+            retention_minutes + carry,
+            retention_count_cap,
+            retention_selected,
+            lambda tune_id: PracticeSessionItem(
+                session_id=session.id,
+                item_type=SessionItemType.retention,
+                tune_id=tune_id,
+                minutes_allocated=_RETENTION_MINUTES,
+                completed=False,
+            ),
+        )
+        items.extend(new_items)
+
+        # ── second-chance top-up (#253) ─────────────────────────────────────
+        # carry can only still be > 0 here because retention's own queue
+        # ran dry (or was empty) -- a budget/cap limit would have already
+        # consumed everything handed to it. Retention itself has nothing
+        # left to buy, but learning/review might have had more candidates
+        # than their own budgets allowed.
+        if carry > 0:
+            new_items, carry, learning_selected = _consume(
+                learning_candidates,
+                already_used,
+                _LEARNING_MINUTES_PER_TUNE,
+                carry,
+                learning_count_cap,
+                learning_selected,
+                lambda tune_id: PracticeSessionItem(
+                    session_id=session.id,
+                    item_type=SessionItemType.learning,
+                    tune_id=tune_id,
+                    minutes_allocated=_LEARNING_MINUTES_PER_TUNE,
+                    completed=False,
+                ),
+            )
+            items.extend(new_items)
+        if carry > 0 and review_queue:
+            new_items, carry, review_selected = _consume(
+                review_queue,
+                already_used,
+                _REVIEW_MINUTES,
+                carry,
+                review_count_cap,
+                review_selected,
+                lambda tune_id: PracticeSessionItem(
                     session_id=session.id,
                     item_type=SessionItemType.review,
                     tune_id=tune_id,
                     minutes_allocated=_REVIEW_MINUTES,
                     completed=False,
-                )
+                ),
             )
-            review_minutes -= _REVIEW_MINUTES
-            selected_review += 1
-
-    # ── retention items ─────────────────────────────────────────────────────
-    if active_list is not None:
-        retention_count_cap = _resolve_count(retention_tune_count, active_list.retention_tune_count)
-        selected_retention = 0
-        for tune_id, _setting_id in retention_queue:
-            if retention_count_cap is not None and selected_retention >= retention_count_cap:
-                break
-            if retention_minutes < _RETENTION_MINUTES:
-                break
-            items.append(
-                PracticeSessionItem(
-                    session_id=session.id,
-                    item_type=SessionItemType.retention,
-                    tune_id=tune_id,
-                    minutes_allocated=_RETENTION_MINUTES,
-                    completed=False,
-                )
-            )
-            retention_minutes -= _RETENTION_MINUTES
-            selected_retention += 1
+            items.extend(new_items)
     else:
         for tune_id, _setting_id in retention_queue:
             if remaining < _RETENTION_MINUTES:
