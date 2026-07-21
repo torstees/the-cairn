@@ -22,9 +22,25 @@
         x-data="{
           boxId: {{ default_box_id }},
           listId: '{{ active_list.id if active_list else '' }}',
-          get lists() { return (window.__cairnListsByBox || {})[String(this.boxId)] || []; }
+          prefs: {},
+          saveAsDefault: false,
+          get lists() { return (window.__cairnListsByBox || {})[String(this.boxId)] || []; },
+          get selectedList() { return this.lists.find(l => l.id == this.listId) || null; },
+          syncPrefs() {
+            const l = this.selectedList;
+            this.prefs = {
+              warmup_pct: l ? l.warmup_pct : {{ default_warmup_pct }},
+              review_pct: l ? l.review_pct : {{ default_review_pct }},
+              learning_pct: l ? l.learning_pct : {{ default_learning_pct }},
+              retention_pct: l ? l.retention_pct : {{ default_retention_pct }},
+              learning_tune_count: l && l.learning_tune_count !== null ? l.learning_tune_count : '',
+              review_tune_count: l && l.review_tune_count !== null ? l.review_tune_count : '',
+              retention_tune_count: l && l.retention_tune_count !== null ? l.retention_tune_count : '',
+            };
+            this.saveAsDefault = false;
+          }
         }"
-        x-init="if (!lists.find(l => l.id == listId)) listId = ''">
+        x-init="if (!lists.find(l => l.id == listId)) listId = ''; syncPrefs(); $watch('listId', () => syncPrefs())">
 
     <div>
       <label for="box_id" class="block text-sm font-medium text-stone-700 mb-1">Tune Box</label>
@@ -46,6 +62,60 @@
           <option :value="l.id" x-text="l.name + ' (' + l.type_label + ')'"></option>
         </template>
       </select>
+    </div>
+
+    <div x-show="listId !== ''" x-cloak class="border-t border-stone-100 pt-5 space-y-4">
+      <h2 class="text-sm font-semibold text-stone-700">Session Shape</h2>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="warmup_pct" class="block text-xs font-medium text-stone-500 mb-1">Warmup %</label>
+          <input id="warmup_pct" name="warmup_pct" type="number" min="0" max="100" :value="prefs.warmup_pct"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label for="review_pct" class="block text-xs font-medium text-stone-500 mb-1">Review %</label>
+          <input id="review_pct" name="review_pct" type="number" min="0" max="100" :value="prefs.review_pct"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label for="learning_pct" class="block text-xs font-medium text-stone-500 mb-1">Learning %</label>
+          <input id="learning_pct" name="learning_pct" type="number" min="0" max="100" :value="prefs.learning_pct"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label for="retention_pct" class="block text-xs font-medium text-stone-500 mb-1">Retention %</label>
+          <input id="retention_pct" name="retention_pct" type="number" min="0" max="100" :value="prefs.retention_pct"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label for="learning_tune_count" class="block text-xs font-medium text-stone-500 mb-1">Max learning tunes</label>
+          <input id="learning_tune_count" name="learning_tune_count" type="number" min="0" placeholder="Unlimited"
+                 :value="prefs.learning_tune_count"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label for="review_tune_count" class="block text-xs font-medium text-stone-500 mb-1">Max review tunes</label>
+          <input id="review_tune_count" name="review_tune_count" type="number" min="0" placeholder="Unlimited"
+                 :value="prefs.review_tune_count"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+        <div>
+          <label for="retention_tune_count" class="block text-xs font-medium text-stone-500 mb-1">Max retention tunes</label>
+          <input id="retention_tune_count" name="retention_tune_count" type="number" min="0" placeholder="Unlimited"
+                 :value="prefs.retention_tune_count"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        </div>
+      </div>
+
+      <label class="flex items-center gap-2 text-sm text-stone-600 cursor-pointer select-none">
+        <input type="checkbox" name="save_as_default" value="true" x-model="saveAsDefault"
+               class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+        Save as this list's default
+      </label>
     </div>
 
     <div>

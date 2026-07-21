@@ -1,3 +1,5 @@
+import json
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +21,9 @@ from cairn.services.lists import (
     add_tune_to_list,
     create_list,
     get_active_list,
+    get_list,
     update_list_entry_transpose,
+    update_list_preferences,
 )
 from cairn.services.session_plan import build_session
 from cairn.services.tunes import add_alias, create_tune
@@ -78,6 +82,139 @@ async def test_plan_create_redirects_to_session(client: AsyncClient, db: AsyncSe
     )
     assert resp.status_code == 303
     assert resp.headers["location"].startswith("/practice/session/")
+
+
+# ── session-shape preferences (#246) ─────────────────────────────────────────
+
+
+async def test_plan_form_prefills_list_preferences(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    plist = await create_list(db, user.id, box.id, "List A", PracticeListType.repertoire)
+    await update_list_preferences(
+        db,
+        plist.id,
+        warmup_pct=20,
+        review_pct=15,
+        learning_pct=45,
+        retention_pct=20,
+        learning_tune_count=5,
+        review_tune_count=None,
+        retention_tune_count=None,
+    )
+
+    resp = await client.get("/practice/plan")
+    assert resp.status_code == 200
+    marker = "window.__cairnListsByBox = "
+    blob = resp.text.split(marker, 1)[1].split(";", 1)[0]
+    entry = json.loads(blob)[str(box.id)][0]
+    assert entry["warmup_pct"] == 20
+    assert entry["review_pct"] == 15
+    assert entry["learning_pct"] == 45
+    assert entry["retention_pct"] == 20
+    assert entry["learning_tune_count"] == 5
+    assert entry["review_tune_count"] is None
+    assert entry["retention_tune_count"] is None
+
+
+async def test_plan_form_prefills_defaults_when_list_has_no_overrides(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    _, box, _, _ = await _seed(db, user)
+    await create_list(db, user.id, box.id, "List A", PracticeListType.repertoire)
+
+    resp = await client.get("/practice/plan")
+    assert resp.status_code == 200
+    marker = "window.__cairnListsByBox = "
+    blob = resp.text.split(marker, 1)[1].split(";", 1)[0]
+    entry = json.loads(blob)[str(box.id)][0]
+    assert entry["warmup_pct"] == 10
+    assert entry["review_pct"] == 10
+    assert entry["learning_pct"] == 50
+    assert entry["retention_pct"] == 30
+    assert entry["learning_tune_count"] is None
+
+
+async def test_plan_create_save_as_default_persists_preferences(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    _, box, _, _ = await _seed(db, user)
+    plist = await create_list(db, user.id, box.id, "List A", PracticeListType.repertoire)
+
+    resp = await client.post(
+        "/practice/plan",
+        data={
+            "box_id": str(box.id),
+            "total_minutes": "60",
+            "list_id": str(plist.id),
+            "warmup_pct": "15",
+            "review_pct": "15",
+            "learning_pct": "40",
+            "retention_pct": "30",
+            "learning_tune_count": "4",
+            "save_as_default": "true",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+
+    saved = await get_list(db, plist.id)
+    assert saved is not None
+    assert saved.warmup_pct == 15
+    assert saved.review_pct == 15
+    assert saved.learning_pct == 40
+    assert saved.retention_pct == 30
+    assert saved.learning_tune_count == 4
+
+
+async def test_plan_create_without_save_as_default_applies_but_does_not_persist(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    _, box, _, _ = await _seed(db, user)
+    plist = await create_list(db, user.id, box.id, "List A", PracticeListType.repertoire)
+
+    resp = await client.post(
+        "/practice/plan",
+        data={
+            "box_id": str(box.id),
+            "total_minutes": "100",
+            "list_id": str(plist.id),
+            "warmup_pct": "40",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    session_id = resp.headers["location"].rsplit("/", 1)[-1]
+
+    # The submitted value shaped this session...
+    session_resp = await client.get(f"/practice/session/{session_id}")
+    marker = "window.__cairnSessionItems = "
+    blob = session_resp.text.split(marker, 1)[1].split(";", 1)[0]
+    items = json.loads(blob)
+    warmup_item = next(i for i in items if i["itemType"] == "warmup")
+    assert warmup_item["minutesAllocated"] == 40
+
+    # ...but the list's own stored preference was never touched.
+    saved = await get_list(db, plist.id)
+    assert saved is not None
+    assert saved.warmup_pct is None
+
+
+async def test_plan_create_404_for_another_users_list(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    _, box, _, _ = await _seed(db, user)
+    other = User(
+        username="other-fiddler", email="other2@example.com", google_sub="google-sub-other2", role=Role.student
+    )
+    db.add(other)
+    await db.flush()
+    other_box = await create_box(db, other.id, "Someone Else's Box", [Instrument.fiddle])
+    other_list = await create_list(db, other.id, other_box.id, "Someone Else's List", PracticeListType.repertoire)
+
+    resp = await client.post(
+        "/practice/plan",
+        data={"box_id": str(box.id), "total_minutes": "30", "list_id": str(other_list.id)},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 404
 
 
 async def test_session_detail_shows_items(client: AsyncClient, db: AsyncSession, user: User) -> None:

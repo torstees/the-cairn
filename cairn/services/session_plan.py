@@ -42,10 +42,26 @@ _REVIEW_MINUTES = 2
 # None. Sum to exactly 100; warmup is pinned to the bottom of its stated
 # 10-20% range so an adopting list's default warmup minutes don't silently
 # change from today's hardcoded 10%.
-_DEFAULT_WARMUP_PCT = 10
-_DEFAULT_REVIEW_PCT = 10
-_DEFAULT_LEARNING_PCT = 50
-_DEFAULT_RETENTION_PCT = 30
+DEFAULT_WARMUP_PCT = 10
+DEFAULT_REVIEW_PCT = 10
+DEFAULT_LEARNING_PCT = 50
+DEFAULT_RETENTION_PCT = 30
+
+
+def _resolve_pct(override: int | None, list_value: int | None, default: int) -> int:
+    """Resolve a session-shape percentage: an explicit per-call override
+    (#246, "use these values for just this session") wins; otherwise fall
+    back to the list's own stored preference, then this module's default."""
+    if override is not None:
+        return override
+    return list_value if list_value is not None else default
+
+
+def _resolve_count(override: int | None, list_value: int | None) -> int | None:
+    """Same precedence as _resolve_pct, for the nullable tune-count caps
+    (None always means "unlimited", at every level)."""
+    return override if override is not None else list_value
+
 
 # Bars shown per status in the practice session view.
 # None  → title + key only (no music rendered)
@@ -319,23 +335,35 @@ async def build_session(
     user_id: int,
     box_id: int,
     total_minutes: int,
+    *,
+    warmup_pct: int | None = None,
+    review_pct: int | None = None,
+    learning_pct: int | None = None,
+    retention_pct: int | None = None,
+    learning_tune_count: int | None = None,
+    review_tune_count: int | None = None,
+    retention_tune_count: int | None = None,
 ) -> PracticeSession:
     """Build and persist a practice session plan.
 
     No active list: allocates ~10% to warmup (minimum 1 minute), then fills
     remaining time with learning items (closest-to-goal first) followed by
     retention items (due for spaced-repetition review) -- unchanged by #244.
+    The keyword overrides below are not consulted at all in this branch.
 
     Active Repertoire/Woodshed list: warmup/review/learning/retention each
-    get their own minute budget, resolved from the list's warmup_pct/
-    review_pct/learning_pct/retention_pct (falling back to this module's
-    defaults when unset), additionally capped by learning_tune_count/
-    review_tune_count/retention_tune_count when set (#241/#242/#244). If the
-    list has at least one focused entry, the learning queue rotates through
-    that subset only, least-recently-practiced first (#241/#243), and a
-    review queue picks up focused tunes bumped from today's rotation that
-    were a learning item in a past session. Zero focused entries falls back
-    to the full-list learning queue, with no review queue.
+    get their own minute budget, resolved from (in order) an explicit
+    per-call override (#246 -- "use these values for just this session,"
+    independent of whether they get saved anywhere), then the list's own
+    warmup_pct/review_pct/learning_pct/retention_pct, then this module's
+    defaults. Each is additionally capped by learning_tune_count/
+    review_tune_count/retention_tune_count, resolved the same way (#241/
+    #242/#244/#246). If the list has at least one focused entry, the
+    learning queue rotates through that subset only, least-recently-
+    practiced first (#241/#243), and a review queue picks up focused tunes
+    bumped from today's rotation that were a learning item in a past
+    session. Zero focused entries falls back to the full-list learning
+    queue, with no review queue.
 
     Queue strategy depends on whether an active PracticeList exists for this box:
       Repertoire list → learning from focus subset (or full list); box tunes at/above goal + due for retention
@@ -358,10 +386,18 @@ async def build_session(
         active_list = None
 
     if active_list is not None:
-        warmup_minutes = max(1, round(total_minutes * (active_list.warmup_pct or _DEFAULT_WARMUP_PCT) / 100))
-        review_minutes = round(total_minutes * (active_list.review_pct or _DEFAULT_REVIEW_PCT) / 100)
-        learning_minutes = round(total_minutes * (active_list.learning_pct or _DEFAULT_LEARNING_PCT) / 100)
-        retention_minutes = round(total_minutes * (active_list.retention_pct or _DEFAULT_RETENTION_PCT) / 100)
+        warmup_minutes = max(
+            1, round(total_minutes * _resolve_pct(warmup_pct, active_list.warmup_pct, DEFAULT_WARMUP_PCT) / 100)
+        )
+        review_minutes = round(
+            total_minutes * _resolve_pct(review_pct, active_list.review_pct, DEFAULT_REVIEW_PCT) / 100
+        )
+        learning_minutes = round(
+            total_minutes * _resolve_pct(learning_pct, active_list.learning_pct, DEFAULT_LEARNING_PCT) / 100
+        )
+        retention_minutes = round(
+            total_minutes * _resolve_pct(retention_pct, active_list.retention_pct, DEFAULT_RETENTION_PCT) / 100
+        )
     else:
         warmup_minutes = max(1, math.ceil(total_minutes * 0.10))
         remaining = total_minutes - warmup_minutes
@@ -405,7 +441,7 @@ async def build_session(
     # ── learning items ──────────────────────────────────────────────────────
     selected_learning_ids: set[int] = set()
     if active_list is not None:
-        learning_count_cap = active_list.learning_tune_count
+        learning_count_cap = _resolve_count(learning_tune_count, active_list.learning_tune_count)
         for tune_id, status, _setting_id in learning_queue:
             if learning_count_cap is not None and len(selected_learning_ids) >= learning_count_cap:
                 break
@@ -443,7 +479,7 @@ async def build_session(
     if active_list is not None and focus_entries:
         review_candidates = {tune_id for tune_id, _, _ in learning_queue if tune_id not in selected_learning_ids}
         review_queue = await _build_review_queue(db, user_id, box_id, review_candidates)
-        review_count_cap = active_list.review_tune_count
+        review_count_cap = _resolve_count(review_tune_count, active_list.review_tune_count)
         selected_review = 0
         for tune_id in review_queue:
             if review_count_cap is not None and selected_review >= review_count_cap:
@@ -464,7 +500,7 @@ async def build_session(
 
     # ── retention items ─────────────────────────────────────────────────────
     if active_list is not None:
-        retention_count_cap = active_list.retention_tune_count
+        retention_count_cap = _resolve_count(retention_tune_count, active_list.retention_tune_count)
         selected_retention = 0
         for tune_id, _setting_id in retention_queue:
             if retention_count_cap is not None and selected_retention >= retention_count_cap:
@@ -585,7 +621,14 @@ async def rate_item(
     user_id: int,
     confidence: int,
 ) -> PracticeSessionItem | None:
-    """Complete a tune item, record the practice rating, and store the rating choice."""
+    """Complete a tune item, record the practice rating, and store the rating choice.
+
+    A `review` item still calls record_practice (SM-2 state keeps updating
+    on any touch) but never advance_status_one, even at high confidence
+    (#246) -- a short review touch shouldn't count as the deliberate
+    practice that advances status; that stays earned through a real
+    learning or retention slot.
+    """
     session = await db.get(PracticeSession, session_id)
     if session is None:
         return None
@@ -596,7 +639,7 @@ async def rate_item(
 
     if item.tune_id and session.box_id:
         await record_practice(db, user_id, session.box_id, item.tune_id, confidence)
-        if confidence >= 4:
+        if confidence >= 4 and item.item_type != SessionItemType.review:
             await advance_status_one(db, user_id, session.box_id, item.tune_id)
 
     result = await db.execute(select(PracticeSessionItem).where(PracticeSessionItem.id == item_id))

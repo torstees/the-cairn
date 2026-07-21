@@ -10,8 +10,12 @@ from cairn.dependencies import get_current_user, get_db
 from cairn.models import KeyRoot, PracticeSession, ProgressStatus, TempoRecord, User
 from cairn.services.abc_utils import build_abc, transpose_abc, transpose_semitones_for, truncate_to_bars
 from cairn.services.boxes import get_box, get_display_names_for_tunes, get_transposes_for_tunes, list_boxes
-from cairn.services.lists import activate_list, deactivate_list, get_active_list, list_lists
+from cairn.services.lists import activate_list, deactivate_list, get_active_list, list_lists, update_list_preferences
 from cairn.services.session_plan import (
+    DEFAULT_LEARNING_PCT,
+    DEFAULT_RETENTION_PCT,
+    DEFAULT_REVIEW_PCT,
+    DEFAULT_WARMUP_PCT,
     _load_progress_map,
     bars_for_status,
     build_session,
@@ -113,7 +117,20 @@ async def plan_form(
     all_lists = await list_lists(db, user.id)
     lists_by_box: dict[int, list[dict]] = {}
     for pl in all_lists:
-        lists_by_box.setdefault(pl.box_id, []).append({"id": pl.id, "name": pl.name, "type_label": pl.list_type.label})
+        lists_by_box.setdefault(pl.box_id, []).append(
+            {
+                "id": pl.id,
+                "name": pl.name,
+                "type_label": pl.list_type.label,
+                "warmup_pct": pl.warmup_pct if pl.warmup_pct is not None else DEFAULT_WARMUP_PCT,
+                "review_pct": pl.review_pct if pl.review_pct is not None else DEFAULT_REVIEW_PCT,
+                "learning_pct": pl.learning_pct if pl.learning_pct is not None else DEFAULT_LEARNING_PCT,
+                "retention_pct": pl.retention_pct if pl.retention_pct is not None else DEFAULT_RETENTION_PCT,
+                "learning_tune_count": pl.learning_tune_count,
+                "review_tune_count": pl.review_tune_count,
+                "retention_tune_count": pl.retention_tune_count,
+            }
+        )
     default_box_id = active_list.box_id if active_list else (boxes[0].id if boxes else None)
     return templates.TemplateResponse(
         request,
@@ -123,6 +140,10 @@ async def plan_form(
             "active_list": active_list,
             "lists_by_box": lists_by_box,
             "default_box_id": default_box_id,
+            "default_warmup_pct": DEFAULT_WARMUP_PCT,
+            "default_review_pct": DEFAULT_REVIEW_PCT,
+            "default_learning_pct": DEFAULT_LEARNING_PCT,
+            "default_retention_pct": DEFAULT_RETENTION_PCT,
         },
     )
 
@@ -135,15 +156,40 @@ async def plan_create(
     box_id: int = Form(...),
     total_minutes: int = Form(...),
     list_id: str = Form(""),
+    warmup_pct: str = Form(default=""),
+    review_pct: str = Form(default=""),
+    learning_pct: str = Form(default=""),
+    retention_pct: str = Form(default=""),
+    learning_tune_count: str = Form(default=""),
+    review_tune_count: str = Form(default=""),
+    retention_tune_count: str = Form(default=""),
+    save_as_default: bool = Form(default=False),
 ) -> Response:
     box = await get_box(db, box_id)
     if box is None or box.user_id != user.id:
         raise HTTPException(status_code=404, detail="Box not found")
     if list_id == "":
         await deactivate_list(db, user.id)
+        activated_list_id = None
     else:
-        await activate_list(db, user.id, int(list_id))
-    session = await build_session(db, user.id, box_id, total_minutes)
+        activated = await activate_list(db, user.id, int(list_id))
+        if activated is None:
+            raise HTTPException(status_code=404, detail="List not found")
+        activated_list_id = activated.id
+
+    prefs = {
+        "warmup_pct": int(warmup_pct) if warmup_pct else None,
+        "review_pct": int(review_pct) if review_pct else None,
+        "learning_pct": int(learning_pct) if learning_pct else None,
+        "retention_pct": int(retention_pct) if retention_pct else None,
+        "learning_tune_count": int(learning_tune_count) if learning_tune_count else None,
+        "review_tune_count": int(review_tune_count) if review_tune_count else None,
+        "retention_tune_count": int(retention_tune_count) if retention_tune_count else None,
+    }
+    if activated_list_id is not None and save_as_default:
+        await update_list_preferences(db, activated_list_id, **prefs)
+
+    session = await build_session(db, user.id, box_id, total_minutes, **prefs)
     logger.info("practice session created", extra={"session_id": session.id, "box_id": box_id})
     return RedirectResponse(f"/practice/session/{session.id}", status_code=303)
 

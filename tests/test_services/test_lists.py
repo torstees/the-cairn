@@ -18,6 +18,7 @@ from cairn.services.lists import (
     set_focus,
     update_list_entry_display_alias,
     update_list_entry_transpose,
+    update_list_preferences,
 )
 from cairn.services.tunes import add_alias, create_tune, get_tune
 
@@ -392,4 +393,80 @@ async def test_clear_focus_prompt_nulls_timestamp_without_changing_focus(db: Asy
 
 async def test_clear_focus_prompt_missing_entry_returns_none(db: AsyncSession) -> None:
     result = await clear_focus_prompt(db, 9999)
+    assert result is None
+
+
+# ── session-shape preferences (#246) ────────────────────────────────────────
+
+
+async def test_update_list_preferences_sets_all_fields(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+
+    updated = await update_list_preferences(
+        db,
+        pl.id,
+        warmup_pct=20,
+        review_pct=15,
+        learning_pct=45,
+        retention_pct=20,
+        learning_tune_count=5,
+        review_tune_count=3,
+        retention_tune_count=2,
+    )
+    assert updated is not None
+    assert updated.warmup_pct == 20
+    assert updated.review_pct == 15
+    assert updated.learning_pct == 45
+    assert updated.retention_pct == 20
+    assert updated.learning_tune_count == 5
+    assert updated.review_tune_count == 3
+    assert updated.retention_tune_count == 2
+
+
+async def test_update_list_preferences_can_clear_back_to_null(db: AsyncSession) -> None:
+    u = await _user(db)
+    box = await _box(db, u.id)
+    pl = await create_list(db, u.id, box.id, "List A", PracticeListType.repertoire)
+    await update_list_preferences(
+        db,
+        pl.id,
+        warmup_pct=20,
+        review_pct=15,
+        learning_pct=45,
+        retention_pct=20,
+        learning_tune_count=5,
+        review_tune_count=3,
+        retention_tune_count=2,
+    )
+
+    cleared = await update_list_preferences(
+        db,
+        pl.id,
+        warmup_pct=None,
+        review_pct=None,
+        learning_pct=None,
+        retention_pct=None,
+        learning_tune_count=None,
+        review_tune_count=None,
+        retention_tune_count=None,
+    )
+    assert cleared is not None
+    assert cleared.warmup_pct is None
+    assert cleared.learning_tune_count is None
+
+
+async def test_update_list_preferences_missing_list_returns_none(db: AsyncSession) -> None:
+    result = await update_list_preferences(
+        db,
+        9999,
+        warmup_pct=None,
+        review_pct=None,
+        learning_pct=None,
+        retention_pct=None,
+        learning_tune_count=None,
+        review_tune_count=None,
+        retention_tune_count=None,
+    )
     assert result is None

@@ -114,6 +114,39 @@ async def update_list(
     return practice_list
 
 
+async def update_list_preferences(
+    db: AsyncSession,
+    list_id: int,
+    *,
+    warmup_pct: int | None,
+    review_pct: int | None,
+    learning_pct: int | None,
+    retention_pct: int | None,
+    learning_tune_count: int | None,
+    review_tune_count: int | None,
+    retention_tune_count: int | None,
+) -> PracticeList | None:
+    """Persist a list's session-shape preferences (#246) -- the "save as
+    this list's default" response to the practice-plan form. None means
+    "use the hardcoded default" for a percentage, or "unlimited" for a
+    tune-count cap, matching how build_session already treats these
+    columns (#242/#244)."""
+    practice_list = await db.get(PracticeList, list_id)
+    if practice_list is None:
+        return None
+    practice_list.warmup_pct = warmup_pct
+    practice_list.review_pct = review_pct
+    practice_list.learning_pct = learning_pct
+    practice_list.retention_pct = retention_pct
+    practice_list.learning_tune_count = learning_tune_count
+    practice_list.review_tune_count = review_tune_count
+    practice_list.retention_tune_count = retention_tune_count
+    db.add(practice_list)
+    await db.commit()
+    await db.refresh(practice_list)
+    return practice_list
+
+
 async def get_list(db: AsyncSession, list_id: int) -> PracticeList | None:
     stmt = (
         select(PracticeList)
