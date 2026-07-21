@@ -313,8 +313,8 @@ List membership is recorded in `TuneListEntry`, which carries:
 - `setting_id` (nullable) — which setting to display during sessions using this
   list; also determines which `SettingProgress` record to use for effective status.
 - `is_focus` — a smaller, explicit subset (#241) the session planner's learning
-  queue rotates through, once it does (#244); expected to land around 8-12
-  tunes but with no hard cap.
+  queue rotates through (#244) instead of the whole list, once at least one
+  entry is focused; expected to land around 8-12 tunes but with no hard cap.
 - `focus_goal_reached_at` (nullable) — set once a focused entry's effective
   status reaches the list's `progress_goal`; cleared when the user responds to
   the resulting prompt, however they respond (`set_focus`/`clear_focus_prompt`
@@ -338,12 +338,38 @@ the top; untagged box tunes still require `next_suggested ≤ now`.
 
 `progress_goal` must be strictly above `just_learning`. Default: `committed`.
 
-**Session queue logic** (all scoped to the active TuneBox):
+A Repertoire/Woodshed list also carries nullable session-shape overrides
+(#241/#242): `warmup_pct`/`review_pct`/`learning_pct`/`retention_pct` (0-100,
+null → this section's defaults) and `learning_tune_count`/
+`review_tune_count`/`retention_tune_count` (null → unlimited, i.e. today's
+fill-by-time behavior for that category).
+
+**Session queue logic** (all scoped to the active TuneBox; #244):
+
+With an active Repertoire/Woodshed list, `cairn/services/session_plan.py`'s
+`build_session` resolves each of warmup/review/learning/retention's percent
+into its own minute budget against `total_minutes` (defaults `warmup=10,
+review=10, learning=50, retention=30`, summing to 100), then fills each
+category up to its budget *and* its tune-count override (whichever binds
+first) — no reallocation of one category's unused budget to another. With
+no active list, the session keeps its original fixed-10%-warmup /
+fill-remaining-time behavior unchanged.
+
+If the active list has at least one focused entry, its learning queue
+rotates through that subset only — oldest `StudentProgress.last_practiced`
+first (nulls, i.e. never practiced, first of all), tie-broken by proximity
+to goal — instead of the whole list; zero focused entries falls back to the
+full-list queue below, unchanged. A **review** queue (new `SessionItemType`)
+picks up focused tunes bumped from today's learning rotation that were a
+`learning`-type item in a past session for this box, most-recent qualifying
+session first, deduped by tune (reaching into an older session only for a
+tune the newer ones don't cover); a tune never previously in rotation is
+never a review candidate.
 
 | Session type | Learning queue | Retention queue |
 |---|---|---|
-| Repertoire list | List entries where effective_status < goal; ordered by proximity to goal | Full box, status ≥ goal, next_suggested ≤ now; exclude session learning tunes |
-| Woodshed list | List entries where effective_status < goal | Full box, status ≥ goal; woodshed-tagged tunes bypass SM-2 gate and are top-weighted; exclude session learning tunes |
+| Repertoire list | Focus subset (or full list if nothing's focused) where effective_status < goal; rotation order (or proximity-to-goal, full-list fallback) | Full box, status ≥ goal, next_suggested ≤ now; exclude session learning tunes |
+| Woodshed list | Same as Repertoire's learning rule | Full box, status ≥ goal; woodshed-tagged tunes bypass SM-2 gate and are top-weighted; exclude session learning tunes |
 | No active list | Full box, status < `committed`, weighted by proximity to `committed` | Full box, status ≥ `committed`, next_suggested ≤ now |
 
 SM-2 fields (`interval_days`, `ease_factor`) update normally in all cases, including

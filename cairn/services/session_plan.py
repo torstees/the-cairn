@@ -16,9 +16,10 @@ from cairn.models import (
     StudentProgress,
     Tune,
     TuneBoxEntry,
+    TuneListEntry,
     WarmupItem,
 )
-from cairn.services.lists import get_active_list
+from cairn.services.lists import get_active_list, list_focus_entries
 from cairn.services.spaced_rep import advance_status_one, get_effective_status, record_practice
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,17 @@ _LEARNING_MINUTES: dict[ProgressStatus, int] = {
 }
 
 _RETENTION_MINUTES = 2
+_REVIEW_MINUTES = 2
+
+# Default per-list session-shape percentages (#241/TODO 12), used when a
+# PracticeList's own warmup_pct/review_pct/learning_pct/retention_pct is
+# None. Sum to exactly 100; warmup is pinned to the bottom of its stated
+# 10-20% range so an adopting list's default warmup minutes don't silently
+# change from today's hardcoded 10%.
+_DEFAULT_WARMUP_PCT = 10
+_DEFAULT_REVIEW_PCT = 10
+_DEFAULT_LEARNING_PCT = 50
+_DEFAULT_RETENTION_PCT = 30
 
 # Bars shown per status in the practice session view.
 # None  → title + key only (no music rendered)
@@ -112,6 +124,47 @@ async def _build_list_learning_queue(
         if idx < goal_idx:
             scored.append((entry.tune_id, status, entry.setting_id, idx))
     scored.sort(key=lambda x: -x[3])
+    return [(t, s, sid) for t, s, sid, _ in scored]
+
+
+def _rotation_key(last_practiced: datetime | None, status_idx: int) -> tuple[int, datetime, int]:
+    """Sort key for focus rotation: oldest last_practiced first (nulls -- never
+    practiced -- first of all), tie-broken by proximity to goal (existing
+    highest-status-index-first convention)."""
+    if last_practiced is None:
+        return (0, datetime.min, -status_idx)
+    # SQLite may return naive datetimes even when values were stored as
+    # tz-aware; strip timezone info so every key in the sort is comparable
+    # (mirrors _is_due's own normalization, same file).
+    return (1, last_practiced.replace(tzinfo=None), -status_idx)
+
+
+async def _build_focus_learning_queue(
+    db: AsyncSession,
+    user_id: int,
+    box_id: int,
+    active_list: PracticeList,
+    focus_entries: list[TuneListEntry],
+) -> list[tuple[int, ProgressStatus, int | None]]:
+    """Learning queue rotated through the focus subset only (#241/#244).
+
+    Same effective_status < goal filter as _build_list_learning_queue, but
+    ordered by rotation (least-recently-practiced first) instead of pure
+    proximity-to-goal, so focused tunes that haven't been touched in a
+    while get priority over ones practiced yesterday.
+    """
+    goal_idx = _STATUS_ORDER.index(active_list.progress_goal)
+    _entries, progress_map = await _load_box_progress(db, user_id, box_id)
+    scored: list[tuple[int, ProgressStatus, int | None, tuple[int, datetime, int]]] = []
+    for entry in focus_entries:
+        status = await get_effective_status(db, user_id, entry.tune_id, box_id, entry.setting_id)
+        idx = _STATUS_ORDER.index(status)
+        if idx >= goal_idx:
+            continue
+        progress = progress_map.get(entry.tune_id)
+        last_practiced = progress.last_practiced if progress else None
+        scored.append((entry.tune_id, status, entry.setting_id, _rotation_key(last_practiced, idx)))
+    scored.sort(key=lambda x: x[3])
     return [(t, s, sid) for t, s, sid, _ in scored]
 
 
@@ -218,6 +271,49 @@ async def _build_no_list_retention(
     return result
 
 
+async def _build_review_queue(
+    db: AsyncSession,
+    user_id: int,
+    box_id: int,
+    candidate_tune_ids: set[int],
+) -> list[int]:
+    """Review queue (#241/#244): focused tunes bumped from today's learning
+    rotation that appeared as a `learning`-type item in a past session for
+    this box. Most-recent session first, deduped by tune -- a tune already
+    picked from a newer session is skipped in older ones. A candidate that
+    never showed up as a learning item before is never added (review is for
+    tunes that were previously in rotation, not brand-new focuses).
+
+    Queries PracticeSessionItem directly (joined to PracticeSession only for
+    the ordering/filter columns) rather than loading PracticeSession.items --
+    the session currently being built already has the same user_id/box_id
+    and is sitting in the identity map, so eagerly loading that relationship
+    here would prematurely populate it (empty, since this session's own
+    items haven't been committed yet) and starve the real selectinload at
+    the end of build_session.
+    """
+    if not candidate_tune_ids:
+        return []
+    result = await db.execute(
+        select(PracticeSessionItem.tune_id)
+        .join(PracticeSession, PracticeSessionItem.session_id == PracticeSession.id)
+        .where(
+            PracticeSession.user_id == user_id,
+            PracticeSession.box_id == box_id,
+            PracticeSessionItem.item_type == SessionItemType.learning,
+            PracticeSessionItem.tune_id.in_(candidate_tune_ids),
+        )
+        .order_by(PracticeSession.started_at.desc())
+    )
+    seen: set[int] = set()
+    ordered: list[int] = []
+    for (tune_id,) in result.all():
+        if tune_id not in seen:
+            seen.add(tune_id)
+            ordered.append(tune_id)
+    return ordered
+
+
 async def build_session(
     db: AsyncSession,
     user_id: int,
@@ -226,26 +322,49 @@ async def build_session(
 ) -> PracticeSession:
     """Build and persist a practice session plan.
 
-    Allocates ~10 % to warmup (minimum 1 minute), then fills remaining time
-    with learning items (ordered closest-to-goal first) followed by retention
-    items (due for spaced-repetition review).
+    No active list: allocates ~10% to warmup (minimum 1 minute), then fills
+    remaining time with learning items (closest-to-goal first) followed by
+    retention items (due for spaced-repetition review) -- unchanged by #244.
+
+    Active Repertoire/Woodshed list: warmup/review/learning/retention each
+    get their own minute budget, resolved from the list's warmup_pct/
+    review_pct/learning_pct/retention_pct (falling back to this module's
+    defaults when unset), additionally capped by learning_tune_count/
+    review_tune_count/retention_tune_count when set (#241/#242/#244). If the
+    list has at least one focused entry, the learning queue rotates through
+    that subset only, least-recently-practiced first (#241/#243), and a
+    review queue picks up focused tunes bumped from today's rotation that
+    were a learning item in a past session. Zero focused entries falls back
+    to the full-list learning queue, with no review queue.
 
     Queue strategy depends on whether an active PracticeList exists for this box:
-      Repertoire list → only list tunes in learning; box tunes at/above goal + due for retention
+      Repertoire list → learning from focus subset (or full list); box tunes at/above goal + due for retention
       Woodshed list   → same learning rule; woodshed tunes bypass SM-2 in retention
       No active list  → all box tunes below committed for learning; committed+ due for retention
 
     Returns the persisted PracticeSession with its items relationship loaded.
     """
     now = datetime.now(UTC)
-    warmup_minutes = max(1, math.ceil(total_minutes * 0.10))
-    remaining = total_minutes - warmup_minutes
 
     session = PracticeSession(user_id=user_id, box_id=box_id, started_at=now)
     db.add(session)
     await db.flush()
 
     items: list[PracticeSessionItem] = []
+
+    # ── resolve queue strategy ──────────────────────────────────────────────
+    active_list = await get_active_list(db, user_id)
+    if active_list is not None and active_list.box_id != box_id:
+        active_list = None
+
+    if active_list is not None:
+        warmup_minutes = max(1, round(total_minutes * (active_list.warmup_pct or _DEFAULT_WARMUP_PCT) / 100))
+        review_minutes = round(total_minutes * (active_list.review_pct or _DEFAULT_REVIEW_PCT) / 100)
+        learning_minutes = round(total_minutes * (active_list.learning_pct or _DEFAULT_LEARNING_PCT) / 100)
+        retention_minutes = round(total_minutes * (active_list.retention_pct or _DEFAULT_RETENTION_PCT) / 100)
+    else:
+        warmup_minutes = max(1, math.ceil(total_minutes * 0.10))
+        remaining = total_minutes - warmup_minutes
 
     # ── warmup ─────────────────────────────────────────────────────────────
     warmup = await _pick_warmup(db)
@@ -260,13 +379,13 @@ async def build_session(
             )
         )
 
-    # ── resolve queue strategy ──────────────────────────────────────────────
-    active_list = await get_active_list(db, user_id)
-    if active_list is not None and active_list.box_id != box_id:
-        active_list = None
-
+    focus_entries: list[TuneListEntry] = []
     if active_list is not None:
-        learning_queue = await _build_list_learning_queue(db, user_id, box_id, active_list)
+        focus_entries = await list_focus_entries(db, active_list.id)
+        if focus_entries:
+            learning_queue = await _build_focus_learning_queue(db, user_id, box_id, active_list, focus_entries)
+        else:
+            learning_queue = await _build_list_learning_queue(db, user_id, box_id, active_list)
         learning_ids = {t for t, _, _ in learning_queue}
 
         if active_list.list_type == PracticeListType.woodshed:
@@ -284,35 +403,99 @@ async def build_session(
         retention_queue = await _build_no_list_retention(db, user_id, box_id, learning_ids, now)
 
     # ── learning items ──────────────────────────────────────────────────────
-    for tune_id, status, _setting_id in learning_queue:
-        minutes = _LEARNING_MINUTES.get(status, _RETENTION_MINUTES)
-        if remaining < minutes:
-            break
-        items.append(
-            PracticeSessionItem(
-                session_id=session.id,
-                item_type=SessionItemType.learning,
-                tune_id=tune_id,
-                minutes_allocated=minutes,
-                completed=False,
+    selected_learning_ids: set[int] = set()
+    if active_list is not None:
+        learning_count_cap = active_list.learning_tune_count
+        for tune_id, status, _setting_id in learning_queue:
+            if learning_count_cap is not None and len(selected_learning_ids) >= learning_count_cap:
+                break
+            minutes = _LEARNING_MINUTES.get(status, _RETENTION_MINUTES)
+            if learning_minutes < minutes:
+                break
+            items.append(
+                PracticeSessionItem(
+                    session_id=session.id,
+                    item_type=SessionItemType.learning,
+                    tune_id=tune_id,
+                    minutes_allocated=minutes,
+                    completed=False,
+                )
             )
-        )
-        remaining -= minutes
+            learning_minutes -= minutes
+            selected_learning_ids.add(tune_id)
+    else:
+        for tune_id, status, _setting_id in learning_queue:
+            minutes = _LEARNING_MINUTES.get(status, _RETENTION_MINUTES)
+            if remaining < minutes:
+                break
+            items.append(
+                PracticeSessionItem(
+                    session_id=session.id,
+                    item_type=SessionItemType.learning,
+                    tune_id=tune_id,
+                    minutes_allocated=minutes,
+                    completed=False,
+                )
+            )
+            remaining -= minutes
+
+    # ── review items (active-list-with-focus only, #241/#244) ──────────────
+    if active_list is not None and focus_entries:
+        review_candidates = {tune_id for tune_id, _, _ in learning_queue if tune_id not in selected_learning_ids}
+        review_queue = await _build_review_queue(db, user_id, box_id, review_candidates)
+        review_count_cap = active_list.review_tune_count
+        selected_review = 0
+        for tune_id in review_queue:
+            if review_count_cap is not None and selected_review >= review_count_cap:
+                break
+            if review_minutes < _REVIEW_MINUTES:
+                break
+            items.append(
+                PracticeSessionItem(
+                    session_id=session.id,
+                    item_type=SessionItemType.review,
+                    tune_id=tune_id,
+                    minutes_allocated=_REVIEW_MINUTES,
+                    completed=False,
+                )
+            )
+            review_minutes -= _REVIEW_MINUTES
+            selected_review += 1
 
     # ── retention items ─────────────────────────────────────────────────────
-    for tune_id, _setting_id in retention_queue:
-        if remaining < _RETENTION_MINUTES:
-            break
-        items.append(
-            PracticeSessionItem(
-                session_id=session.id,
-                item_type=SessionItemType.retention,
-                tune_id=tune_id,
-                minutes_allocated=_RETENTION_MINUTES,
-                completed=False,
+    if active_list is not None:
+        retention_count_cap = active_list.retention_tune_count
+        selected_retention = 0
+        for tune_id, _setting_id in retention_queue:
+            if retention_count_cap is not None and selected_retention >= retention_count_cap:
+                break
+            if retention_minutes < _RETENTION_MINUTES:
+                break
+            items.append(
+                PracticeSessionItem(
+                    session_id=session.id,
+                    item_type=SessionItemType.retention,
+                    tune_id=tune_id,
+                    minutes_allocated=_RETENTION_MINUTES,
+                    completed=False,
+                )
             )
-        )
-        remaining -= _RETENTION_MINUTES
+            retention_minutes -= _RETENTION_MINUTES
+            selected_retention += 1
+    else:
+        for tune_id, _setting_id in retention_queue:
+            if remaining < _RETENTION_MINUTES:
+                break
+            items.append(
+                PracticeSessionItem(
+                    session_id=session.id,
+                    item_type=SessionItemType.retention,
+                    tune_id=tune_id,
+                    minutes_allocated=_RETENTION_MINUTES,
+                    completed=False,
+                )
+            )
+            remaining -= _RETENTION_MINUTES
 
     for item in items:
         db.add(item)
