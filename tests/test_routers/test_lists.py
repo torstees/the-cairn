@@ -1,10 +1,19 @@
+from datetime import UTC, datetime
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.models import Instrument, KeyMode, KeyRoot, PracticeListType, Role, TuneType, User
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate
 from cairn.services.boxes import create_box
-from cairn.services.lists import add_tune_to_list, create_list, update_list_entry_setting, update_list_entry_transpose
+from cairn.services.lists import (
+    add_tune_to_list,
+    create_list,
+    get_list_entry,
+    set_focus,
+    update_list_entry_setting,
+    update_list_entry_transpose,
+)
 from cairn.services.tune_sets import add_list_set, create_set, set_members
 from cairn.services.tunes import add_alias, create_setting, create_tune, set_difficulty
 
@@ -506,4 +515,105 @@ async def test_list_add_tune_404_for_another_users_list(client: AsyncClient, db:
 async def test_list_delete_404_for_another_users_list(client: AsyncClient, db: AsyncSession) -> None:
     practice_list = await _seed_other_owner_list(db)
     resp = await client.delete(f"/lists/{practice_list.id}")
+    assert resp.status_code == 404
+
+
+# ── focus toggle and goal-reached prompt (#245) ─────────────────────────────
+
+
+def _checkbox_open_tag(html: str, list_id: int, tune_id: int) -> str:
+    marker = f'hx-post="/lists/{list_id}/tunes/{tune_id}/focus"'
+    idx = html.index(marker)
+    tag_start = html.rfind("<input", 0, idx)
+    tag_end = html.index(">", idx)
+    return html[tag_start:tag_end]
+
+
+async def test_list_toggle_entry_focus_persists(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    practice_list, tune = await _seed(db, user)
+
+    resp = await client.post(f"/lists/{practice_list.id}/tunes/{tune.id}/focus")
+    assert resp.status_code == 200
+    assert "checked" in _checkbox_open_tag(resp.text, practice_list.id, tune.id)
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert "checked" in _checkbox_open_tag(resp.text, practice_list.id, tune.id)
+
+    resp = await client.post(f"/lists/{practice_list.id}/tunes/{tune.id}/focus")
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert "checked" not in _checkbox_open_tag(resp.text, practice_list.id, tune.id)
+
+
+async def test_list_toggle_entry_focus_404_for_missing_entry(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    practice_list, _tune = await _seed(db, user)
+    resp = await client.post(f"/lists/{practice_list.id}/tunes/9999/focus")
+    assert resp.status_code == 404
+
+
+async def test_goal_reached_prompt_shows_for_focused_entry_with_pending_prompt(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    practice_list, tune = await _seed(db, user)
+    entry = await get_list_entry(db, practice_list.id, tune.id)
+    await set_focus(db, practice_list.id, tune.id, True)
+    entry.focus_goal_reached_at = datetime.now(UTC)
+    db.add(entry)
+    await db.commit()
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert resp.status_code == 200
+    assert f'id="focus-prompt-{tune.id}"' in resp.text
+    assert "reached its goal" in resp.text
+    assert "Remove from focus" in resp.text
+    assert "Keep focused" in resp.text
+
+
+async def test_goal_reached_prompt_absent_without_pending_prompt(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    practice_list, tune = await _seed(db, user)
+    await set_focus(db, practice_list.id, tune.id, True)
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert resp.status_code == 200
+    assert f'id="focus-prompt-{tune.id}"' not in resp.text
+
+
+async def test_remove_from_focus_clears_prompt_and_unfocuses(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    practice_list, tune = await _seed(db, user)
+    entry = await get_list_entry(db, practice_list.id, tune.id)
+    await set_focus(db, practice_list.id, tune.id, True)
+    entry.focus_goal_reached_at = datetime.now(UTC)
+    db.add(entry)
+    await db.commit()
+
+    resp = await client.post(f"/lists/{practice_list.id}/tunes/{tune.id}/focus")
+    assert resp.status_code == 200
+    assert f'<div id="focus-prompt-{tune.id}" hx-swap-oob="true"></div>' in resp.text
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert f'id="focus-prompt-{tune.id}"' not in resp.text
+    assert "checked" not in _checkbox_open_tag(resp.text, practice_list.id, tune.id)
+
+
+async def test_keep_focused_clears_prompt_without_unfocusing(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    practice_list, tune = await _seed(db, user)
+    entry = await get_list_entry(db, practice_list.id, tune.id)
+    await set_focus(db, practice_list.id, tune.id, True)
+    entry.focus_goal_reached_at = datetime.now(UTC)
+    db.add(entry)
+    await db.commit()
+
+    resp = await client.post(f"/lists/{practice_list.id}/tunes/{tune.id}/focus/keep")
+    assert resp.status_code == 200
+    assert f'<div id="focus-prompt-{tune.id}" hx-swap-oob="true"></div>' in resp.text
+
+    resp = await client.get(f"/lists/{practice_list.id}")
+    assert f'id="focus-prompt-{tune.id}"' not in resp.text
+    assert "checked" in _checkbox_open_tag(resp.text, practice_list.id, tune.id)
+
+
+async def test_keep_focused_404_for_missing_entry(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    practice_list, _tune = await _seed(db, user)
+    resp = await client.post(f"/lists/{practice_list.id}/tunes/9999/focus/keep")
     assert resp.status_code == 404

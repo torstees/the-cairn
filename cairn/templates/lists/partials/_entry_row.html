@@ -1,5 +1,5 @@
 {% from "components/_alias_summary.html" import alias_summary %}
-<div id="entry-row-{{ entry.tune_id }}" role="row" class="cairn-row cairn-row-grid border-b border-stone-100 hover:bg-stone-50"
+<div id="entry-row-{{ entry.tune_id }}" {% if oob %}hx-swap-oob="true"{% endif %} role="row" class="cairn-row cairn-row-grid-focus border-b border-stone-100 hover:bg-stone-50"
      data-title="{{ (entry.display_alias.name if entry.display_alias else entry.tune.title) | lower }}"
      data-type="{{ entry.tune.tune_type.label | lower }}"
      data-tune-label="{{ entry.tune.title }} — {{ entry.tune.tune_type.label }} · {{ entry.tune.key_root.label }} {{ entry.tune.key_mode.label }}"
@@ -19,6 +19,16 @@
      }"
      @click.outside="menuOpen = false"
      @keydown.escape="menuOpen = false">
+  <div role="cell" class="py-3 px-1 text-center">
+    <label class="inline-flex items-center"
+           title="{{ 'Remove from focus rotation' if entry.is_focus else 'Add to focus rotation' }}">
+      <input type="checkbox" {% if entry.is_focus %}checked{% endif %}
+             hx-post="/lists/{{ list_id }}/tunes/{{ entry.tune_id }}/focus"
+             hx-trigger="change"
+             hx-swap="none"
+             class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+    </label>
+  </div>
   <div role="cell" class="py-3 px-4">
     <div class="flex items-center gap-2 flex-wrap">
       <a href="/tunes/{{ entry.tune.id }}?list_id={{ list_id }}" class="font-medium text-stone-800 hover:text-stone-600">

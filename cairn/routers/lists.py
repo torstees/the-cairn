@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.dependencies import get_current_user, get_db
-from cairn.models import KeyRoot, PracticeList, PracticeListType, ProgressStatus, User
+from cairn.models import KeyRoot, PracticeList, PracticeListType, ProgressStatus, TuneListEntry, User
 from cairn.services.abc_utils import (
     strip_chord_symbols,
     strip_decorative_headers,
@@ -18,6 +18,7 @@ from cairn.services.boxes import get_box_detail, list_boxes
 from cairn.services.lists import (
     activate_list,
     add_tune_to_list,
+    clear_focus_prompt,
     create_list,
     deactivate_list,
     delete_list,
@@ -25,6 +26,7 @@ from cairn.services.lists import (
     get_list_entry,
     list_lists,
     remove_tune_from_list,
+    set_focus,
     update_list,
     update_list_entry_display_alias,
     update_list_entry_setting,
@@ -521,6 +523,66 @@ async def list_set_entry_display_alias(
         "lists/partials/_entry_row.html",
         {"entry": entry, "list_id": list_id, "tune_previews": _entry_previews([entry])},
     )
+
+
+def _focus_oob_response(entry: TuneListEntry, list_id: int) -> Response:
+    """Render the row and the goal-reached banner as out-of-band swaps (#245).
+
+    Both live in different parts of the page, and either triggering control
+    (the row's own focus checkbox, or one of the goal-reached prompt's two
+    buttons) needs to keep both in sync -- e.g. un-focusing directly via the
+    checkbox while a prompt happens to be pending should also clear that
+    banner. Making both fragments OOB sidesteps picking a "primary" target
+    per caller; every caller uses hx-swap="none". Clearing an id that isn't
+    in the DOM (no banner was showing) is a harmless no-op, the same trick
+    list_set_entry_transpose already uses to clear its modal.
+    """
+    row_html = templates.env.get_template("lists/partials/_entry_row.html").render(
+        {"entry": entry, "list_id": list_id, "tune_previews": _entry_previews([entry]), "oob": True}
+    )
+    banner_html = f'<div id="focus-prompt-{entry.tune_id}" hx-swap-oob="true"></div>'
+    return Response(content=row_html + banner_html, media_type="text/html")
+
+
+@router.post("/{list_id}/tunes/{tune_id}/focus")
+async def list_toggle_entry_focus(
+    request: Request,
+    list_id: int,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """Flip is_focus for one entry -- also the "Remove from focus" action on
+    the goal-reached prompt, since that prompt only ever shows for an
+    already-focused entry, so flipping it always means turning it off."""
+    await _get_owned_list(db, user.id, list_id)
+    current = await get_list_entry(db, list_id, tune_id)
+    if current is None:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    entry = await set_focus(db, list_id, tune_id, not current.is_focus)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return _focus_oob_response(entry, list_id)
+
+
+@router.post("/{list_id}/tunes/{tune_id}/focus/keep")
+async def list_keep_entry_focus(
+    request: Request,
+    list_id: int,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """The "Keep focused" response to the goal-reached prompt -- clears the
+    prompt without changing is_focus."""
+    await _get_owned_list(db, user.id, list_id)
+    current = await get_list_entry(db, list_id, tune_id)
+    if current is None:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    entry = await clear_focus_prompt(db, current.id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return _focus_oob_response(entry, list_id)
 
 
 @router.get("/{list_id}/tunes/{tune_id}/transpose")
