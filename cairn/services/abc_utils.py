@@ -298,19 +298,25 @@ def transpose_abc(abc: str, semitones: int) -> str:
     return "\n".join(out_lines) + ("\n" if abc.endswith("\n") else "")
 
 
-# Q:1/4=N anchors tempo to quarter notes regardless of L:, avoiding ambiguity.
+# Q:<fraction>=N always anchors tempo to an explicit note value, avoiding
+# L:-based ambiguity -- but which fraction varies by tune type, matching
+# whatever note value is that type's own natural main beat: quarter note
+# for a straight simple meter (waltz, air), dotted quarter for a compound
+# meter felt in 2/3 (jig, slip_jig, slide), half note for a simple/duple
+# meter actually felt in cut time (#258; reel, hornpipe, polka,
+# strathspey, march, barndance).
 _DEFAULT_TEMPO: dict[str, str] = {
-    "reel": "Q:1/4=80",
+    "reel": "Q:1/2=40",
     "jig": "Q:3/8=80",  # counted in 2; dotted quarter = 80
     "slip_jig": "Q:3/8=80",  # counted in 3; dotted quarter = 80
-    "hornpipe": "Q:1/4=70",
-    "polka": "Q:1/4=90",
+    "hornpipe": "Q:1/2=35",
+    "polka": "Q:1/2=45",
     "slide": "Q:3/8=80",  # counted in 2; dotted quarter = 80
-    "strathspey": "Q:1/4=70",
+    "strathspey": "Q:1/2=35",
     "waltz": "Q:1/4=80",
     "air": "Q:1/4=60",
-    "march": "Q:1/4=80",
-    "barndance": "Q:1/4=80",
+    "march": "Q:1/2=40",
+    "barndance": "Q:1/2=40",
 }
 
 
