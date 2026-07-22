@@ -16,10 +16,10 @@
   var MAPPED_HEADERS = new Set(["X","T","C","O","A","R","M","S","Z","N","K"]);
   var MODE_SUFFIX = { major: "", minor: "m", dorian: "dor", mixolydian: "mix", lydian: "lyd" };
   var DEFAULT_TEMPO = {
-    reel: "Q:1/4=80", jig: "Q:3/8=80", slip_jig: "Q:3/8=80",
-    hornpipe: "Q:1/4=70", polka: "Q:1/4=90", slide: "Q:3/8=80",
-    strathspey: "Q:1/4=70", waltz: "Q:1/4=80", air: "Q:1/4=60",
-    march: "Q:1/4=80", barndance: "Q:1/4=80",
+    reel: "Q:1/2=40", jig: "Q:3/8=80", slip_jig: "Q:3/8=80",
+    hornpipe: "Q:1/2=35", polka: "Q:1/2=45", slide: "Q:3/8=80",
+    strathspey: "Q:1/2=35", waltz: "Q:1/4=80", air: "Q:1/4=60",
+    march: "Q:1/2=40", barndance: "Q:1/2=40",
   };
 
   var visualObj = null;
@@ -765,10 +765,21 @@
   // interval by this to get the actual per-slot click interval, so the
   // number the user sees and types always means beats per minute, never a
   // raw per-slot rate. Anything not listed here is 1 (one slot per beat).
+  //
+  // reel/hornpipe/barndance/march/polka/strathspey (#258) are felt in cut
+  // time -- the main beat is the half note, i.e. every *other*
+  // METRO_PATTERNS slot (which is one per quarter note for these types),
+  // so they get the same treatment with a factor of 2.
   var METRO_SUBDIVISION = {
     jig: 3,
     slip_jig: 3,
     slide: 3,
+    reel: 2,
+    hornpipe: 2,
+    barndance: 2,
+    march: 2,
+    polka: 2,
+    strathspey: 2,
   };
 
   // ── user-configurable pulse subdivision (#51) ──────────────────────────────
@@ -785,11 +796,17 @@
   }
 
   function loadSubdivisionLevel(tuneTypeKey) {
+    // "downbeats" (#258) is the default for every tune type until a
+    // per-type preference is saved -- "full" clicks every quarter note,
+    // which is too dense/fast-feeling as an out-of-the-box default now
+    // that the cut-time types (#258) are correctly doubled. Still
+    // available as a manual choice for someone deliberately working at a
+    // slow pulse who wants the extra clicks.
     try {
       var saved = localStorage.getItem("cairn.metro.subdivision." + tuneTypeKey);
-      return METRO_SUBDIVISION_LEVELS.indexOf(saved) !== -1 ? saved : "full";
+      return METRO_SUBDIVISION_LEVELS.indexOf(saved) !== -1 ? saved : "downbeats";
     } catch (e) {
-      return "full"; // localStorage unavailable (private browsing etc.)
+      return "downbeats"; // localStorage unavailable (private browsing etc.)
     }
   }
 
@@ -801,8 +818,8 @@
     }
   }
 
-  var metroPatternKey = "reel";        // the tune-type key currently resolved
-  var metroSubdivisionLevel = "full";  // persisted per metroPatternKey
+  var metroPatternKey = "reel";              // the tune-type key currently resolved
+  var metroSubdivisionLevel = "downbeats";  // persisted per metroPatternKey (#258)
 
   // Applies metroSubdivisionLevel to whichever pattern metroPatternKey
   // currently resolves to, and syncs the <select> (if this page has one) to
@@ -945,14 +962,19 @@
 
   // SMuFL (Bravura Text) codepoints for the metronome-mark label — "tail up"
   // quarter note, plus an augmentation dot for the compound-meter (3-per-
-  // beat) types, so the label always shows the same beat unit metroSchedule
-  // is actually counting. Derived from metroSubdivision directly (rather
-  // than a second tune-type lookup) so the two can't drift out of sync.
+  // beat) types, plus a half note (metNoteHalfUp, U+ECA3) for the cut-time
+  // (2-per-beat, #258) types, so the label always shows the same beat unit
+  // metroSchedule is actually counting. Derived from metroSubdivision
+  // directly (rather than a second tune-type lookup) so the two can't
+  // drift out of sync.
   var SMUFL_QUARTER_NOTE = "";
+  var SMUFL_HALF_NOTE = "";
   var SMUFL_AUGMENTATION_DOT = "";
 
   function metroTempoGlyph() {
-    return metroSubdivision === 3 ? SMUFL_QUARTER_NOTE + SMUFL_AUGMENTATION_DOT : SMUFL_QUARTER_NOTE;
+    if (metroSubdivision === 3) return SMUFL_QUARTER_NOTE + SMUFL_AUGMENTATION_DOT;
+    if (metroSubdivision === 2) return SMUFL_HALF_NOTE;
+    return SMUFL_QUARTER_NOTE;
   }
 
   // Refresh the #abc-tempo-unit glyph to match the currently-resolved
