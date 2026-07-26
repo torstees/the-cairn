@@ -57,6 +57,9 @@ async def export_tunes(db, out_dir: Path) -> int:
                 "origin": tune.origin,
                 "region": tune.region,
                 "notes": tune.notes,
+                "visibility": tune.visibility.value,
+                "thesession_tune_id": tune.thesession_tune_id,
+                "thesession_username": tune.thesession_username,
                 "settings": [
                     {
                         "label": s.label,
@@ -67,6 +70,9 @@ async def export_tunes(db, out_dir: Path) -> int:
                         "source_notes": s.source_notes,
                         "ornamentation_level": s.ornamentation_level.value,
                         "mutation_notation": s.mutation_notation,
+                        "visibility": s.visibility.value,
+                        "thesession_setting_id": s.thesession_setting_id,
+                        "thesession_username": s.thesession_username,
                     }
                     for s in tune.settings
                 ],
@@ -77,6 +83,13 @@ async def export_tunes(db, out_dir: Path) -> int:
                         "notes": d.notes,
                     }
                     for d in tune.difficulties
+                ],
+                "aliases": [
+                    {
+                        "name": a.name,
+                        "notes": a.notes,
+                    }
+                    for a in tune.aliases
                 ],
             }
         )

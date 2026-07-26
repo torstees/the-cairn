@@ -31,6 +31,7 @@ from sqlalchemy import select
 
 from cairn.database import AsyncSessionLocal
 from cairn.models import (
+    ContentVisibility,
     Instrument,
     KeyMode,
     KeyRoot,
@@ -52,7 +53,7 @@ from cairn.models import (
     WarmupType,
 )
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate
-from cairn.services.tunes import create_setting, create_tune, set_difficulty
+from cairn.services.tunes import add_alias, create_setting, create_tune, set_difficulty
 
 _STUB_USER_ID = 1
 
@@ -101,24 +102,33 @@ async def seed_tunes(db, records: list) -> tuple[int, int, int]:
                     origin=rec.get("origin"),
                     region=rec.get("region"),
                     notes=rec.get("notes"),
+                    visibility=ContentVisibility(rec.get("visibility", ContentVisibility.public.value)),
                 ),
                 abc_notation=core_setting["abc_notation"],
                 setting_label=core_setting["label"],
             )
-            if core_setting.get("source") or core_setting.get("source_notes"):
-                core_row = (
-                    await db.execute(
-                        select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True))
-                    )
-                ).scalar_one_or_none()
-                if core_row:
-                    core_row.source = core_setting.get("source")
-                    core_row.source_notes = core_setting.get("source_notes")
-                    await db.commit()
+            # thesession_tune_id/username aren't on TuneCreate (they're a permanent
+            # attribution link set directly by services/thesession_link.py, not a
+            # user-editable field) -- set them the same way here.
+            tune.thesession_tune_id = rec.get("thesession_tune_id")
+            tune.thesession_username = rec.get("thesession_username")
+            await db.commit()
+            core_row = (
+                await db.execute(
+                    select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True))
+                )
+            ).scalar_one_or_none()
+            if core_row:
+                core_row.source = core_setting.get("source")
+                core_row.source_notes = core_setting.get("source_notes")
+                core_row.visibility = ContentVisibility(core_setting.get("visibility", ContentVisibility.public.value))
+                core_row.thesession_setting_id = core_setting.get("thesession_setting_id")
+                core_row.thesession_username = core_setting.get("thesession_username")
+                await db.commit()
             for s in rec["settings"]:
                 if s["is_core"]:
                     continue
-                await create_setting(
+                setting = await create_setting(
                     db,
                     tune.id,
                     TuneSettingCreate(
@@ -130,8 +140,13 @@ async def seed_tunes(db, records: list) -> tuple[int, int, int]:
                         source_notes=s.get("source_notes"),
                         ornamentation_level=OrnamentationLevel(s.get("ornamentation_level", "none")),
                         mutation_notation=s.get("mutation_notation"),
+                        visibility=ContentVisibility(s.get("visibility", ContentVisibility.public.value)),
                     ),
                 )
+                if setting is not None:
+                    setting.thesession_setting_id = s.get("thesession_setting_id")
+                    setting.thesession_username = s.get("thesession_username")
+                    await db.commit()
             for d in rec.get("difficulties", []):
                 await set_difficulty(
                     db,
@@ -143,6 +158,8 @@ async def seed_tunes(db, records: list) -> tuple[int, int, int]:
                         notes=d.get("notes"),
                     ),
                 )
+            for a in rec.get("aliases", []):
+                await add_alias(db, tune.id, a["name"], a.get("notes"))
             print(f"  OK  {title!r}")
             loaded += 1
         except Exception as exc:
