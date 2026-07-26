@@ -351,3 +351,41 @@ async def test_apply_link_populates_brand_new_tune_from_default(db: AsyncSession
     assert updated.time_signature == "6/8"
     assert updated.key_root == KeyRoot.G
     assert updated.key_mode == KeyMode.major
+
+
+async def test_apply_link_second_call_does_not_duplicate_already_imported_setting(db: AsyncSession) -> None:
+    """Re-running apply_thesession_link (e.g. via #256's re-entry point) with
+    an overlapping setting_id must not create a second TuneSetting row."""
+    tune = await create_tune(db, _tune_create(), abc_notation=ABC)
+    ext = _ext_setting(setting_id=477, tune_id=100, username="Josh Kane")
+    db.add(ext)
+    await db.commit()
+    await db.refresh(ext)
+
+    await apply_thesession_link(db, tune.id, 100, [], [ext.id], ext.id)
+    await apply_thesession_link(db, tune.id, 100, [], [ext.id], ext.id)
+
+    result = await db.execute(
+        select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.thesession_setting_id == 477)
+    )
+    assert len(result.scalars().all()) == 1
+
+
+async def test_apply_link_second_call_still_imports_new_setting(db: AsyncSession) -> None:
+    tune = await create_tune(db, _tune_create(), abc_notation=ABC)
+    ext = _ext_setting(setting_id=477, tune_id=100, username="Josh Kane")
+    db.add(ext)
+    await db.commit()
+    await db.refresh(ext)
+    await apply_thesession_link(db, tune.id, 100, [], [ext.id], ext.id)
+
+    ext2 = _ext_setting(setting_id=478, tune_id=100, username="Someone Else")
+    db.add(ext2)
+    await db.commit()
+    await db.refresh(ext2)
+
+    await apply_thesession_link(db, tune.id, 100, [], [ext.id, ext2.id], None)
+
+    result = await db.execute(select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(False)))
+    thesession_ids = {s.thesession_setting_id for s in result.scalars().all()}
+    assert thesession_ids == {477, 478}

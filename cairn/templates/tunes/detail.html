@@ -33,6 +33,12 @@
          class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
         TheSession.org &#8599;
       </a>
+      <button type="button" title="Import more settings from TheSession.org"
+              hx-get="/tunes/{{ tune.id }}/thesession-import-more-settings{% if list_id %}?list_id={{ list_id }}{% elif box_id %}?box_id={{ box_id }}{% endif %}"
+              hx-target="#thesession-wizard" hx-swap="innerHTML"
+              class="border border-stone-300 hover:bg-stone-50 text-stone-600 px-4 py-2 rounded-lg text-sm font-medium">
+        Import More Settings
+      </button>
       {% else %}
       <button type="button" title="Link to Tune @ TheSession.org"
               hx-get="/tunes/{{ tune.id }}/thesession-search{% if list_id %}?list_id={{ list_id }}{% elif box_id %}?box_id={{ box_id }}{% endif %}"

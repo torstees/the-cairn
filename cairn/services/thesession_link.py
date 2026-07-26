@@ -175,6 +175,25 @@ async def get_thesession_settings(
     return list(result.scalars().all())
 
 
+def _already_imported_setting_ids(tune: Tune) -> set[int]:
+    """TheSession setting_ids (TheSession's own id space) already present as a
+    TuneSetting on this tune — see TuneSetting.thesession_setting_id."""
+    return {s.thesession_setting_id for s in tune.settings if s.thesession_setting_id is not None}
+
+
+async def build_settings_step_context(db: AsyncSession, tune: Tune, external_tune_id: int) -> dict:
+    """Shared context for the wizard's settings step (#256): fetches
+    TheSession's settings for external_tune_id, excludes ones already
+    imported as a TuneSetting on this tune, then splits by key match.
+    tune.settings must already be loaded (get_tune eager-loads it)."""
+    already_imported = _already_imported_setting_ids(tune)
+    settings = await get_thesession_settings(db, external_tune_id)
+    settings = [s for s in settings if s.setting_id not in already_imported]
+    matching_settings, other_settings = split_settings_by_key_match(settings, tune.key_root, tune.key_mode)
+    previews = {s.id: build_thesession_preview_abc(s) for s in settings}
+    return {"matching_settings": matching_settings, "other_settings": other_settings, "previews": previews}
+
+
 def _thesession_setting_label(setting: TheSessionSetting) -> str:
     """Match the label shown next to each setting's checkbox in the wizard
     (see _thesession_wizard_settings.html) so the saved TuneSetting.label
@@ -203,6 +222,7 @@ async def apply_thesession_link(
     if tune is None:
         return None
 
+    already_imported = _already_imported_setting_ids(tune)
     existing_names = existing_alias_names(tune)
     if alias_ids:
         result = await db.execute(
@@ -227,6 +247,8 @@ async def apply_thesession_link(
         settings_by_id = {s.id: s for s in result.scalars().all()}
 
     default_ext_setting = settings_by_id.get(default_setting_id) if default_setting_id is not None else None
+    if default_ext_setting is not None and default_ext_setting.setting_id in already_imported:
+        default_ext_setting = None
     existing_core = core_setting(tune)
     remaining_setting_ids = setting_ids
 
@@ -252,7 +274,7 @@ async def apply_thesession_link(
 
     for sid in remaining_setting_ids:
         ext_setting = settings_by_id.get(sid)
-        if ext_setting is None:
+        if ext_setting is None or ext_setting.setting_id in already_imported:
             continue
         db.add(
             TuneSetting(
