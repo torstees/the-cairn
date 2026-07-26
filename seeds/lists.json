@@ -9,25 +9,46 @@
     "entries": [
       {
         "tune_title": "The Abbey",
-        "setting_label": "Basic Ornamentation"
+        "setting_label": "Basic Ornamentation",
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Ballintore Fancy",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Banshee",
-        "setting_label": "Test Setting"
+        "setting_label": "Test Setting",
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Foxhunters",
-        "setting_label": "bonk"
+        "setting_label": "bonk",
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "Comb Your Hair And Curl It",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       }
-    ]
+    ],
+    "set_entries": []
   },
   {
     "name": "Favorite Tunes",
@@ -39,88 +60,173 @@
     "entries": [
       {
         "tune_title": "Gillan's Apples",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": true
       },
       {
         "tune_title": "Come West Along The Road",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": true
       },
       {
         "tune_title": "The Cock And The Hen",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Boys Of Ballisodare",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "Sporting Paddy",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": true
       },
       {
         "tune_title": "Maud Millar",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": true
       },
       {
         "tune_title": "Dusty Windowsills",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": true
       },
       {
         "tune_title": "A Fig For A Kiss",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": true
       },
       {
         "tune_title": "Drowsy Maggie",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Banshee",
-        "setting_label": "Test Setting"
+        "setting_label": "Test Setting",
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Cliffs Of Moher",
-        "setting_label": "Flute test"
+        "setting_label": "Flute test",
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": true
       },
       {
         "tune_title": "The Cook In The Kitchen",
-        "setting_label": "Just another one"
+        "setting_label": "Just another one",
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "Gallagher's Frolics",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": true
       },
       {
         "tune_title": "The Foxhunters",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Ballintore Fancy",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "Comb Your Hair And Curl It",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Honeymoon",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "Autumn Child",
-        "setting_label": "#24776 by JACKB @ TheSession.org"
+        "setting_label": "#24776 by JACKB @ TheSession.org",
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The Wise Maid",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "The White Petticoat",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       },
       {
         "tune_title": "Up In The Air",
-        "setting_label": null
+        "setting_label": null,
+        "display_alias_name": null,
+        "transpose_key_root": null,
+        "transpose_octave": 0,
+        "is_focus": false
       }
-    ]
+    ],
+    "set_entries": []
   }
 ]

@@ -2,12 +2,13 @@
 """
 Seed the database from the seeds/ directory.
 
-Files read (if present, processed in dependency order):
-  seeds/tunes.json    — Tune + TuneSetting + TuneDifficulty
+Files read (if present, processed in dependency order — sets before boxes/lists,
+since box/list set_entries reference sets by title):
+  seeds/tunes.json    — Tune + TuneSetting + TuneDifficulty + TuneAlias
   seeds/warmups.json  — WarmupItem + WarmupInstrument
-  seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry
-  seeds/lists.json    — PracticeList + TuneListEntry
   seeds/sets.json     — TuneSet + TuneSetMember
+  seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry + TuneBoxSetEntry
+  seeds/lists.json    — PracticeList + TuneListEntry + TuneListSetEntry
 
 Missing files are skipped with a notice. Existing records are skipped by
 natural key (safe to re-run). Cross-references are resolved by title / label /
@@ -40,6 +41,7 @@ from cairn.models import (
     PracticeListType,
     ProgressStatus,
     Tune,
+    TuneAlias,
     TuneBox,
     TuneBoxEntry,
     TuneBoxInstrument,
@@ -53,6 +55,7 @@ from cairn.models import (
     WarmupType,
 )
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate
+from cairn.services.tune_sets import add_box_set, add_list_set, set_box_set_difficulty, set_list_set_difficulty
 from cairn.services.tunes import add_alias, create_setting, create_tune, set_difficulty
 
 _STUB_USER_ID = 1
@@ -74,6 +77,38 @@ async def _resolve_setting_id(db, tune_id: int, label: str | None) -> int | None
     return (
         await db.execute(select(TuneSetting.id).where(TuneSetting.tune_id == tune_id, TuneSetting.label == label))
     ).scalar_one_or_none()
+
+
+async def _resolve_alias_id(db, tune_id: int, name: str | None) -> int | None:
+    if name is None:
+        return None
+    return (
+        await db.execute(select(TuneAlias.id).where(TuneAlias.tune_id == tune_id, TuneAlias.name == name))
+    ).scalar_one_or_none()
+
+
+async def _resolve_set_id(db, title: str) -> int | None:
+    return (await db.execute(select(TuneSet.id).where(TuneSet.title == title))).scalar_one_or_none()
+
+
+async def _seed_set_entries(db, records: list, add_set, set_difficulty, entity_id: int) -> int:
+    """Shared by seed_boxes/seed_lists: resolve each set_entries record's
+    "set_title" to an id and add it via add_set/set_difficulty (whichever
+    box/list variant the caller passes in). Returns a warning count for
+    titles that don't resolve to an existing TuneSet -- requires seed_sets()
+    to have already run (see step order in main()).
+    """
+    warns = 0
+    for se_rec in records:
+        set_id = await _resolve_set_id(db, se_rec["set_title"])
+        if set_id is None:
+            print(f"    WARN set not found: {se_rec['set_title']!r}")
+            warns += 1
+            continue
+        await add_set(db, entity_id, set_id)
+        if se_rec.get("difficulty_override") is not None:
+            await set_difficulty(db, entity_id, set_id, se_rec["difficulty_override"])
+    return warns
 
 
 async def seed_tunes(db, records: list) -> tuple[int, int, int]:
@@ -220,9 +255,24 @@ async def seed_boxes(db, records: list) -> tuple[int, int, int]:
                     entry_warns += 1
                     continue
                 setting_id = await _resolve_setting_id(db, tune_id, entry_rec.get("setting_label"))
-                db.add(TuneBoxEntry(box_id=box.id, tune_id=tune_id, setting_id=setting_id))
+                display_alias_id = await _resolve_alias_id(db, tune_id, entry_rec.get("display_alias_name"))
+                db.add(
+                    TuneBoxEntry(
+                        box_id=box.id,
+                        tune_id=tune_id,
+                        setting_id=setting_id,
+                        display_alias_id=display_alias_id,
+                        transpose_key_root=KeyRoot(entry_rec["transpose_key_root"])
+                        if entry_rec.get("transpose_key_root")
+                        else None,
+                        transpose_octave=entry_rec.get("transpose_octave", 0),
+                    )
+                )
             await db.commit()
-            suffix = f" ({entry_warns} entry warnings)" if entry_warns else ""
+            entry_warns += await _seed_set_entries(
+                db, rec.get("set_entries", []), add_box_set, set_box_set_difficulty, box.id
+            )
+            suffix = f" ({entry_warns} warnings)" if entry_warns else ""
             print(f"  OK{suffix}  {name!r}")
             loaded += 1
         except Exception as exc:
@@ -275,9 +325,25 @@ async def seed_lists(db, records: list) -> tuple[int, int, int]:
                     entry_warns += 1
                     continue
                 setting_id = await _resolve_setting_id(db, tune_id, entry_rec.get("setting_label"))
-                db.add(TuneListEntry(list_id=pl.id, tune_id=tune_id, setting_id=setting_id))
+                display_alias_id = await _resolve_alias_id(db, tune_id, entry_rec.get("display_alias_name"))
+                db.add(
+                    TuneListEntry(
+                        list_id=pl.id,
+                        tune_id=tune_id,
+                        setting_id=setting_id,
+                        display_alias_id=display_alias_id,
+                        transpose_key_root=KeyRoot(entry_rec["transpose_key_root"])
+                        if entry_rec.get("transpose_key_root")
+                        else None,
+                        transpose_octave=entry_rec.get("transpose_octave", 0),
+                        is_focus=entry_rec.get("is_focus", False),
+                    )
+                )
             await db.commit()
-            suffix = f" ({entry_warns} entry warnings)" if entry_warns else ""
+            entry_warns += await _seed_set_entries(
+                db, rec.get("set_entries", []), add_list_set, set_list_set_difficulty, pl.id
+            )
+            suffix = f" ({entry_warns} warnings)" if entry_warns else ""
             print(f"  OK{suffix}  {name!r}")
             loaded += 1
         except Exception as exc:
@@ -329,9 +395,11 @@ async def main(seeds_dir: Path) -> None:
     steps = [
         ("tunes", "tunes.json", seed_tunes),
         ("warmups", "warmups.json", seed_warmups),
+        # sets before boxes/lists: box/list set_entries resolve set titles that
+        # must already exist (#267).
+        ("sets", "sets.json", seed_sets),
         ("boxes", "boxes.json", seed_boxes),
         ("lists", "lists.json", seed_lists),
-        ("sets", "sets.json", seed_sets),
     ]
 
     async with AsyncSessionLocal() as db:

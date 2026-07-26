@@ -7,17 +7,32 @@ from cairn.models import (
     ContentVisibility,
     KeyMode,
     KeyRoot,
+    PracticeList,
+    PracticeListType,
+    ProgressStatus,
     Tune,
     TuneAlias,
+    TuneBox,
+    TuneBoxEntry,
+    TuneListEntry,
     TuneSet,
     TuneSetMember,
     TuneSetting,
     TuneType,
 )
 from cairn.schemas import TuneCreate, TuneSettingCreate
+from cairn.services.tune_sets import (
+    add_box_set,
+    add_list_set,
+    create_set,
+    get_set_difficulty_override,
+    list_list_sets,
+    set_box_set_difficulty,
+    set_members,
+)
 from cairn.services.tunes import add_alias, create_setting, create_tune
-from scripts.export_seed import export_sets, export_tunes
-from scripts.seed import seed_sets, seed_tunes
+from scripts.export_seed import export_boxes, export_lists, export_sets, export_tunes
+from scripts.seed import seed_boxes, seed_lists, seed_sets, seed_tunes
 
 
 async def _tune(db: AsyncSession, title: str = "The Morning Dew"):
@@ -283,6 +298,207 @@ async def test_export_sets_writes_file(db: AsyncSession, tmp_path: Path) -> None
     assert rec["flow_difficulty"] == 2
     assert rec["members"][0]["tune_title"] == "The Morning Dew"
     assert rec["members"][0]["setting_label"] is None
+
+
+# ── seed_boxes ───────────────────────────────────────────────────────────────
+
+
+async def test_seed_boxes_creates_entry_with_alias_and_transpose(db: AsyncSession) -> None:
+    tune = await _tune(db, "The Morning Dew")
+    await add_alias(db, tune.id, "Morning Air")
+    records = [
+        {
+            "name": "My Box",
+            "instruments": [],
+            "entries": [
+                {
+                    "tune_title": "The Morning Dew",
+                    "setting_label": None,
+                    "display_alias_name": "Morning Air",
+                    "transpose_key_root": "G",
+                    "transpose_octave": -1,
+                }
+            ],
+        }
+    ]
+    loaded, skipped, errors = await seed_boxes(db, records)
+    assert (loaded, skipped, errors) == (1, 0, 0)
+
+    entry = (await db.execute(select(TuneBoxEntry).join(TuneBox).where(TuneBox.name == "My Box"))).scalar_one()
+    alias = (await db.execute(select(TuneAlias).where(TuneAlias.id == entry.display_alias_id))).scalar_one()
+    assert alias.name == "Morning Air"
+    assert entry.transpose_key_root == KeyRoot.G
+    assert entry.transpose_octave == -1
+
+
+async def test_seed_boxes_creates_embedded_set_with_difficulty_override(db: AsyncSession) -> None:
+    tune = await _tune(db, "The Morning Dew")
+    tune_set = await create_set(db, title="Morning Set")
+    await set_members(db, tune_set.id, [{"tune_id": tune.id, "setting_id": None}])
+
+    records = [
+        {
+            "name": "My Box",
+            "entries": [],
+            "set_entries": [{"set_title": "Morning Set", "difficulty_override": 4}],
+        }
+    ]
+    loaded, skipped, errors = await seed_boxes(db, records)
+    assert (loaded, skipped, errors) == (1, 0, 0)
+
+    box = (await db.execute(select(TuneBox).where(TuneBox.name == "My Box"))).scalar_one()
+    difficulty = await get_set_difficulty_override(db, box.id, tune_set.id)
+    assert difficulty == 4
+
+
+async def test_seed_boxes_warns_on_missing_set(db: AsyncSession, capsys) -> None:
+    records = [{"name": "My Box", "entries": [], "set_entries": [{"set_title": "Nonexistent Set"}]}]
+    loaded, skipped, errors = await seed_boxes(db, records)
+    assert (loaded, errors) == (1, 0)
+    out = capsys.readouterr().out
+    assert "WARN set not found" in out
+    assert "Nonexistent Set" in out
+
+
+# ── export_boxes ─────────────────────────────────────────────────────────────
+
+
+async def test_export_boxes_includes_entry_overrides_and_set_entries(db: AsyncSession, tmp_path: Path) -> None:
+    tune = await _tune(db, "The Morning Dew")
+    alias = await add_alias(db, tune.id, "Morning Air")
+    tune_set = await create_set(db, title="Morning Set")
+
+    box = TuneBox(user_id=1, name="My Box")
+    db.add(box)
+    await db.flush()
+    db.add(
+        TuneBoxEntry(
+            box_id=box.id,
+            tune_id=tune.id,
+            display_alias_id=alias.id,
+            transpose_key_root=KeyRoot.G,
+            transpose_octave=-1,
+        )
+    )
+    await db.commit()
+    await add_box_set(db, box.id, tune_set.id)
+    await set_box_set_difficulty(db, box.id, tune_set.id, 4)
+
+    await export_boxes(db, tmp_path)
+    import json
+
+    data = json.loads((tmp_path / "boxes.json").read_text())
+    rec = next(r for r in data if r["name"] == "My Box")
+    entry = rec["entries"][0]
+    assert entry["display_alias_name"] == "Morning Air"
+    assert entry["transpose_key_root"] == "G"
+    assert entry["transpose_octave"] == -1
+    assert rec["set_entries"] == [{"set_title": "Morning Set", "difficulty_override": 4}]
+
+
+# ── seed_lists ───────────────────────────────────────────────────────────────
+
+
+async def test_seed_lists_creates_entry_with_focus_and_transpose(db: AsyncSession) -> None:
+    await seed_boxes(db, [{"name": "My Box", "entries": []}])
+    tune = await _tune(db, "The Morning Dew")
+    await add_alias(db, tune.id, "Morning Air")
+    records = [
+        {
+            "name": "My List",
+            "box_name": "My Box",
+            "list_type": "woodshed",
+            "progress_goal": "committed",
+            "entries": [
+                {
+                    "tune_title": "The Morning Dew",
+                    "setting_label": None,
+                    "display_alias_name": "Morning Air",
+                    "transpose_key_root": "G",
+                    "transpose_octave": 1,
+                    "is_focus": True,
+                }
+            ],
+        }
+    ]
+    loaded, skipped, errors = await seed_lists(db, records)
+    assert (loaded, skipped, errors) == (1, 0, 0)
+
+    entry = (
+        await db.execute(select(TuneListEntry).join(PracticeList).where(PracticeList.name == "My List"))
+    ).scalar_one()
+    assert entry.transpose_key_root == KeyRoot.G
+    assert entry.transpose_octave == 1
+    assert entry.is_focus is True
+
+
+async def test_seed_lists_creates_embedded_set(db: AsyncSession) -> None:
+    await seed_boxes(db, [{"name": "My Box", "entries": []}])
+    tune = await _tune(db, "The Morning Dew")
+    tune_set = await create_set(db, title="Morning Set")
+    await set_members(db, tune_set.id, [{"tune_id": tune.id, "setting_id": None}])
+
+    records = [
+        {
+            "name": "My List",
+            "box_name": "My Box",
+            "list_type": "woodshed",
+            "progress_goal": "committed",
+            "entries": [],
+            "set_entries": [{"set_title": "Morning Set"}],
+        }
+    ]
+    await seed_lists(db, records)
+    pl = (await db.execute(select(PracticeList).where(PracticeList.name == "My List"))).scalar_one()
+    set_entries = await list_list_sets(db, pl.id)
+    assert len(set_entries) == 1
+    assert set_entries[0].set_id == tune_set.id
+
+
+# ── export_lists ─────────────────────────────────────────────────────────────
+
+
+async def test_export_lists_includes_entry_overrides_focus_and_set_entries(db: AsyncSession, tmp_path: Path) -> None:
+    tune = await _tune(db, "The Morning Dew")
+    alias = await add_alias(db, tune.id, "Morning Air")
+    tune_set = await create_set(db, title="Morning Set")
+
+    box = TuneBox(user_id=1, name="My Box")
+    db.add(box)
+    await db.flush()
+    pl = PracticeList(
+        user_id=1,
+        box_id=box.id,
+        name="My List",
+        list_type=PracticeListType.woodshed,
+        progress_goal=ProgressStatus.committed,
+    )
+    db.add(pl)
+    await db.flush()
+    db.add(
+        TuneListEntry(
+            list_id=pl.id,
+            tune_id=tune.id,
+            display_alias_id=alias.id,
+            transpose_key_root=KeyRoot.G,
+            transpose_octave=1,
+            is_focus=True,
+        )
+    )
+    await db.commit()
+    await add_list_set(db, pl.id, tune_set.id)
+
+    await export_lists(db, tmp_path)
+    import json
+
+    data = json.loads((tmp_path / "lists.json").read_text())
+    rec = next(r for r in data if r["name"] == "My List")
+    entry = rec["entries"][0]
+    assert entry["display_alias_name"] == "Morning Air"
+    assert entry["transpose_key_root"] == "G"
+    assert entry["transpose_octave"] == 1
+    assert entry["is_focus"] is True
+    assert rec["set_entries"] == [{"set_title": "Morning Set", "difficulty_override": None}]
 
 
 async def test_export_sets_empty(db: AsyncSession, tmp_path: Path) -> None:
