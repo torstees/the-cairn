@@ -19,6 +19,8 @@ from cairn.models import (
     TuneSetMember,
     TuneSetting,
     TuneType,
+    WarmupInstrument,
+    WarmupItem,
 )
 from cairn.schemas import TuneCreate, TuneSettingCreate
 from cairn.services.tune_sets import (
@@ -26,13 +28,14 @@ from cairn.services.tune_sets import (
     add_list_set,
     create_set,
     get_set_difficulty_override,
+    list_box_sets,
     list_list_sets,
     set_box_set_difficulty,
     set_members,
 )
 from cairn.services.tunes import add_alias, create_setting, create_tune
 from scripts.export_seed import export_boxes, export_lists, export_sets, export_tunes
-from scripts.seed import seed_boxes, seed_lists, seed_sets, seed_tunes
+from scripts.seed import seed_boxes, seed_lists, seed_sets, seed_tunes, seed_warmups
 
 
 async def _tune(db: AsyncSession, title: str = "The Morning Dew"):
@@ -67,8 +70,8 @@ def _tune_record(**overrides) -> dict:
 
 async def test_seed_tunes_creates_aliases(db: AsyncSession) -> None:
     rec = _tune_record(aliases=[{"name": "The Kesh Jig", "notes": "common misnomer"}, {"name": "An Ciseach"}])
-    loaded, skipped, errors = await seed_tunes(db, [rec])
-    assert (loaded, skipped, errors) == (1, 0, 0)
+    created, updated, errors = await seed_tunes(db, [rec])
+    assert (created, updated, errors) == (1, 0, 0)
 
     tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
     aliases = (await db.execute(select(TuneAlias).where(TuneAlias.tune_id == tune.id))).scalars().all()
@@ -126,6 +129,84 @@ async def test_seed_tunes_preserves_setting_visibility_and_thesession_fields(db:
     assert settings["Alt"].thesession_username == "altuser"
 
 
+async def test_seed_tunes_reconcile_adds_setting_and_alias(db: AsyncSession) -> None:
+    await seed_tunes(db, [_tune_record(aliases=[{"name": "An Ciseach"}])])
+
+    rec = _tune_record(
+        settings=[
+            {"label": "Standard", "abc_notation": "|:GABc dedB|dedB dedB:|\n", "is_core": True},
+            {"label": "Alt", "abc_notation": "|:GABc dedB|dedB dedB:|\n", "is_core": False},
+        ],
+        aliases=[{"name": "An Ciseach"}, {"name": "The Kesh Jig"}],
+    )
+    created, updated, errors = await seed_tunes(db, [rec])
+    assert (created, updated, errors) == (0, 1, 0)
+
+    tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
+    labels = {s.label for s in (await db.execute(select(TuneSetting).where(TuneSetting.tune_id == tune.id))).scalars()}
+    assert labels == {"Standard", "Alt"}
+    names = {a.name for a in (await db.execute(select(TuneAlias).where(TuneAlias.tune_id == tune.id))).scalars()}
+    assert names == {"An Ciseach", "The Kesh Jig"}
+
+
+async def test_seed_tunes_reconcile_updates_changed_fields(db: AsyncSession) -> None:
+    await seed_tunes(db, [_tune_record(composer="Unknown", visibility="public")])
+    await seed_tunes(db, [_tune_record(composer="O'Carolan", visibility="enrolled")])
+
+    tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
+    assert tune.composer == "O'Carolan"
+    assert tune.visibility == ContentVisibility.enrolled
+
+
+async def test_seed_tunes_reconcile_removes_setting_and_alias_no_longer_present(db: AsyncSession) -> None:
+    rec = _tune_record(
+        settings=[
+            {"label": "Standard", "abc_notation": "|:GABc dedB|dedB dedB:|\n", "is_core": True},
+            {"label": "Alt", "abc_notation": "|:GABc dedB|dedB dedB:|\n", "is_core": False},
+        ],
+        aliases=[{"name": "An Ciseach"}, {"name": "The Kesh Jig"}],
+    )
+    await seed_tunes(db, [rec])
+
+    await seed_tunes(db, [_tune_record(aliases=[{"name": "An Ciseach"}])])
+
+    tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
+    labels = {s.label for s in (await db.execute(select(TuneSetting).where(TuneSetting.tune_id == tune.id))).scalars()}
+    assert labels == {"Standard"}
+    names = {a.name for a in (await db.execute(select(TuneAlias).where(TuneAlias.tune_id == tune.id))).scalars()}
+    assert names == {"An Ciseach"}
+
+
+async def test_seed_tunes_reconcile_warns_instead_of_deleting_a_still_referenced_setting(db: AsyncSession) -> None:
+    # sqlite here doesn't enforce FKs (no PRAGMA foreign_keys), so a stale
+    # setting still pointed to by a box entry must be guarded explicitly
+    # rather than relying on the DB to reject the delete.
+    rec = _tune_record(
+        settings=[
+            {"label": "Standard", "abc_notation": "|:GABc dedB|dedB dedB:|\n", "is_core": True},
+            {"label": "Alt", "abc_notation": "|:GABc dedB|dedB dedB:|\n", "is_core": False},
+        ]
+    )
+    await seed_tunes(db, [rec])
+    tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
+    alt_setting_id = (
+        await db.execute(select(TuneSetting.id).where(TuneSetting.tune_id == tune.id, TuneSetting.label == "Alt"))
+    ).scalar_one()
+    box = TuneBox(user_id=1, name="Referencing Box")
+    db.add(box)
+    await db.flush()
+    db.add(TuneBoxEntry(box_id=box.id, tune_id=tune.id, setting_id=alt_setting_id))
+    await db.commit()
+
+    created, updated, errors = await seed_tunes(db, [_tune_record()])  # drops "Alt" from settings
+    assert (created, updated, errors) == (0, 1, 0)
+    # the still-referenced setting must survive, not get silently deleted
+    still_there = (
+        await db.execute(select(TuneSetting.id).where(TuneSetting.id == alt_setting_id))
+    ).scalar_one_or_none()
+    assert still_there == alt_setting_id
+
+
 # ── export_tunes ─────────────────────────────────────────────────────────────
 
 
@@ -180,6 +261,46 @@ async def test_export_tunes_includes_visibility_and_thesession_fields(db: AsyncS
     assert settings["Alt"]["thesession_setting_id"] is None
 
 
+# ── seed_warmups ─────────────────────────────────────────────────────────────
+
+
+def _warmup_record(**overrides) -> dict:
+    rec = {
+        "title": "Long Tones",
+        "warmup_type": "scale",
+        "content": "Hold each note for 8 counts.",
+        "difficulty": 1,
+        "instruments": ["flute"],
+    }
+    rec.update(overrides)
+    return rec
+
+
+async def test_seed_warmups_creates_warmup(db: AsyncSession) -> None:
+    created, updated, errors = await seed_warmups(db, [_warmup_record()])
+    assert (created, updated, errors) == (1, 0, 0)
+    warmup = (await db.execute(select(WarmupItem).where(WarmupItem.title == "Long Tones"))).scalar_one()
+    assert warmup.difficulty == 1
+    instruments = (
+        (await db.execute(select(WarmupInstrument).where(WarmupInstrument.warmup_id == warmup.id))).scalars().all()
+    )
+    assert {i.instrument.value for i in instruments} == {"flute"}
+
+
+async def test_seed_warmups_reconcile_updates_field_and_instruments(db: AsyncSession) -> None:
+    await seed_warmups(db, [_warmup_record(difficulty=1, instruments=["flute"])])
+
+    created, updated, errors = await seed_warmups(db, [_warmup_record(difficulty=3, instruments=["fiddle"])])
+    assert (created, updated, errors) == (0, 1, 0)
+
+    warmup = (await db.execute(select(WarmupItem).where(WarmupItem.title == "Long Tones"))).scalar_one()
+    assert warmup.difficulty == 3
+    instruments = (
+        (await db.execute(select(WarmupInstrument).where(WarmupInstrument.warmup_id == warmup.id))).scalars().all()
+    )
+    assert {i.instrument.value for i in instruments} == {"fiddle"}
+
+
 # ── seed_sets ─────────────────────────────────────────────────────────────────
 
 
@@ -196,21 +317,50 @@ async def test_seed_sets_creates_set(db: AsyncSession) -> None:
             "members": [{"tune_title": "The Morning Dew", "setting_label": None}],
         }
     ]
-    loaded, skipped, errors = await seed_sets(db, records)
-    assert loaded == 1
-    assert skipped == 0
+    created, updated, errors = await seed_sets(db, records)
+    assert created == 1
+    assert updated == 0
     assert errors == 0
     result = (await db.execute(select(TuneSet).where(TuneSet.title == "Morning Set"))).scalar_one_or_none()
     assert result is not None
 
 
-async def test_seed_sets_skips_duplicate_title(db: AsyncSession) -> None:
-    records = [{"title": "My Set", "members": []}]
-    await seed_sets(db, records)
-    loaded, skipped, errors = await seed_sets(db, records)
-    assert loaded == 0
-    assert skipped == 1
-    assert errors == 0
+async def test_seed_sets_reconciles_existing_set(db: AsyncSession) -> None:
+    t1 = await _tune(db, "Tune A")
+    t2 = await _tune(db, "Tune B")
+    await seed_sets(db, [{"title": "My Set", "description": "Old", "members": [{"tune_title": "Tune A"}]}])
+
+    created, updated, errors = await seed_sets(
+        db,
+        [
+            {
+                "title": "My Set",
+                "description": "New",
+                "members": [{"tune_title": "Tune A"}, {"tune_title": "Tune B"}],
+            }
+        ],
+    )
+    assert (created, updated, errors) == (0, 1, 0)
+
+    result = (await db.execute(select(TuneSet).where(TuneSet.title == "My Set"))).scalar_one()
+    assert result.description == "New"
+    members = (
+        (await db.execute(select(TuneSetMember).where(TuneSetMember.set_id == result.id).order_by(TuneSetMember.order)))
+        .scalars()
+        .all()
+    )
+    assert [m.tune_id for m in members] == [t1.id, t2.id]
+
+
+async def test_seed_sets_reconcile_removes_member_no_longer_in_record(db: AsyncSession) -> None:
+    t1 = await _tune(db, "Tune A")
+    await _tune(db, "Tune B")
+    await seed_sets(db, [{"title": "My Set", "members": [{"tune_title": "Tune A"}, {"tune_title": "Tune B"}]}])
+    await seed_sets(db, [{"title": "My Set", "members": [{"tune_title": "Tune A"}]}])
+
+    result = (await db.execute(select(TuneSet).where(TuneSet.title == "My Set"))).scalar_one()
+    members = (await db.execute(select(TuneSetMember).where(TuneSetMember.set_id == result.id))).scalars().all()
+    assert [m.tune_id for m in members] == [t1.id]
 
 
 async def test_seed_sets_stores_members_in_order(db: AsyncSession) -> None:
@@ -244,8 +394,8 @@ async def test_seed_sets_stores_members_in_order(db: AsyncSession) -> None:
 
 async def test_seed_sets_warns_on_missing_tune(db: AsyncSession, capsys) -> None:
     records = [{"title": "Broken Set", "members": [{"tune_title": "Nonexistent Tune", "setting_label": None}]}]
-    loaded, skipped, errors = await seed_sets(db, records)
-    assert loaded == 1
+    created, updated, errors = await seed_sets(db, records)
+    assert created == 1
     assert errors == 0
     out = capsys.readouterr().out
     assert "WARN" in out
@@ -321,8 +471,8 @@ async def test_seed_boxes_creates_entry_with_alias_and_transpose(db: AsyncSessio
             ],
         }
     ]
-    loaded, skipped, errors = await seed_boxes(db, records)
-    assert (loaded, skipped, errors) == (1, 0, 0)
+    created, updated, errors = await seed_boxes(db, records)
+    assert (created, updated, errors) == (1, 0, 0)
 
     entry = (await db.execute(select(TuneBoxEntry).join(TuneBox).where(TuneBox.name == "My Box"))).scalar_one()
     alias = (await db.execute(select(TuneAlias).where(TuneAlias.id == entry.display_alias_id))).scalar_one()
@@ -343,8 +493,8 @@ async def test_seed_boxes_creates_embedded_set_with_difficulty_override(db: Asyn
             "set_entries": [{"set_title": "Morning Set", "difficulty_override": 4}],
         }
     ]
-    loaded, skipped, errors = await seed_boxes(db, records)
-    assert (loaded, skipped, errors) == (1, 0, 0)
+    created, updated, errors = await seed_boxes(db, records)
+    assert (created, updated, errors) == (1, 0, 0)
 
     box = (await db.execute(select(TuneBox).where(TuneBox.name == "My Box"))).scalar_one()
     difficulty = await get_set_difficulty_override(db, box.id, tune_set.id)
@@ -353,11 +503,52 @@ async def test_seed_boxes_creates_embedded_set_with_difficulty_override(db: Asyn
 
 async def test_seed_boxes_warns_on_missing_set(db: AsyncSession, capsys) -> None:
     records = [{"name": "My Box", "entries": [], "set_entries": [{"set_title": "Nonexistent Set"}]}]
-    loaded, skipped, errors = await seed_boxes(db, records)
-    assert (loaded, errors) == (1, 0)
+    created, updated, errors = await seed_boxes(db, records)
+    assert (created, errors) == (1, 0)
     out = capsys.readouterr().out
     assert "WARN set not found" in out
     assert "Nonexistent Set" in out
+
+
+async def test_seed_boxes_reconcile_updates_entry_and_removes_stale(db: AsyncSession) -> None:
+    t1 = await _tune(db, "Tune A")
+    t2 = await _tune(db, "Tune B")
+    await seed_boxes(
+        db,
+        [
+            {
+                "name": "My Box",
+                "entries": [
+                    {"tune_title": "Tune A", "transpose_octave": 0},
+                    {"tune_title": "Tune B", "transpose_octave": 0},
+                ],
+            }
+        ],
+    )
+
+    created, updated, errors = await seed_boxes(
+        db, [{"name": "My Box", "entries": [{"tune_title": "Tune A", "transpose_octave": -1}]}]
+    )
+    assert (created, updated, errors) == (0, 1, 0)
+
+    box = (await db.execute(select(TuneBox).where(TuneBox.name == "My Box"))).scalar_one()
+    entries = (await db.execute(select(TuneBoxEntry).where(TuneBoxEntry.box_id == box.id))).scalars().all()
+    assert len(entries) == 1
+    assert entries[0].tune_id == t1.id
+    assert entries[0].transpose_octave == -1
+    assert not any(e.tune_id == t2.id for e in entries)
+
+
+async def test_seed_boxes_reconcile_removes_embedded_set_no_longer_present(db: AsyncSession) -> None:
+    tune = await _tune(db, "The Morning Dew")
+    tune_set = await create_set(db, title="Morning Set")
+    await set_members(db, tune_set.id, [{"tune_id": tune.id, "setting_id": None}])
+    await seed_boxes(db, [{"name": "My Box", "entries": [], "set_entries": [{"set_title": "Morning Set"}]}])
+
+    await seed_boxes(db, [{"name": "My Box", "entries": [], "set_entries": []}])
+
+    box = (await db.execute(select(TuneBox).where(TuneBox.name == "My Box"))).scalar_one()
+    assert await list_box_sets(db, box.id) == []
 
 
 # ── export_boxes ─────────────────────────────────────────────────────────────
@@ -421,8 +612,8 @@ async def test_seed_lists_creates_entry_with_focus_and_transpose(db: AsyncSessio
             ],
         }
     ]
-    loaded, skipped, errors = await seed_lists(db, records)
-    assert (loaded, skipped, errors) == (1, 0, 0)
+    created, updated, errors = await seed_lists(db, records)
+    assert (created, updated, errors) == (1, 0, 0)
 
     entry = (
         await db.execute(select(TuneListEntry).join(PracticeList).where(PracticeList.name == "My List"))
@@ -453,6 +644,35 @@ async def test_seed_lists_creates_embedded_set(db: AsyncSession) -> None:
     set_entries = await list_list_sets(db, pl.id)
     assert len(set_entries) == 1
     assert set_entries[0].set_id == tune_set.id
+
+
+async def test_seed_lists_reconcile_updates_entry_and_removes_stale(db: AsyncSession) -> None:
+    await seed_boxes(db, [{"name": "My Box", "entries": []}])
+    t1 = await _tune(db, "Tune A")
+    t2 = await _tune(db, "Tune B")
+    base = {"name": "My List", "box_name": "My Box", "list_type": "woodshed", "progress_goal": "committed"}
+    await seed_lists(
+        db,
+        [
+            {
+                **base,
+                "entries": [
+                    {"tune_title": "Tune A", "is_focus": False},
+                    {"tune_title": "Tune B", "is_focus": False},
+                ],
+            }
+        ],
+    )
+
+    created, updated, errors = await seed_lists(db, [{**base, "entries": [{"tune_title": "Tune A", "is_focus": True}]}])
+    assert (created, updated, errors) == (0, 1, 0)
+
+    pl = (await db.execute(select(PracticeList).where(PracticeList.name == "My List"))).scalar_one()
+    entries = (await db.execute(select(TuneListEntry).where(TuneListEntry.list_id == pl.id))).scalars().all()
+    assert len(entries) == 1
+    assert entries[0].tune_id == t1.id
+    assert entries[0].is_focus is True
+    assert not any(e.tune_id == t2.id for e in entries)
 
 
 # ── export_lists ─────────────────────────────────────────────────────────────

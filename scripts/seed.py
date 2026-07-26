@@ -10,8 +10,12 @@ since box/list set_entries reference sets by title):
   seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry + TuneBoxSetEntry
   seeds/lists.json    — PracticeList + TuneListEntry + TuneListSetEntry
 
-Missing files are skipped with a notice. Existing records are skipped by
-natural key (safe to re-run). Cross-references are resolved by title / label /
+Records are matched by natural key (title / name / label) and reconciled against
+the seed record rather than skipped when they already exist: scalar fields are
+overwritten, missing child records (settings, aliases, entries, ...) are added,
+and child records no longer present in the seed record are removed. seeds/ is
+the source of truth -- re-running this after editing/exporting seeds/ brings
+the database in line with it. Cross-references are resolved by title / label /
 name rather than by ID.
 
 Usage:
@@ -45,6 +49,7 @@ from cairn.models import (
     TuneBox,
     TuneBoxEntry,
     TuneBoxInstrument,
+    TuneDifficulty,
     TuneListEntry,
     TuneSet,
     TuneSetMember,
@@ -54,9 +59,21 @@ from cairn.models import (
     WarmupItem,
     WarmupType,
 )
-from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate
-from cairn.services.tune_sets import add_box_set, add_list_set, set_box_set_difficulty, set_list_set_difficulty
-from cairn.services.tunes import add_alias, create_setting, create_tune, set_difficulty
+from cairn.schemas import TuneCreate, TuneDifficultyCreate
+from cairn.services.tune_sets import (
+    add_box_set,
+    add_list_set,
+    clear_box_set_difficulty,
+    clear_list_set_difficulty,
+    list_box_sets,
+    list_list_sets,
+    remove_box_set,
+    remove_list_set,
+    set_box_set_difficulty,
+    set_list_set_difficulty,
+    set_members,
+)
+from cairn.services.tunes import add_alias, create_tune, set_difficulty
 
 _STUB_USER_ID = 1
 
@@ -91,97 +108,156 @@ async def _resolve_set_id(db, title: str) -> int | None:
     return (await db.execute(select(TuneSet.id).where(TuneSet.title == title))).scalar_one_or_none()
 
 
-async def _seed_set_entries(db, records: list, add_set, set_difficulty, entity_id: int) -> int:
-    """Shared by seed_boxes/seed_lists: resolve each set_entries record's
-    "set_title" to an id and add it via add_set/set_difficulty (whichever
-    box/list variant the caller passes in). Returns a warning count for
-    titles that don't resolve to an existing TuneSet -- requires seed_sets()
-    to have already run (see step order in main()).
+async def _delete_stale(db, existing: list, keep_keys: set, key_fn, guard=None) -> int:
+    """Delete any of existing whose key_fn(obj) isn't in keep_keys -- the
+    common "remove children no longer present in the seed record" half of
+    reconciliation. If guard is given, it's awaited per candidate and, if it
+    returns True, the deletion is skipped and reported as a warning instead
+    of going through -- this app's sqlite connections don't enable
+    PRAGMA foreign_keys, so a stale setting/alias still pointed to by a
+    box/list/set entry would otherwise be silently deleted out from under
+    that reference rather than caught. Returns the warning count.
     """
     warns = 0
+    for obj in existing:
+        if key_fn(obj) in keep_keys:
+            continue
+        if guard is not None and await guard(obj):
+            print(f"    WARN not removing {key_fn(obj)!r} — still referenced elsewhere")
+            warns += 1
+            continue
+        await db.delete(obj)
+    await db.commit()
+    return warns
+
+
+async def _setting_still_referenced(db, setting_id: int) -> bool:
+    for col in (TuneBoxEntry.setting_id, TuneListEntry.setting_id, TuneSetMember.setting_id):
+        if (await db.execute(select(col).where(col == setting_id))).first() is not None:
+            return True
+    return False
+
+
+async def _alias_still_referenced(db, alias_id: int) -> bool:
+    for col in (TuneBoxEntry.display_alias_id, TuneListEntry.display_alias_id):
+        if (await db.execute(select(col).where(col == alias_id))).first() is not None:
+            return True
+    return False
+
+
+async def _sync_set_entries(
+    db, records: list, list_existing, add_set, remove_set, set_diff, clear_diff, entity_id: int
+) -> int:
+    """Shared by seed_boxes/seed_lists: reconcile embedded TuneSet entries
+    (add missing, remove stale, sync each entry's difficulty override)
+    against set_entries records resolved by set title -- requires
+    seed_sets() to have already run (see step order in main()). Returns a
+    warning count for set titles that don't resolve to an existing TuneSet.
+    """
+    warns = 0
+    existing = await list_existing(db, entity_id)
+    existing_set_ids = {se.set_id for se in existing}
+    keep_set_ids = set()
     for se_rec in records:
         set_id = await _resolve_set_id(db, se_rec["set_title"])
         if set_id is None:
             print(f"    WARN set not found: {se_rec['set_title']!r}")
             warns += 1
             continue
-        await add_set(db, entity_id, set_id)
+        keep_set_ids.add(set_id)
+        if set_id not in existing_set_ids:
+            await add_set(db, entity_id, set_id)
         if se_rec.get("difficulty_override") is not None:
-            await set_difficulty(db, entity_id, set_id, se_rec["difficulty_override"])
+            await set_diff(db, entity_id, set_id, se_rec["difficulty_override"])
+        else:
+            await clear_diff(db, entity_id, set_id)
+    for se in existing:
+        if se.set_id not in keep_set_ids:
+            await remove_set(db, entity_id, se.set_id)
     return warns
 
 
 async def seed_tunes(db, records: list) -> tuple[int, int, int]:
-    loaded = skipped = errors = 0
+    created = updated = errors = 0
     for rec in records:
         title = rec["title"]
-        if (await db.execute(select(Tune.id).where(Tune.title == title))).scalar_one_or_none() is not None:
-            skipped += 1
-            continue
         try:
-            core_setting = next(
-                (s for s in rec["settings"] if s["is_core"]),
-                rec["settings"][0] if rec["settings"] else None,
-            )
-            if core_setting is None:
-                raise ValueError("no settings")
-            tune = await create_tune(
-                db,
-                TuneCreate(
-                    title=title,
-                    tune_type=TuneType(rec["tune_type"]),
-                    key_root=KeyRoot(rec["key_root"]),
-                    key_mode=KeyMode(rec["key_mode"]),
-                    time_signature=rec.get("time_signature", "4/4"),
-                    composer=rec.get("composer"),
-                    origin=rec.get("origin"),
-                    region=rec.get("region"),
-                    notes=rec.get("notes"),
-                    visibility=ContentVisibility(rec.get("visibility", ContentVisibility.public.value)),
-                ),
-                abc_notation=core_setting["abc_notation"],
-                setting_label=core_setting["label"],
-            )
-            # thesession_tune_id/username aren't on TuneCreate (they're a permanent
-            # attribution link set directly by services/thesession_link.py, not a
-            # user-editable field) -- set them the same way here.
+            existing_tune = (await db.execute(select(Tune).where(Tune.title == title))).scalar_one_or_none()
+            is_new = existing_tune is None
+
+            if is_new:
+                core_setting = next(
+                    (s for s in rec["settings"] if s["is_core"]),
+                    rec["settings"][0] if rec["settings"] else None,
+                )
+                if core_setting is None:
+                    raise ValueError("no settings")
+                tune = await create_tune(
+                    db,
+                    TuneCreate(
+                        title=title,
+                        tune_type=TuneType(rec["tune_type"]),
+                        key_root=KeyRoot(rec["key_root"]),
+                        key_mode=KeyMode(rec["key_mode"]),
+                        time_signature=rec.get("time_signature", "4/4"),
+                        composer=rec.get("composer"),
+                        origin=rec.get("origin"),
+                        region=rec.get("region"),
+                        notes=rec.get("notes"),
+                        visibility=ContentVisibility(rec.get("visibility", ContentVisibility.public.value)),
+                    ),
+                    abc_notation=core_setting["abc_notation"],
+                    setting_label=core_setting["label"],
+                )
+            else:
+                tune = existing_tune
+                tune.tune_type = TuneType(rec["tune_type"])
+                tune.key_root = KeyRoot(rec["key_root"])
+                tune.key_mode = KeyMode(rec["key_mode"])
+                tune.time_signature = rec.get("time_signature", "4/4")
+                tune.composer = rec.get("composer")
+                tune.origin = rec.get("origin")
+                tune.region = rec.get("region")
+                tune.notes = rec.get("notes")
+                tune.visibility = ContentVisibility(rec.get("visibility", ContentVisibility.public.value))
+            # thesession_tune_id/username aren't on TuneCreate (permanent attribution
+            # link set directly by services/thesession_link.py, not a user-editable
+            # field) -- set them the same way here, for both branches.
             tune.thesession_tune_id = rec.get("thesession_tune_id")
             tune.thesession_username = rec.get("thesession_username")
             await db.commit()
-            core_row = (
-                await db.execute(
-                    select(TuneSetting).where(TuneSetting.tune_id == tune.id, TuneSetting.is_core.is_(True))
-                )
-            ).scalar_one_or_none()
-            if core_row:
-                core_row.source = core_setting.get("source")
-                core_row.source_notes = core_setting.get("source_notes")
-                core_row.visibility = ContentVisibility(core_setting.get("visibility", ContentVisibility.public.value))
-                core_row.thesession_setting_id = core_setting.get("thesession_setting_id")
-                core_row.thesession_username = core_setting.get("thesession_username")
-                await db.commit()
+
+            existing_settings = (
+                (await db.execute(select(TuneSetting).where(TuneSetting.tune_id == tune.id))).scalars().all()
+            )
+            existing_by_label = {s.label: s for s in existing_settings}
             for s in rec["settings"]:
-                if s["is_core"]:
-                    continue
-                setting = await create_setting(
-                    db,
-                    tune.id,
-                    TuneSettingCreate(
-                        tune_id=tune.id,
-                        label=s["label"],
-                        abc_notation=s["abc_notation"],
-                        instrument=Instrument(s["instrument"]) if s.get("instrument") else None,
-                        source=s.get("source"),
-                        source_notes=s.get("source_notes"),
-                        ornamentation_level=OrnamentationLevel(s.get("ornamentation_level", "none")),
-                        mutation_notation=s.get("mutation_notation"),
-                        visibility=ContentVisibility(s.get("visibility", ContentVisibility.public.value)),
-                    ),
-                )
-                if setting is not None:
-                    setting.thesession_setting_id = s.get("thesession_setting_id")
-                    setting.thesession_username = s.get("thesession_username")
-                    await db.commit()
+                row = existing_by_label.get(s["label"])
+                if row is None:
+                    row = TuneSetting(tune_id=tune.id, label=s["label"])
+                    db.add(row)
+                row.abc_notation = s["abc_notation"]
+                row.is_core = s["is_core"]
+                row.instrument = Instrument(s["instrument"]) if s.get("instrument") else None
+                row.source = s.get("source")
+                row.source_notes = s.get("source_notes")
+                row.ornamentation_level = OrnamentationLevel(s.get("ornamentation_level", "none"))
+                row.mutation_notation = s.get("mutation_notation")
+                row.visibility = ContentVisibility(s.get("visibility", ContentVisibility.public.value))
+                row.thesession_setting_id = s.get("thesession_setting_id")
+                row.thesession_username = s.get("thesession_username")
+            await db.commit()
+            warns = await _delete_stale(
+                db,
+                existing_settings,
+                {s["label"] for s in rec["settings"]},
+                lambda x: x.label,
+                guard=lambda x: _setting_still_referenced(db, x.id),
+            )
+
+            existing_difficulties = (
+                (await db.execute(select(TuneDifficulty).where(TuneDifficulty.tune_id == tune.id))).scalars().all()
+            )
             for d in rec.get("difficulties", []):
                 await set_difficulty(
                     db,
@@ -193,96 +269,152 @@ async def seed_tunes(db, records: list) -> tuple[int, int, int]:
                         notes=d.get("notes"),
                     ),
                 )
+            await _delete_stale(
+                db,
+                existing_difficulties,
+                {d["instrument"] for d in rec.get("difficulties", [])},
+                lambda x: x.instrument.value,
+            )
+
+            existing_aliases = (await db.execute(select(TuneAlias).where(TuneAlias.tune_id == tune.id))).scalars().all()
+            existing_alias_by_name = {a.name: a for a in existing_aliases}
             for a in rec.get("aliases", []):
-                await add_alias(db, tune.id, a["name"], a.get("notes"))
-            print(f"  OK  {title!r}")
-            loaded += 1
+                row = existing_alias_by_name.get(a["name"])
+                if row is None:
+                    await add_alias(db, tune.id, a["name"], a.get("notes"))
+                elif row.notes != a.get("notes"):
+                    row.notes = a.get("notes")
+                    await db.commit()
+            warns += await _delete_stale(
+                db,
+                existing_aliases,
+                {a["name"] for a in rec.get("aliases", [])},
+                lambda x: x.name,
+                guard=lambda x: _alias_still_referenced(db, x.id),
+            )
+
+            suffix = f" ({warns} warnings)" if warns else ""
+            print(f"  {'NEW' if is_new else 'UPD'}{suffix}  {title!r}")
+            created += is_new
+            updated += not is_new
         except Exception as exc:
             print(f"  ERR {title!r} — {exc}")
             errors += 1
-    return loaded, skipped, errors
+    return created, updated, errors
 
 
 async def seed_warmups(db, records: list) -> tuple[int, int, int]:
-    loaded = skipped = errors = 0
+    created = updated = errors = 0
     for rec in records:
         title = rec["title"]
-        if (await db.execute(select(WarmupItem.id).where(WarmupItem.title == title))).scalar_one_or_none() is not None:
-            skipped += 1
-            continue
         try:
-            warmup = WarmupItem(
-                title=title,
-                warmup_type=WarmupType(rec["warmup_type"]),
-                content=rec["content"],
-                difficulty=rec["difficulty"],
-                default_tempo=rec.get("default_tempo"),
-            )
-            db.add(warmup)
+            existing = (await db.execute(select(WarmupItem).where(WarmupItem.title == title))).scalar_one_or_none()
+            is_new = existing is None
+            warmup = existing
+            if is_new:
+                warmup = WarmupItem(title=title)
+                db.add(warmup)
+            warmup.warmup_type = WarmupType(rec["warmup_type"])
+            warmup.content = rec["content"]
+            warmup.difficulty = rec["difficulty"]
+            warmup.default_tempo = rec.get("default_tempo")
             await db.flush()
+
+            existing_instruments = (
+                (await db.execute(select(WarmupInstrument).where(WarmupInstrument.warmup_id == warmup.id)))
+                .scalars()
+                .all()
+            )
+            existing_values = {i.instrument.value for i in existing_instruments}
             for inst_val in rec.get("instruments", []):
-                db.add(WarmupInstrument(warmup_id=warmup.id, instrument=Instrument(inst_val)))
+                if inst_val not in existing_values:
+                    db.add(WarmupInstrument(warmup_id=warmup.id, instrument=Instrument(inst_val)))
             await db.commit()
-            print(f"  OK  {title!r}")
-            loaded += 1
+            await _delete_stale(db, existing_instruments, set(rec.get("instruments", [])), lambda x: x.instrument.value)
+
+            print(f"  {'NEW' if is_new else 'UPD'}  {title!r}")
+            created += is_new
+            updated += not is_new
         except Exception as exc:
             print(f"  ERR {title!r} — {exc}")
             errors += 1
-    return loaded, skipped, errors
+    return created, updated, errors
 
 
 async def seed_boxes(db, records: list) -> tuple[int, int, int]:
-    loaded = skipped = errors = 0
+    created = updated = errors = 0
     for rec in records:
         name = rec["name"]
-        if (
-            await db.execute(select(TuneBox.id).where(TuneBox.user_id == _STUB_USER_ID, TuneBox.name == name))
-        ).scalar_one_or_none() is not None:
-            skipped += 1
-            continue
         try:
-            box = TuneBox(user_id=_STUB_USER_ID, name=name)
-            db.add(box)
+            existing = (
+                await db.execute(select(TuneBox).where(TuneBox.user_id == _STUB_USER_ID, TuneBox.name == name))
+            ).scalar_one_or_none()
+            is_new = existing is None
+            box = existing
+            if is_new:
+                box = TuneBox(user_id=_STUB_USER_ID, name=name)
+                db.add(box)
             await db.flush()
+
+            existing_instruments = (
+                (await db.execute(select(TuneBoxInstrument).where(TuneBoxInstrument.box_id == box.id))).scalars().all()
+            )
+            existing_inst_values = {i.instrument.value for i in existing_instruments}
             for inst_val in rec.get("instruments", []):
-                db.add(TuneBoxInstrument(box_id=box.id, instrument=Instrument(inst_val)))
+                if inst_val not in existing_inst_values:
+                    db.add(TuneBoxInstrument(box_id=box.id, instrument=Instrument(inst_val)))
             await db.flush()
-            entry_warns = 0
+            await _delete_stale(db, existing_instruments, set(rec.get("instruments", [])), lambda x: x.instrument.value)
+
+            warns = 0
+            existing_entries = (
+                (await db.execute(select(TuneBoxEntry).where(TuneBoxEntry.box_id == box.id))).scalars().all()
+            )
+            existing_by_tune = {e.tune_id: e for e in existing_entries}
+            keep_tune_ids = set()
             for entry_rec in rec.get("entries", []):
                 tune_id = await _resolve_tune_id(db, entry_rec["tune_title"])
                 if tune_id is None:
                     print(f"    WARN tune not found: {entry_rec['tune_title']!r}")
-                    entry_warns += 1
+                    warns += 1
                     continue
-                setting_id = await _resolve_setting_id(db, tune_id, entry_rec.get("setting_label"))
-                display_alias_id = await _resolve_alias_id(db, tune_id, entry_rec.get("display_alias_name"))
-                db.add(
-                    TuneBoxEntry(
-                        box_id=box.id,
-                        tune_id=tune_id,
-                        setting_id=setting_id,
-                        display_alias_id=display_alias_id,
-                        transpose_key_root=KeyRoot(entry_rec["transpose_key_root"])
-                        if entry_rec.get("transpose_key_root")
-                        else None,
-                        transpose_octave=entry_rec.get("transpose_octave", 0),
-                    )
+                keep_tune_ids.add(tune_id)
+                row = existing_by_tune.get(tune_id)
+                if row is None:
+                    row = TuneBoxEntry(box_id=box.id, tune_id=tune_id)
+                    db.add(row)
+                row.setting_id = await _resolve_setting_id(db, tune_id, entry_rec.get("setting_label"))
+                row.display_alias_id = await _resolve_alias_id(db, tune_id, entry_rec.get("display_alias_name"))
+                row.transpose_key_root = (
+                    KeyRoot(entry_rec["transpose_key_root"]) if entry_rec.get("transpose_key_root") else None
                 )
+                row.transpose_octave = entry_rec.get("transpose_octave", 0)
             await db.commit()
-            entry_warns += await _seed_set_entries(
-                db, rec.get("set_entries", []), add_box_set, set_box_set_difficulty, box.id
+            await _delete_stale(db, existing_entries, keep_tune_ids, lambda x: x.tune_id)
+
+            warns += await _sync_set_entries(
+                db,
+                rec.get("set_entries", []),
+                list_box_sets,
+                add_box_set,
+                remove_box_set,
+                set_box_set_difficulty,
+                clear_box_set_difficulty,
+                box.id,
             )
-            suffix = f" ({entry_warns} warnings)" if entry_warns else ""
-            print(f"  OK{suffix}  {name!r}")
-            loaded += 1
+
+            suffix = f" ({warns} warnings)" if warns else ""
+            print(f"  {'NEW' if is_new else 'UPD'}{suffix}  {name!r}")
+            created += is_new
+            updated += not is_new
         except Exception as exc:
             print(f"  ERR {name!r} — {exc}")
             errors += 1
-    return loaded, skipped, errors
+    return created, updated, errors
 
 
 async def seed_lists(db, records: list) -> tuple[int, int, int]:
-    loaded = skipped = errors = 0
+    created = updated = errors = 0
     for rec in records:
         name = rec["name"]
         box_id = (
@@ -294,103 +426,122 @@ async def seed_lists(db, records: list) -> tuple[int, int, int]:
             print(f"  ERR {name!r} — box not found: {rec['box_name']!r}")
             errors += 1
             continue
-        if (
-            await db.execute(
-                select(PracticeList.id).where(
-                    PracticeList.user_id == _STUB_USER_ID,
-                    PracticeList.box_id == box_id,
-                    PracticeList.name == name,
-                )
-            )
-        ).scalar_one_or_none() is not None:
-            skipped += 1
-            continue
         try:
-            pl = PracticeList(
-                user_id=_STUB_USER_ID,
-                box_id=box_id,
-                name=name,
-                list_type=PracticeListType(rec["list_type"]),
-                progress_goal=ProgressStatus(rec["progress_goal"]),
-                target_date=date.fromisoformat(rec["target_date"]) if rec.get("target_date") else None,
-                is_active=rec.get("is_active", False),
-            )
-            db.add(pl)
+            existing = (
+                await db.execute(
+                    select(PracticeList).where(
+                        PracticeList.user_id == _STUB_USER_ID,
+                        PracticeList.box_id == box_id,
+                        PracticeList.name == name,
+                    )
+                )
+            ).scalar_one_or_none()
+            is_new = existing is None
+            pl = existing
+            if is_new:
+                pl = PracticeList(user_id=_STUB_USER_ID, box_id=box_id, name=name)
+                db.add(pl)
+            pl.list_type = PracticeListType(rec["list_type"])
+            pl.progress_goal = ProgressStatus(rec["progress_goal"])
+            pl.target_date = date.fromisoformat(rec["target_date"]) if rec.get("target_date") else None
+            pl.is_active = rec.get("is_active", False)
             await db.flush()
-            entry_warns = 0
+
+            warns = 0
+            existing_entries = (
+                (await db.execute(select(TuneListEntry).where(TuneListEntry.list_id == pl.id))).scalars().all()
+            )
+            existing_by_tune = {e.tune_id: e for e in existing_entries}
+            keep_tune_ids = set()
             for entry_rec in rec.get("entries", []):
                 tune_id = await _resolve_tune_id(db, entry_rec["tune_title"])
                 if tune_id is None:
                     print(f"    WARN tune not found: {entry_rec['tune_title']!r}")
-                    entry_warns += 1
+                    warns += 1
                     continue
-                setting_id = await _resolve_setting_id(db, tune_id, entry_rec.get("setting_label"))
-                display_alias_id = await _resolve_alias_id(db, tune_id, entry_rec.get("display_alias_name"))
-                db.add(
-                    TuneListEntry(
-                        list_id=pl.id,
-                        tune_id=tune_id,
-                        setting_id=setting_id,
-                        display_alias_id=display_alias_id,
-                        transpose_key_root=KeyRoot(entry_rec["transpose_key_root"])
-                        if entry_rec.get("transpose_key_root")
-                        else None,
-                        transpose_octave=entry_rec.get("transpose_octave", 0),
-                        is_focus=entry_rec.get("is_focus", False),
-                    )
+                keep_tune_ids.add(tune_id)
+                row = existing_by_tune.get(tune_id)
+                if row is None:
+                    row = TuneListEntry(list_id=pl.id, tune_id=tune_id)
+                    db.add(row)
+                row.setting_id = await _resolve_setting_id(db, tune_id, entry_rec.get("setting_label"))
+                row.display_alias_id = await _resolve_alias_id(db, tune_id, entry_rec.get("display_alias_name"))
+                row.transpose_key_root = (
+                    KeyRoot(entry_rec["transpose_key_root"]) if entry_rec.get("transpose_key_root") else None
                 )
+                row.transpose_octave = entry_rec.get("transpose_octave", 0)
+                row.is_focus = entry_rec.get("is_focus", False)
             await db.commit()
-            entry_warns += await _seed_set_entries(
-                db, rec.get("set_entries", []), add_list_set, set_list_set_difficulty, pl.id
+            await _delete_stale(db, existing_entries, keep_tune_ids, lambda x: x.tune_id)
+
+            warns += await _sync_set_entries(
+                db,
+                rec.get("set_entries", []),
+                list_list_sets,
+                add_list_set,
+                remove_list_set,
+                set_list_set_difficulty,
+                clear_list_set_difficulty,
+                pl.id,
             )
-            suffix = f" ({entry_warns} warnings)" if entry_warns else ""
-            print(f"  OK{suffix}  {name!r}")
-            loaded += 1
+
+            suffix = f" ({warns} warnings)" if warns else ""
+            print(f"  {'NEW' if is_new else 'UPD'}{suffix}  {name!r}")
+            created += is_new
+            updated += not is_new
         except Exception as exc:
             print(f"  ERR {name!r} — {exc}")
             errors += 1
-    return loaded, skipped, errors
+    return created, updated, errors
 
 
 async def seed_sets(db, records: list) -> tuple[int, int, int]:
-    loaded = skipped = errors = 0
+    created = updated = errors = 0
     for rec in records:
         title = rec["title"]
-        if (await db.execute(select(TuneSet.id).where(TuneSet.title == title))).scalar_one_or_none() is not None:
-            skipped += 1
-            continue
         try:
-            tune_set = TuneSet(
-                title=title,
-                description=rec.get("description"),
-                source=rec.get("source"),
-                abc_header=rec.get("abc_header"),
-                flow_difficulty=rec.get("flow_difficulty"),
-                flow_difficulty_notes=rec.get("flow_difficulty_notes"),
-            )
-            db.add(tune_set)
-            await db.flush()
-            entry_warns = 0
-            for order, member_rec in enumerate(rec.get("members", [])):
+            existing_id = (await db.execute(select(TuneSet.id).where(TuneSet.title == title))).scalar_one_or_none()
+            is_new = existing_id is None
+            if is_new:
+                tune_set = TuneSet(title=title)
+                db.add(tune_set)
+                await db.flush()
+            else:
+                tune_set = await db.get(TuneSet, existing_id)
+            tune_set.description = rec.get("description")
+            tune_set.source = rec.get("source")
+            tune_set.abc_header = rec.get("abc_header")
+            tune_set.flow_difficulty = rec.get("flow_difficulty")
+            tune_set.flow_difficulty_notes = rec.get("flow_difficulty_notes")
+            await db.commit()
+
+            warns = 0
+            member_data = []
+            for member_rec in rec.get("members", []):
                 tune_id = await _resolve_tune_id(db, member_rec["tune_title"])
                 if tune_id is None:
                     print(f"    WARN tune not found: {member_rec['tune_title']!r}")
-                    entry_warns += 1
+                    warns += 1
                     continue
                 setting_id = await _resolve_setting_id(db, tune_id, member_rec.get("setting_label"))
-                db.add(TuneSetMember(set_id=tune_set.id, tune_id=tune_id, setting_id=setting_id, order=order))
-            await db.commit()
-            suffix = f" ({entry_warns} member warnings)" if entry_warns else ""
-            print(f"  OK{suffix}  {title!r}")
-            loaded += 1
+                member_data.append({"tune_id": tune_id, "setting_id": setting_id})
+            # set_members() replaces the full member list in one shot (delete all,
+            # recreate from member_data) -- already exactly the reconciliation
+            # semantics wanted here, for both a new and an already-seeded set.
+            await set_members(db, tune_set.id, member_data)
+
+            suffix = f" ({warns} warnings)" if warns else ""
+            print(f"  {'NEW' if is_new else 'UPD'}{suffix}  {title!r}")
+            created += is_new
+            updated += not is_new
         except Exception as exc:
             print(f"  ERR {title!r} — {exc}")
             errors += 1
-    return loaded, skipped, errors
+    return created, updated, errors
 
 
 async def main(seeds_dir: Path) -> None:
-    total_loaded = total_skipped = total_errors = 0
+    total_created = total_updated = total_errors = 0
 
     steps = [
         ("tunes", "tunes.json", seed_tunes),
@@ -409,12 +560,12 @@ async def main(seeds_dir: Path) -> None:
                 print(f"\n{label}: (no {filename}, skipping)")
                 continue
             print(f"\n{label}: {len(records)} records from {seeds_dir / filename}")
-            ld, sk, er = await fn(db, records)
-            total_loaded += ld
-            total_skipped += sk
+            cr, up, er = await fn(db, records)
+            total_created += cr
+            total_updated += up
             total_errors += er
 
-    print(f"\n{total_loaded} loaded   {total_skipped} skipped   {total_errors} errors")
+    print(f"\n{total_created} created   {total_updated} updated   {total_errors} errors")
 
 
 if __name__ == "__main__":
