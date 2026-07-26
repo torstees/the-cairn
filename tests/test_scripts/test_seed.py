@@ -10,6 +10,8 @@ from cairn.models import (
     PracticeList,
     PracticeListType,
     ProgressStatus,
+    Recording,
+    RecordingReference,
     Tune,
     TuneAlias,
     TuneBox,
@@ -23,6 +25,7 @@ from cairn.models import (
     WarmupItem,
 )
 from cairn.schemas import TuneCreate, TuneSettingCreate
+from cairn.services.recordings import add_reference, create_recording
 from cairn.services.tune_sets import (
     add_box_set,
     add_list_set,
@@ -34,8 +37,8 @@ from cairn.services.tune_sets import (
     set_members,
 )
 from cairn.services.tunes import add_alias, create_setting, create_tune
-from scripts.export_seed import export_boxes, export_lists, export_sets, export_tunes
-from scripts.seed import seed_boxes, seed_lists, seed_sets, seed_tunes, seed_warmups
+from scripts.export_seed import export_boxes, export_lists, export_recordings, export_sets, export_tunes
+from scripts.seed import seed_boxes, seed_lists, seed_recordings, seed_sets, seed_tunes, seed_warmups
 
 
 async def _tune(db: AsyncSession, title: str = "The Morning Dew"):
@@ -448,6 +451,183 @@ async def test_export_sets_writes_file(db: AsyncSession, tmp_path: Path) -> None
     assert rec["flow_difficulty"] == 2
     assert rec["members"][0]["tune_title"] == "The Morning Dew"
     assert rec["members"][0]["setting_label"] is None
+
+
+# ── seed_recordings ──────────────────────────────────────────────────────────
+
+
+async def test_seed_recordings_creates_recording_with_setting_reference(db: AsyncSession) -> None:
+    await _tune(db, "The Morning Dew")
+    records = [
+        {
+            "artist": "Lúnasa",
+            "title": "Otherworld",
+            "links": {"youtube": "https://www.youtube.com/watch?v=abc"},
+            "references": [
+                {"tune_title": "The Morning Dew", "setting_label": "Standard", "track_number": 3, "position": 1}
+            ],
+        }
+    ]
+    created, updated, errors = await seed_recordings(db, records)
+    assert (created, updated, errors) == (1, 0, 0)
+
+    recording = (
+        await db.execute(select(Recording).where(Recording.artist == "Lúnasa", Recording.title == "Otherworld"))
+    ).scalar_one()
+    assert recording.links == {"youtube": "https://www.youtube.com/watch?v=abc"}
+    ref = (
+        await db.execute(select(RecordingReference).where(RecordingReference.recording_id == recording.id))
+    ).scalar_one()
+    assert ref.track_number == 3
+    assert ref.position == 1
+    assert ref.set_id is None
+
+
+async def test_seed_recordings_creates_recording_with_set_reference(db: AsyncSession) -> None:
+    t = await _tune(db, "The Morning Dew")
+    tune_set = await create_set(db, title="Morning Set")
+    await set_members(db, tune_set.id, [{"tune_id": t.id, "setting_id": None}])
+    records = [{"artist": "Various", "title": "Live Set", "links": None, "references": [{"set_title": "Morning Set"}]}]
+    created, updated, errors = await seed_recordings(db, records)
+    assert (created, updated, errors) == (1, 0, 0)
+
+    recording = (
+        await db.execute(select(Recording).where(Recording.artist == "Various", Recording.title == "Live Set"))
+    ).scalar_one()
+    ref = (
+        await db.execute(select(RecordingReference).where(RecordingReference.recording_id == recording.id))
+    ).scalar_one()
+    assert ref.set_id == tune_set.id
+    assert ref.setting_id is None
+
+
+async def test_seed_recordings_reconcile_removes_stale_reference(db: AsyncSession) -> None:
+    await _tune(db, "Tune A")
+    await _tune(db, "Tune B")
+    links = {"youtube": "abc"}
+    base_refs = [
+        {"tune_title": "Tune A", "setting_label": "Standard"},
+        {"tune_title": "Tune B", "setting_label": "Standard"},
+    ]
+    await seed_recordings(db, [{"artist": "Lúnasa", "title": "Otherworld", "links": links, "references": base_refs}])
+
+    created, updated, errors = await seed_recordings(
+        db,
+        [
+            {
+                "artist": "Lúnasa",
+                "title": "Otherworld",
+                "links": links,
+                "references": [{"tune_title": "Tune A", "setting_label": "Standard"}],
+            }
+        ],
+    )
+    assert (created, updated, errors) == (0, 1, 0)
+
+    recording = (
+        await db.execute(select(Recording).where(Recording.artist == "Lúnasa", Recording.title == "Otherworld"))
+    ).scalar_one()
+    refs = (
+        (await db.execute(select(RecordingReference).where(RecordingReference.recording_id == recording.id)))
+        .scalars()
+        .all()
+    )
+    assert len(refs) == 1
+
+
+async def test_seed_recordings_treats_different_links_as_a_distinct_recording(db: AsyncSession) -> None:
+    # Recording has no DB uniqueness on (artist, title) -- the real catalog
+    # has genuinely distinct recordings sharing a title, distinguished only
+    # by their links. A naive (artist, title) natural key would collapse
+    # them onto one row and silently drop references processed earlier in
+    # the same run; links must be part of the identity.
+    await _tune(db, "Tune A")
+    await _tune(db, "Tune B")
+    records = [
+        {
+            "artist": "Ceoltóirí Cultúrlainne",
+            "title": "Foinn Seisiún 2",
+            "links": {"youtube": "aaa"},
+            "references": [{"tune_title": "Tune A", "setting_label": "Standard"}],
+        },
+        {
+            "artist": "Ceoltóirí Cultúrlainne",
+            "title": "Foinn Seisiún 2",
+            "links": {"youtube": "bbb"},
+            "references": [{"tune_title": "Tune B", "setting_label": "Standard"}],
+        },
+    ]
+    created, updated, errors = await seed_recordings(db, records)
+    assert (created, updated, errors) == (2, 0, 0)
+
+    recordings = (
+        (
+            await db.execute(
+                select(Recording).where(
+                    Recording.artist == "Ceoltóirí Cultúrlainne", Recording.title == "Foinn Seisiún 2"
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(recordings) == 2
+    refs_by_link = {}
+    for r in recordings:
+        refs = (
+            (await db.execute(select(RecordingReference).where(RecordingReference.recording_id == r.id)))
+            .scalars()
+            .all()
+        )
+        assert len(refs) == 1
+        refs_by_link[r.links["youtube"]] = refs[0]
+    assert refs_by_link["aaa"].setting_id is not None
+    assert refs_by_link["bbb"].setting_id is not None
+    assert refs_by_link["aaa"].setting_id != refs_by_link["bbb"].setting_id
+
+
+async def test_seed_recordings_warns_on_missing_tune(db: AsyncSession, capsys) -> None:
+    records = [
+        {
+            "artist": "Lúnasa",
+            "title": "Otherworld",
+            "references": [{"tune_title": "Nonexistent Tune", "setting_label": "Standard"}],
+        }
+    ]
+    created, updated, errors = await seed_recordings(db, records)
+    assert (created, errors) == (1, 0)
+    out = capsys.readouterr().out
+    assert "WARN setting not found" in out
+    assert "Nonexistent Tune" in out
+
+
+# ── export_recordings ────────────────────────────────────────────────────────
+
+
+async def test_export_recordings_includes_setting_and_set_references(db: AsyncSession, tmp_path: Path) -> None:
+    t = await _tune(db, "The Morning Dew")
+    tune_set = await create_set(db, title="Morning Set")
+    await set_members(db, tune_set.id, [{"tune_id": t.id, "setting_id": None}])
+    setting_id = (await db.execute(select(TuneSetting.id).where(TuneSetting.tune_id == t.id))).scalar_one()
+
+    recording = await create_recording(db, "Lúnasa", "Otherworld", {"youtube": "https://youtu.be/abc"})
+    await add_reference(db, recording.id, setting_id=setting_id, track_number=3, position=1)
+    await add_reference(db, recording.id, set_id=tune_set.id)
+
+    await export_recordings(db, tmp_path)
+    import json
+
+    data = json.loads((tmp_path / "recordings.json").read_text())
+    rec = next(r for r in data if r["artist"] == "Lúnasa" and r["title"] == "Otherworld")
+    assert rec["links"] == {"youtube": "https://youtu.be/abc"}
+    refs = rec["references"]
+    setting_ref = next(r for r in refs if r["tune_title"] is not None)
+    set_ref = next(r for r in refs if r["set_title"] is not None)
+    assert setting_ref["tune_title"] == "The Morning Dew"
+    assert setting_ref["setting_label"] == "Standard"
+    assert setting_ref["track_number"] == 3
+    assert setting_ref["position"] == 1
+    assert set_ref["set_title"] == "Morning Set"
 
 
 # ── seed_boxes ───────────────────────────────────────────────────────────────

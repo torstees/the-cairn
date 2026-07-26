@@ -1,0 +1,270 @@
+[
+  {
+    "artist": "Arundo",
+    "title": "Live at Counihans",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=vwsZhQUVQ1E"
+    },
+    "references": [
+      {
+        "tune_title": "Mary Grace",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 2,
+        "position": 2
+      }
+    ]
+  },
+  {
+    "artist": "Ceoltóirí Cultúrlainne",
+    "title": "Foinn Seisiún 1",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=l4Uj0u-k2wo"
+    },
+    "references": [
+      {
+        "tune_title": "The Wise Maid",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 28,
+        "position": 2
+      }
+    ]
+  },
+  {
+    "artist": "Ceoltóirí Cultúrlainne",
+    "title": "Foinn Seisiún 2",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=funcPb0_i9Y"
+    },
+    "references": [
+      {
+        "tune_title": "Willie Coleman's",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 10,
+        "position": 3
+      }
+    ]
+  },
+  {
+    "artist": "Ceoltóirí Cultúrlainne",
+    "title": "Foinn Seisiún 2",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=RwCGpSd-WvA"
+    },
+    "references": [
+      {
+        "tune_title": "Paddy's Return (Young Tim Murphy)",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 28,
+        "position": 1
+      }
+    ]
+  },
+  {
+    "artist": "Claire Shirely",
+    "title": "Play Along & Sheet Music (Fiddle)",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=ntvv5L2UyT8"
+    },
+    "references": [
+      {
+        "tune_title": "The Honeymoon",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": null,
+        "position": null
+      }
+    ]
+  },
+  {
+    "artist": "Kevin Burke",
+    "title": "Trad Irish Fiddle Lesson",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=rObiRbE2pgM"
+    },
+    "references": [
+      {
+        "tune_title": "Paddy's Return (Young Tim Murphy)",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": null,
+        "position": null
+      }
+    ]
+  },
+  {
+    "artist": "Kevin Burke And Mícheál Ó Domhnaill",
+    "title": "Portland",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=MwTY3teQEWU"
+    },
+    "references": [
+      {
+        "tune_title": "Willie Coleman's",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 6,
+        "position": 2
+      },
+      {
+        "tune_title": "Paddy's Return (Young Tim Murphy)",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 6,
+        "position": 1
+      },
+      {
+        "tune_title": "Up In The Air",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 6,
+        "position": 3
+      }
+    ]
+  },
+  {
+    "artist": "Lúnasa",
+    "title": "Otherworld",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=ilhp3WEky9w"
+    },
+    "references": [
+      {
+        "tune_title": "The Abbey",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 10,
+        "position": 4
+      }
+    ]
+  },
+  {
+    "artist": "Margo McGeeney & Björn Grüneberg",
+    "title": "Ar Eirinn Ni Neosfainn Ce Hi",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=FsiZ87UKZLY"
+    },
+    "references": [
+      {
+        "tune_title": "Ar Éirinn Ní Neosfainn Cé Hí",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": null,
+        "position": null
+      }
+    ]
+  },
+  {
+    "artist": "Matt Molloy",
+    "title": "Heathery Breeze",
+    "links": null,
+    "references": [
+      {
+        "tune_title": "Mary Grace",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 11,
+        "position": 2
+      }
+    ]
+  },
+  {
+    "artist": "Matt Molloy & Donal Lunny",
+    "title": "Matt Molloy",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=Q4qflFfkvCM&list=RDQ4qflFfkvCM&start_radio=1"
+    },
+    "references": [
+      {
+        "tune_title": "Willie Coleman's",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": 6,
+        "position": 1
+      }
+    ]
+  },
+  {
+    "artist": "Old Blind Dogs",
+    "title": "Close To The Bone",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=U1BqGhN51Sk"
+    },
+    "references": [
+      {
+        "tune_title": "The Honeymoon",
+        "setting_label": "#40592 by benhockenberry @ TheSession.org",
+        "set_title": null,
+        "track_number": 4,
+        "position": 1
+      }
+    ]
+  },
+  {
+    "artist": "Sarah Hale",
+    "title": "The Abbey Reel",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=Hyb3Urrhlwo"
+    },
+    "references": [
+      {
+        "tune_title": "The Abbey",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": null,
+        "position": null
+      }
+    ]
+  },
+  {
+    "artist": "Shannon Heaton",
+    "title": "Abbey Reel - Tune of the Month",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=HZfqjaLe5hs"
+    },
+    "references": [
+      {
+        "tune_title": "The Abbey",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": null,
+        "position": null
+      }
+    ]
+  },
+  {
+    "artist": "Shannon Heaton",
+    "title": "Tune of the Month",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=30iJmxTPVco"
+    },
+    "references": [
+      {
+        "tune_title": "Willie Coleman's",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": null,
+        "position": null
+      }
+    ]
+  },
+  {
+    "artist": "Shannon Heaton",
+    "title": "Wise Maid - Tune of the Month",
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=tS7gMsGjpRc"
+    },
+    "references": [
+      {
+        "tune_title": "The Wise Maid",
+        "setting_label": "Standard",
+        "set_title": null,
+        "track_number": null,
+        "position": null
+      }
+    ]
+  }
+]

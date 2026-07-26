@@ -3,11 +3,12 @@
 Export all seedable data to the seeds/ directory.
 
 Files written:
-  seeds/tunes.json    — Tune + TuneSetting + TuneDifficulty + TuneAlias
-  seeds/warmups.json  — WarmupItem + WarmupInstrument
-  seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry + TuneBoxSetEntry
-  seeds/lists.json    — PracticeList + TuneListEntry + TuneListSetEntry
-  seeds/sets.json     — TuneSet + TuneSetMember
+  seeds/tunes.json      — Tune + TuneSetting + TuneDifficulty + TuneAlias
+  seeds/warmups.json    — WarmupItem + WarmupInstrument
+  seeds/boxes.json      — TuneBox + TuneBoxInstrument + TuneBoxEntry + TuneBoxSetEntry
+  seeds/lists.json      — PracticeList + TuneListEntry + TuneListSetEntry
+  seeds/sets.json       — TuneSet + TuneSetMember
+  seeds/recordings.json — Recording + RecordingReference
 
 Cross-references (box entries, list entries, set members) use stable
 human-readable keys (tune title, setting label, box name) so seeds survive
@@ -30,7 +31,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from cairn.database import AsyncSessionLocal
-from cairn.models import PracticeList, TuneBox, TuneBoxEntry, TuneListEntry, TuneSet, TuneSetMember
+from cairn.models import (
+    PracticeList,
+    Recording,
+    RecordingReference,
+    TuneBox,
+    TuneBoxEntry,
+    TuneListEntry,
+    TuneSet,
+    TuneSetMember,
+    TuneSetting,
+)
 from cairn.services.tune_sets import (
     get_list_set_difficulty_override,
     get_set_difficulty_override,
@@ -237,6 +248,43 @@ async def export_sets(db, out_dir: Path) -> int:
     return len(records)
 
 
+async def export_recordings(db, out_dir: Path) -> int:
+    """Recording has no DB-level uniqueness on (artist, title) -- the real
+    catalog has both same-recording duplicates (identical links, entered more
+    than once) and different recordings that happen to share a title
+    (different links). (artist, title, links) is the only thing that reliably
+    tells those apart, so rows sharing that full key are merged into one seed
+    record (union of references) here, rather than exported as separate
+    records that would then fight over the same natural key in seed_recordings().
+    """
+    result = await db.execute(
+        select(Recording)
+        .options(
+            selectinload(Recording.references).selectinload(RecordingReference.setting).selectinload(TuneSetting.tune),
+            selectinload(Recording.references).selectinload(RecordingReference.tune_set),
+        )
+        .order_by(Recording.artist, Recording.title)
+    )
+    recordings = list(result.scalars().all())
+    merged: dict[tuple, dict] = {}
+    for r in recordings:
+        key = (r.artist, r.title, json.dumps(r.links, sort_keys=True) if r.links else None)
+        rec = merged.setdefault(key, {"artist": r.artist, "title": r.title, "links": r.links, "references": []})
+        rec["references"].extend(
+            {
+                "tune_title": ref.setting.tune.title if ref.setting else None,
+                "setting_label": ref.setting.label if ref.setting else None,
+                "set_title": ref.tune_set.title if ref.tune_set else None,
+                "track_number": ref.track_number,
+                "position": ref.position,
+            }
+            for ref in r.references
+        )
+    records = list(merged.values())
+    _write(out_dir / "recordings.json", records)
+    return len(records)
+
+
 async def main(out_dir: Path) -> None:
     async with AsyncSessionLocal() as db:
         n_tunes = await export_tunes(db, out_dir)
@@ -244,6 +292,7 @@ async def main(out_dir: Path) -> None:
         n_boxes = await export_boxes(db, out_dir)
         n_lists = await export_lists(db, out_dir)
         n_sets = await export_sets(db, out_dir)
+        n_recordings = await export_recordings(db, out_dir)
 
     print(f"Exported to {out_dir}/")
     print(f"  {n_tunes:>4} tunes")
@@ -251,6 +300,7 @@ async def main(out_dir: Path) -> None:
     print(f"  {n_boxes:>4} boxes")
     print(f"  {n_lists:>4} lists")
     print(f"  {n_sets:>4} sets")
+    print(f"  {n_recordings:>4} recordings")
 
 
 if __name__ == "__main__":
