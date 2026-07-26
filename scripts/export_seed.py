@@ -3,10 +3,10 @@
 Export all seedable data to the seeds/ directory.
 
 Files written:
-  seeds/tunes.json    — Tune + TuneSetting + TuneDifficulty
+  seeds/tunes.json    — Tune + TuneSetting + TuneDifficulty + TuneAlias
   seeds/warmups.json  — WarmupItem + WarmupInstrument
-  seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry
-  seeds/lists.json    — PracticeList + TuneListEntry
+  seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry + TuneBoxSetEntry
+  seeds/lists.json    — PracticeList + TuneListEntry + TuneListSetEntry
   seeds/sets.json     — TuneSet + TuneSetMember
 
 Cross-references (box entries, list entries, set members) use stable
@@ -31,6 +31,12 @@ from sqlalchemy.orm import selectinload
 
 from cairn.database import AsyncSessionLocal
 from cairn.models import PracticeList, TuneBox, TuneBoxEntry, TuneListEntry, TuneSet, TuneSetMember
+from cairn.services.tune_sets import (
+    get_list_set_difficulty_override,
+    get_set_difficulty_override,
+    list_box_sets,
+    list_list_sets,
+)
 from cairn.services.tunes import list_tunes
 from cairn.services.warmups import list_warmups
 
@@ -122,24 +128,34 @@ async def export_boxes(db, out_dir: Path) -> int:
             selectinload(TuneBox.instruments),
             selectinload(TuneBox.entries).selectinload(TuneBoxEntry.tune),
             selectinload(TuneBox.entries).selectinload(TuneBoxEntry.setting),
+            selectinload(TuneBox.entries).selectinload(TuneBoxEntry.display_alias),
         )
         .order_by(TuneBox.name)
     )
     boxes = list(result.scalars().all())
-    records = [
-        {
-            "name": box.name,
-            "instruments": [i.instrument.value for i in box.instruments],
-            "entries": [
-                {
-                    "tune_title": entry.tune.title,
-                    "setting_label": entry.setting.label if entry.setting else None,
-                }
-                for entry in box.entries
-            ],
-        }
-        for box in boxes
-    ]
+    records = []
+    for box in boxes:
+        set_entry_records = []
+        for se in await list_box_sets(db, box.id):
+            difficulty = await get_set_difficulty_override(db, box.id, se.set_id)
+            set_entry_records.append({"set_title": se.tune_set.title, "difficulty_override": difficulty})
+        records.append(
+            {
+                "name": box.name,
+                "instruments": [i.instrument.value for i in box.instruments],
+                "entries": [
+                    {
+                        "tune_title": entry.tune.title,
+                        "setting_label": entry.setting.label if entry.setting else None,
+                        "display_alias_name": entry.display_alias.name if entry.display_alias else None,
+                        "transpose_key_root": entry.transpose_key_root.value if entry.transpose_key_root else None,
+                        "transpose_octave": entry.transpose_octave,
+                    }
+                    for entry in box.entries
+                ],
+                "set_entries": set_entry_records,
+            }
+        )
     _write(out_dir / "boxes.json", records)
     return len(records)
 
@@ -152,28 +168,39 @@ async def export_lists(db, out_dir: Path) -> int:
             selectinload(PracticeList.box),
             selectinload(PracticeList.entries).selectinload(TuneListEntry.tune),
             selectinload(PracticeList.entries).selectinload(TuneListEntry.setting),
+            selectinload(PracticeList.entries).selectinload(TuneListEntry.display_alias),
         )
         .order_by(PracticeList.name)
     )
     lists = list(result.scalars().all())
-    records = [
-        {
-            "name": pl.name,
-            "box_name": pl.box.name,
-            "list_type": pl.list_type.value,
-            "progress_goal": pl.progress_goal.value,
-            "target_date": pl.target_date.isoformat() if pl.target_date else None,
-            "is_active": pl.is_active,
-            "entries": [
-                {
-                    "tune_title": entry.tune.title,
-                    "setting_label": entry.setting.label if entry.setting else None,
-                }
-                for entry in pl.entries
-            ],
-        }
-        for pl in lists
-    ]
+    records = []
+    for pl in lists:
+        set_entry_records = []
+        for se in await list_list_sets(db, pl.id):
+            difficulty = await get_list_set_difficulty_override(db, pl.id, se.set_id)
+            set_entry_records.append({"set_title": se.tune_set.title, "difficulty_override": difficulty})
+        records.append(
+            {
+                "name": pl.name,
+                "box_name": pl.box.name,
+                "list_type": pl.list_type.value,
+                "progress_goal": pl.progress_goal.value,
+                "target_date": pl.target_date.isoformat() if pl.target_date else None,
+                "is_active": pl.is_active,
+                "entries": [
+                    {
+                        "tune_title": entry.tune.title,
+                        "setting_label": entry.setting.label if entry.setting else None,
+                        "display_alias_name": entry.display_alias.name if entry.display_alias else None,
+                        "transpose_key_root": entry.transpose_key_root.value if entry.transpose_key_root else None,
+                        "transpose_octave": entry.transpose_octave,
+                        "is_focus": entry.is_focus,
+                    }
+                    for entry in pl.entries
+                ],
+                "set_entries": set_entry_records,
+            }
+        )
     _write(out_dir / "lists.json", records)
     return len(records)
 
