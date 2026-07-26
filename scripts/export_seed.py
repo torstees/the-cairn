@@ -43,7 +43,7 @@ def _write(path: Path, records: list) -> None:
 
 
 async def export_tunes(db, out_dir: Path) -> int:
-    tunes = await list_tunes(db)
+    tunes = await list_tunes(db, _STUB_USER_ID)
     records = []
     for tune in tunes:
         records.append(
