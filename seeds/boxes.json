@@ -8,11 +8,15 @@
     "entries": [
       {
         "tune_title": "The Abbey",
-        "setting_label": null
+        "setting_label": "Shannon Heaton TotM"
+      },
+      {
+        "tune_title": "Autumn Child",
+        "setting_label": "#24776 by JACKB @ TheSession.org"
       },
       {
         "tune_title": "The Ballintore Fancy",
-        "setting_label": null
+        "setting_label": "#56120 by shanachie @ TheSession.org"
       },
       {
         "tune_title": "Banish Misfortune",
@@ -59,11 +63,27 @@
         "setting_label": null
       },
       {
+        "tune_title": "The Honeymoon",
+        "setting_label": null
+      },
+      {
         "tune_title": "Maud Millar",
         "setting_label": null
       },
       {
         "tune_title": "Sporting Paddy",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Up In The Air",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The White Petticoat",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The Wise Maid",
         "setting_label": null
       }
     ]
