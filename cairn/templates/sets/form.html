@@ -128,9 +128,15 @@
             <span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-500"
                   x-text="member.type_label || ''"
                   x-show="member.type_label"></span>
+            {# x-model can't select an <option> that doesn't exist yet -- the
+               nested x-for below inserts the real <option>s a tick after this
+               <select>'s own x-model initializes, so a non-default value is
+               silently dropped back to "Default setting" (#265) unless we
+               re-apply it once those options are actually in the DOM. #}
             <select class="border border-stone-200 rounded px-2 py-1 text-xs text-stone-600 bg-white
                            focus:outline-none focus:ring-1 focus:ring-stone-400 max-w-40"
-                    x-model="members[idx].setting_id">
+                    x-model="members[idx].setting_id"
+                    x-init="$nextTick(() => { $el.value = members[idx].setting_id })">
               <option value="">Default setting</option>
               <template x-for="setting in member.settings" :key="setting.id">
                 <option :value="String(setting.id)"
