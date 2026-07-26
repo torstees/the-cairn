@@ -6,11 +6,11 @@ from cairn.models import TuneType
 from cairn.services.abc_utils import truncate_to_bars
 from cairn.services.thesession_link import (
     apply_thesession_link,
+    build_settings_step_context,
     build_thesession_preview_abc,
     get_thesession_aliases,
     get_thesession_settings,
     search_thesession_tunes,
-    split_settings_by_key_match,
 )
 from cairn.services.tunes import FAMILY_LABELS, existing_alias_names, get_tune
 from cairn.templating import templates
@@ -137,9 +137,7 @@ async def thesession_pick_aliases(
     tune = await get_tune(db, tune_id)
     if tune is None:
         raise HTTPException(status_code=404, detail="Tune not found")
-    settings = await get_thesession_settings(db, external_tune_id)
-    matching_settings, other_settings = split_settings_by_key_match(settings, tune.key_root, tune.key_mode)
-    previews = {s.id: build_thesession_preview_abc(s) for s in settings}
+    ctx = await build_settings_step_context(db, tune, external_tune_id)
     return templates.TemplateResponse(
         request,
         "tunes/partials/_thesession_wizard_settings.html",
@@ -147,12 +145,41 @@ async def thesession_pick_aliases(
             "tune_id": tune_id,
             "external_tune_id": external_tune_id,
             "tune": tune,
-            "matching_settings": matching_settings,
-            "other_settings": other_settings,
-            "previews": previews,
             "alias_ids": alias_ids,
             "box_id": box_id,
             "list_id": list_id,
+            **ctx,
+        },
+    )
+
+
+@router.get("/{tune_id}/thesession-import-more-settings")
+async def thesession_import_more_settings(
+    request: Request,
+    tune_id: int,
+    db: AsyncSession = Depends(get_db),
+    box_id: str = Query(default=""),
+    list_id: str = Query(default=""),
+) -> Response:
+    """Re-enter the wizard's settings step for an already-linked tune (#256),
+    skipping search/aliases since both external_tune_id and existing aliases
+    are already known. Settings already imported are excluded by
+    build_settings_step_context."""
+    tune = await get_tune(db, tune_id)
+    if tune is None or tune.thesession_tune_id is None:
+        raise HTTPException(status_code=404, detail="Tune not found or not linked")
+    ctx = await build_settings_step_context(db, tune, tune.thesession_tune_id)
+    return templates.TemplateResponse(
+        request,
+        "tunes/partials/_thesession_wizard_settings.html",
+        {
+            "tune_id": tune_id,
+            "external_tune_id": tune.thesession_tune_id,
+            "tune": tune,
+            "alias_ids": [],
+            "box_id": box_id,
+            "list_id": list_id,
+            **ctx,
         },
     )
 

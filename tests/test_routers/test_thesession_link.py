@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.models import KeyMode, KeyRoot, TuneSetting, TuneType
 from cairn.models_thesession_tunes import TheSessionAlias, TheSessionSetting
 from cairn.schemas import TuneCreate
+from cairn.services.thesession_link import apply_thesession_link
 from cairn.services.tunes import create_tune
 
 _ABC = "X:1\nT:x\nK:D\n|:DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA|DEFA BAFA:|"
@@ -337,3 +338,67 @@ async def test_save_unknown_tune_404s(client: AsyncClient) -> None:
         data={"external_tune_id": 100, "alias_ids": [], "setting_ids": [], "default_setting_id": ""},
     )
     assert resp.status_code == 404
+
+
+# ── import more settings (#256) ──────────────────────────────────────────────
+
+
+async def test_import_more_settings_renders_settings_step_for_linked_tune(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    tune = await _seed_tune(db)
+    ext = await _seed_external_tune(db)
+    await apply_thesession_link(db, tune.id, 100, [], [ext.id], ext.id)
+
+    new_ext = TheSessionSetting(
+        setting_id=478,
+        tune_id=100,
+        name="The Abbey",
+        tune_type_raw="reel",
+        meter="4/4",
+        mode_raw="Ador",
+        abc="|:B|A3B A2GE|A2GA BddB:|",
+        username="Someone Else",
+    )
+    db.add(new_ext)
+    await db.commit()
+
+    resp = await client.get(f"/tunes/{tune.id}/thesession-import-more-settings")
+    assert resp.status_code == 200
+    assert "Step 3 of 4" in resp.text
+    assert "Someone Else" in resp.text
+
+
+async def test_import_more_settings_excludes_already_imported_setting(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    ext = await _seed_external_tune(db)
+    await apply_thesession_link(db, tune.id, 100, [], [ext.id], ext.id)
+
+    resp = await client.get(f"/tunes/{tune.id}/thesession-import-more-settings")
+    assert resp.status_code == 200
+    assert f"#{ext.setting_id}" not in resp.text
+    assert "already here" in resp.text
+
+
+async def test_import_more_settings_404s_for_unlinked_tune(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await _seed_tune(db)
+    resp = await client.get(f"/tunes/{tune.id}/thesession-import-more-settings")
+    assert resp.status_code == 404
+
+
+async def test_import_more_settings_404s_for_unknown_tune(client: AsyncClient) -> None:
+    resp = await client.get("/tunes/999/thesession-import-more-settings")
+    assert resp.status_code == 404
+
+
+async def test_pick_aliases_excludes_already_imported_setting(client: AsyncClient, db: AsyncSession) -> None:
+    """The settings step's dedup filter also applies to the original wizard
+    flow (thesession_pick_aliases), not just the #256 entry point, since both
+    now share build_settings_step_context."""
+    tune = await _seed_tune(db)
+    ext = await _seed_external_tune(db)
+    await apply_thesession_link(db, tune.id, 100, [], [ext.id], ext.id)
+
+    resp = await client.post(f"/tunes/{tune.id}/thesession-tune/100/settings", data={"alias_ids": []})
+    assert resp.status_code == 200
+    assert f"#{ext.setting_id}" not in resp.text
