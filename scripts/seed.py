@@ -2,13 +2,15 @@
 """
 Seed the database from the seeds/ directory.
 
-Files read (if present, processed in dependency order — sets before boxes/lists,
-since box/list set_entries reference sets by title):
-  seeds/tunes.json    — Tune + TuneSetting + TuneDifficulty + TuneAlias
-  seeds/warmups.json  — WarmupItem + WarmupInstrument
-  seeds/sets.json     — TuneSet + TuneSetMember
-  seeds/boxes.json    — TuneBox + TuneBoxInstrument + TuneBoxEntry + TuneBoxSetEntry
-  seeds/lists.json    — PracticeList + TuneListEntry + TuneListSetEntry
+Files read (if present, processed in dependency order — sets before boxes/lists/
+recordings, since those reference sets by title; recordings also needs
+tunes/settings, which are seeded first regardless):
+  seeds/tunes.json      — Tune + TuneSetting + TuneDifficulty + TuneAlias
+  seeds/warmups.json    — WarmupItem + WarmupInstrument
+  seeds/sets.json       — TuneSet + TuneSetMember
+  seeds/recordings.json — Recording + RecordingReference
+  seeds/boxes.json      — TuneBox + TuneBoxInstrument + TuneBoxEntry + TuneBoxSetEntry
+  seeds/lists.json      — PracticeList + TuneListEntry + TuneListSetEntry
 
 Records are matched by natural key (title / name / label) and reconciled against
 the seed record rather than skipped when they already exist: scalar fields are
@@ -44,6 +46,8 @@ from cairn.models import (
     PracticeList,
     PracticeListType,
     ProgressStatus,
+    Recording,
+    RecordingReference,
     Tune,
     TuneAlias,
     TuneBox,
@@ -60,6 +64,13 @@ from cairn.models import (
     WarmupType,
 )
 from cairn.schemas import TuneCreate, TuneDifficultyCreate
+from cairn.services.recordings import (
+    add_reference,
+    create_recording,
+    remove_reference,
+    update_recording,
+    update_reference,
+)
 from cairn.services.tune_sets import (
     add_box_set,
     add_list_set,
@@ -540,15 +551,101 @@ async def seed_sets(db, records: list) -> tuple[int, int, int]:
     return created, updated, errors
 
 
+async def seed_recordings(db, records: list) -> tuple[int, int, int]:
+    created = updated = errors = 0
+    for rec in records:
+        artist, title, links = rec["artist"], rec["title"], rec.get("links")
+        try:
+            # (artist, title) alone isn't a safe natural key -- Recording has no
+            # DB uniqueness on it, and the real catalog has both same-recording
+            # duplicates and different recordings sharing a title. links (part
+            # of what export_recordings() already merges on) disambiguates them;
+            # see export_recordings()'s docstring for why.
+            candidates = (
+                (await db.execute(select(Recording).where(Recording.artist == artist, Recording.title == title)))
+                .scalars()
+                .all()
+            )
+            existing = next((c for c in candidates if c.links == links), None)
+            is_new = existing is None
+            recording = (
+                await create_recording(db, artist, title, links)
+                if is_new
+                else await update_recording(db, existing.id, artist, title, links)
+            )
+
+            warns = 0
+            existing_refs = (
+                (await db.execute(select(RecordingReference).where(RecordingReference.recording_id == recording.id)))
+                .scalars()
+                .all()
+            )
+            existing_by_key = {
+                ("setting", ref.setting_id) if ref.setting_id is not None else ("set", ref.set_id): ref
+                for ref in existing_refs
+            }
+            keep_keys = set()
+            for ref_rec in rec.get("references", []):
+                if ref_rec.get("set_title"):
+                    set_id = await _resolve_set_id(db, ref_rec["set_title"])
+                    if set_id is None:
+                        print(f"    WARN set not found: {ref_rec['set_title']!r}")
+                        warns += 1
+                        continue
+                    key, target = ("set", set_id), {"set_id": set_id}
+                else:
+                    tune_id = await _resolve_tune_id(db, ref_rec["tune_title"])
+                    setting_id = (
+                        await _resolve_setting_id(db, tune_id, ref_rec.get("setting_label")) if tune_id else None
+                    )
+                    if setting_id is None:
+                        label, tune_title = ref_rec.get("setting_label"), ref_rec.get("tune_title")
+                        print(f"    WARN setting not found: {label!r} on {tune_title!r}")
+                        warns += 1
+                        continue
+                    key, target = ("setting", setting_id), {"setting_id": setting_id}
+                keep_keys.add(key)
+                existing_ref = existing_by_key.get(key)
+                if existing_ref is None:
+                    await add_reference(
+                        db,
+                        recording.id,
+                        track_number=ref_rec.get("track_number"),
+                        position=ref_rec.get("position"),
+                        **target,
+                    )
+                else:
+                    await update_reference(
+                        db,
+                        existing_ref.id,
+                        setting_id=target.get("setting_id"),
+                        track_number=ref_rec.get("track_number"),
+                        position=ref_rec.get("position"),
+                    )
+            for key, ref in existing_by_key.items():
+                if key not in keep_keys:
+                    await remove_reference(db, ref.id)
+
+            suffix = f" ({warns} warnings)" if warns else ""
+            print(f"  {'NEW' if is_new else 'UPD'}{suffix}  {artist!r} — {title!r}")
+            created += is_new
+            updated += not is_new
+        except Exception as exc:
+            print(f"  ERR {artist!r} — {title!r} — {exc}")
+            errors += 1
+    return created, updated, errors
+
+
 async def main(seeds_dir: Path) -> None:
     total_created = total_updated = total_errors = 0
 
     steps = [
         ("tunes", "tunes.json", seed_tunes),
         ("warmups", "warmups.json", seed_warmups),
-        # sets before boxes/lists: box/list set_entries resolve set titles that
-        # must already exist (#267).
+        # sets before boxes/lists/recordings: box/list set_entries and recording
+        # references resolve set titles that must already exist (#267, #276).
         ("sets", "sets.json", seed_sets),
+        ("recordings", "recordings.json", seed_recordings),
         ("boxes", "boxes.json", seed_boxes),
         ("lists", "lists.json", seed_lists),
     ]
