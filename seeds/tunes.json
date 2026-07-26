@@ -9,6 +9,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 477,
+    "thesession_username": "Josh Kane",
     "settings": [
       {
         "label": "Standard",
@@ -18,7 +21,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Basic Ornamentation",
@@ -28,7 +34,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "minimal",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#477 by Josh Kane @ TheSession.org",
@@ -38,7 +47,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 477,
+        "thesession_username": "Josh Kane"
       },
       {
         "label": "#13369 by slainte @ TheSession.org",
@@ -48,7 +60,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 13369,
+        "thesession_username": "slainte"
       },
       {
         "label": "Shannon Heaton TotM",
@@ -58,7 +73,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Sarah Hale",
@@ -68,10 +86,39 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "Abbey Road, The",
+        "notes": null
+      },
+      {
+        "name": "Irish-American, The",
+        "notes": null
+      },
+      {
+        "name": "Moher, The",
+        "notes": null
+      },
+      {
+        "name": "Pullet, The",
+        "notes": null
+      },
+      {
+        "name": "Reddigan's",
+        "notes": null
+      },
+      {
+        "name": "Redican's",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "Ar Éirinn Ní Neosfainn Cé Hí",
@@ -83,6 +130,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 1039,
+    "thesession_username": "cuchulain54",
     "settings": [
       {
         "label": "Standard",
@@ -92,7 +142,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#1039 by cuchulain54 @ TheSession.org",
@@ -102,10 +155,103 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 1039,
+        "thesession_username": "cuchulain54"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "'Ar Éirinn Ni 'Neosfainn Ce Hi",
+        "notes": null
+      },
+      {
+        "name": "Abha Na Laoi",
+        "notes": null
+      },
+      {
+        "name": "Ar Eireann Ni Neosainn Ce Hi",
+        "notes": null
+      },
+      {
+        "name": "Ar Eirinn Ni NEosfinn Ce Hi",
+        "notes": null
+      },
+      {
+        "name": "Ar Eirinn Ni Neosfainn Ce Hi",
+        "notes": null
+      },
+      {
+        "name": "Ar Eirinn No N'Eosfhainn Ce H'I",
+        "notes": null
+      },
+      {
+        "name": "Ar Éireann Ní Neosfainn Cé Uí",
+        "notes": null
+      },
+      {
+        "name": "Ar Éirinn Ni 'Neosfainn Ce Hi",
+        "notes": null
+      },
+      {
+        "name": "Buachaill On Eirne",
+        "notes": null
+      },
+      {
+        "name": "Do Dh'Eirinn Cha'n Innis Mi Ah-Ainm",
+        "notes": null
+      },
+      {
+        "name": "For Ireland I Will Not Tell Her Name",
+        "notes": null
+      },
+      {
+        "name": "For Ireland I Won't Say Her Name",
+        "notes": null
+      },
+      {
+        "name": "For Ireland I Would Not Not Tell Her Name",
+        "notes": null
+      },
+      {
+        "name": "For Ireland I Would Not Speak Her Name",
+        "notes": null
+      },
+      {
+        "name": "For Ireland I Would Not Tell Her Name",
+        "notes": null
+      },
+      {
+        "name": "For Ireland I'll Not Tell Her Name",
+        "notes": null
+      },
+      {
+        "name": "For Ireland, I'd Not Tell Her Name",
+        "notes": null
+      },
+      {
+        "name": "Is Ar Éirinn Ní Neosfainn Cé Hí",
+        "notes": null
+      },
+      {
+        "name": "River Lee, The",
+        "notes": null
+      },
+      {
+        "name": "Tweed Side",
+        "notes": null
+      },
+      {
+        "name": "Tweed-side",
+        "notes": null
+      },
+      {
+        "name": "Tweedside",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "August Rain",
@@ -117,6 +263,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -126,7 +275,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -136,10 +288,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Autumn Child",
@@ -151,6 +307,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 1336,
+    "thesession_username": "JACKB",
     "settings": [
       {
         "label": "Standard",
@@ -160,7 +319,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#1336 by fidicen @ TheSession.org",
@@ -170,7 +332,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 1336,
+        "thesession_username": "fidicen"
       },
       {
         "label": "#24776 by JACKB @ TheSession.org",
@@ -180,7 +345,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 24776,
+        "thesession_username": "JACKB"
       },
       {
         "label": "#49639 by Edgar Bolton @ TheSession.org",
@@ -190,10 +358,19 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 49639,
+        "thesession_username": "Edgar Bolton"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "Beauties Of Autumn, The",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "The Ballintore Fancy",
@@ -205,6 +382,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 1437,
+    "thesession_username": "shanachie",
     "settings": [
       {
         "label": "Standard",
@@ -214,7 +394,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#1437 by gian marco @ TheSession.org",
@@ -224,7 +407,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 1437,
+        "thesession_username": "gian marco"
       },
       {
         "label": "#56120 by shanachie @ TheSession.org",
@@ -234,10 +420,27 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 56120,
+        "thesession_username": "shanachie"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "Balintore Fancy",
+        "notes": null
+      },
+      {
+        "name": "John Fleming's",
+        "notes": null
+      },
+      {
+        "name": "A Kiss In The Furze",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "The Ballydesmond No. 1",
@@ -249,6 +452,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -258,10 +464,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Banish Misfortune",
@@ -273,6 +483,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -282,7 +495,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Just a test",
@@ -292,10 +508,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Banshee",
@@ -307,6 +527,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -316,7 +539,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Test Setting",
@@ -326,10 +552,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Biddy Martin's",
@@ -341,6 +571,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -350,10 +583,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Bill Sullivan's",
@@ -365,6 +602,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -374,10 +614,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Black Haired Lass (Redican's Mother)",
@@ -389,6 +633,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -398,10 +645,14 @@
         "source": "Rose Flanagan",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Blarney Pilgrim",
@@ -413,6 +664,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -422,10 +676,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Bolen's Fancy (Connie The Soldier)",
@@ -437,6 +695,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -446,10 +707,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Boy's Lament for His Dragon",
@@ -461,6 +726,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -470,7 +738,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -480,10 +751,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Boys Of Ballisodare",
@@ -495,6 +770,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -504,10 +782,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Brian Boru's March",
@@ -519,6 +801,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -528,10 +813,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Bucks of Oranmore, The",
@@ -543,6 +832,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -552,7 +844,10 @@
         "source": "Gretchen Preist",
         "source_notes": "id:hn-reel-148",
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -562,10 +857,14 @@
         "source": null,
         "source_notes": "id:hn-reel-148",
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Bó Mhín Na Toitean",
@@ -577,6 +876,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -586,10 +888,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Carmel Mahoney Mulhaire",
@@ -601,6 +907,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -610,10 +919,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Chicago",
@@ -625,6 +938,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -634,10 +950,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Cliffs Of Moher",
@@ -649,6 +969,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -658,7 +981,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Flute test",
@@ -668,7 +994,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "crazy",
@@ -678,10 +1007,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Cock And The Hen",
@@ -693,6 +1026,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -702,10 +1038,14 @@
         "source": "Rose",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Comb Your Hair And Curl It",
@@ -717,6 +1057,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -726,10 +1069,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Come West Along The Road",
@@ -741,6 +1088,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -750,10 +1100,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Connaughtman's Rambles",
@@ -765,6 +1119,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -774,7 +1131,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -784,10 +1144,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Contentment Is Wealth",
@@ -799,6 +1163,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -808,7 +1175,10 @@
         "source": "Gretchen",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -818,10 +1188,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Cook In The Kitchen",
@@ -833,6 +1207,9 @@
     "origin": null,
     "region": "Arranged by Gretchen Priest",
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -842,7 +1219,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Just another one",
@@ -852,10 +1232,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Cooley's",
@@ -867,6 +1251,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -876,10 +1263,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Crested Hens",
@@ -891,6 +1282,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -900,10 +1294,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Crow In The Sun",
@@ -915,6 +1313,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -924,10 +1325,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Cup Of Tea",
@@ -939,6 +1344,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -948,10 +1356,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Drowsy Maggie",
@@ -963,6 +1375,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -972,10 +1387,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Drunken Landlady",
@@ -987,6 +1406,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -996,10 +1418,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Drunken Sailor",
@@ -1011,6 +1437,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1020,10 +1449,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Dunmore Lasses",
@@ -1035,6 +1468,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1044,7 +1480,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -1054,10 +1493,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Dusty Windowsills",
@@ -1069,6 +1512,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1078,10 +1524,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Egan's Polka",
@@ -1093,6 +1543,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1102,10 +1555,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Farewell To Ireland",
@@ -1117,6 +1574,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1126,10 +1586,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Farewell To Whalley Range",
@@ -1141,6 +1605,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1150,10 +1617,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Father Kelly's",
@@ -1165,6 +1636,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1174,10 +1648,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Father O'Flynn",
@@ -1189,6 +1667,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1198,10 +1679,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Fermoy Lasses",
@@ -1213,6 +1698,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1222,10 +1710,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "A Fig For A Kiss",
@@ -1237,6 +1729,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1246,10 +1741,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Finnish",
@@ -1261,6 +1760,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1270,7 +1772,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -1280,10 +1785,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Flowers Of Spring",
@@ -1295,6 +1804,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1304,10 +1816,14 @@
         "source": "heathermillermusic.com",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Foxhunters",
@@ -1319,6 +1835,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1328,7 +1847,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "bonk",
@@ -1338,10 +1860,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Frieze Breeches",
@@ -1353,6 +1879,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1362,10 +1891,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Gallagher's Frolics",
@@ -1377,6 +1910,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1386,7 +1922,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "another",
@@ -1396,10 +1935,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Garrett Barry's",
@@ -1411,6 +1954,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1420,10 +1966,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "George White's Favourite",
@@ -1435,6 +1985,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1444,10 +1997,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Ger The Rigger",
@@ -1459,6 +2016,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1468,10 +2028,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Gillan's Apples",
@@ -1483,6 +2047,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1492,10 +2059,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Glass Of Beer",
@@ -1507,6 +2078,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1516,7 +2090,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Flutey Copy",
@@ -1526,10 +2103,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Glen Of Aherlow",
@@ -1541,6 +2122,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1550,10 +2134,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Good Morning To Your Nightcap",
@@ -1565,6 +2153,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1574,10 +2165,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Green Fields Of Glentown",
@@ -1589,6 +2184,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1598,10 +2196,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Green Fields Of Rossbeigh",
@@ -1613,6 +2215,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1622,10 +2227,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Green Groves Of Erin",
@@ -1637,6 +2246,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1646,10 +2258,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Greig's Pipes",
@@ -1661,6 +2277,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1670,10 +2289,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Hag At The Churn",
@@ -1685,6 +2308,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1694,10 +2320,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Hag With The Money",
@@ -1709,6 +2339,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1718,10 +2351,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Heather Breeze",
@@ -1733,6 +2370,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1742,10 +2382,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Heaton Chapel",
@@ -1757,6 +2401,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1766,7 +2413,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -1776,10 +2426,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Honeymoon",
@@ -1791,6 +2445,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 2064,
+    "thesession_username": "PiperAdrian",
     "settings": [
       {
         "label": "Standard",
@@ -1800,7 +2457,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#2064 by PiperAdrian @ TheSession.org",
@@ -1810,7 +2470,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 2064,
+        "thesession_username": "PiperAdrian"
       },
       {
         "label": "#40592 by benhockenberry @ TheSession.org",
@@ -1820,10 +2483,67 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 40592,
+        "thesession_username": "benhockenberry"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "Bearna Ghaoithe",
+        "notes": null
+      },
+      {
+        "name": "Half-Penny",
+        "notes": null
+      },
+      {
+        "name": "Haypenny, The",
+        "notes": null
+      },
+      {
+        "name": "Honeymoon Highland Fling, The",
+        "notes": null
+      },
+      {
+        "name": "Johnny On The Woodpile",
+        "notes": null
+      },
+      {
+        "name": "Lady O'Brien's",
+        "notes": null
+      },
+      {
+        "name": "Maid That Left The County",
+        "notes": null
+      },
+      {
+        "name": "Maid That Left The County, The",
+        "notes": null
+      },
+      {
+        "name": "Maid Who Left The Country, The",
+        "notes": null
+      },
+      {
+        "name": "Maid Who Left The County, The",
+        "notes": null
+      },
+      {
+        "name": "Neil Rooney's",
+        "notes": null
+      },
+      {
+        "name": "Pure Drop, The",
+        "notes": null
+      },
+      {
+        "name": "Rooney's",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "The Humours Of Ballyloughlin",
@@ -1835,6 +2555,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1844,10 +2567,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Humours Of Ballymanus",
@@ -1859,6 +2586,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1868,10 +2598,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Humours Of Ennistymon",
@@ -1883,6 +2617,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1892,10 +2629,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Humours Of Glendart",
@@ -1907,6 +2648,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1916,10 +2660,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Humours Of Scarriff",
@@ -1931,6 +2679,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1940,10 +2691,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Humours Of Whiskey",
@@ -1955,6 +2710,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1964,10 +2722,14 @@
         "source": "Rose",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "I Buried My Wife And Danced On Her Grave",
@@ -1979,6 +2741,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -1988,10 +2753,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Idir Deighric 'Gus Breo'",
@@ -2003,6 +2772,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2012,10 +2784,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "In Memory Of Coleman",
@@ -2027,6 +2803,9 @@
     "origin": null,
     "region": "Ed Reavy",
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2036,10 +2815,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Inisheer",
@@ -2051,6 +2834,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2060,10 +2846,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Island Of Woods",
@@ -2075,6 +2865,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2084,10 +2877,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Jenny's Chickens",
@@ -2099,6 +2896,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2108,10 +2908,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Jig Of Slurs",
@@ -2123,6 +2927,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2132,10 +2939,14 @@
         "source": "Gretchen Priest",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Jimmy Ward's",
@@ -2147,6 +2958,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2156,10 +2970,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "John Ryan's",
@@ -2171,6 +2989,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2180,10 +3001,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Kerfunten",
@@ -2195,6 +3020,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2204,7 +3032,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "The Kerfunten (Alternate)",
@@ -2214,10 +3045,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Kid On The Mountain",
@@ -2229,6 +3064,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2238,10 +3076,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Killavil",
@@ -2253,6 +3095,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2262,10 +3107,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Kitty Goes A-Milking",
@@ -2277,6 +3126,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2286,10 +3138,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Lad O'Beirne's Jig (The Silver Vale)",
@@ -2301,6 +3157,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2310,10 +3169,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Last Night's Fun",
@@ -2325,6 +3188,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2334,10 +3200,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Last Night's Panic",
@@ -2349,6 +3219,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2358,10 +3231,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Laurel Tree",
@@ -2373,6 +3250,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2382,10 +3262,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Legacy",
@@ -2397,6 +3281,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2406,10 +3293,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Lilting Banshee",
@@ -2421,6 +3312,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2430,7 +3324,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "The Lilting Banshee (Alternate B)",
@@ -2440,10 +3337,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Little Cascade",
@@ -2455,6 +3356,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2464,10 +3368,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Little Mouse",
@@ -2479,6 +3387,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2488,10 +3399,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Maggie's Pancakes",
@@ -2503,6 +3418,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2512,10 +3430,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Maids Of Mitchelstown",
@@ -2527,6 +3449,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2536,10 +3461,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Man Of The House",
@@ -2551,6 +3480,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2560,10 +3492,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "March Of The Kings Of Laois",
@@ -2575,6 +3511,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2584,10 +3523,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Mary Grace",
@@ -2599,6 +3542,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 5780,
+    "thesession_username": "Dr. Dow",
     "settings": [
       {
         "label": "Standard",
@@ -2608,7 +3554,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#5780 by Dr. Dow @ TheSession.org",
@@ -2618,7 +3567,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 5780,
+        "thesession_username": "Dr. Dow"
       },
       {
         "label": "#17721 by Dr. Dow @ TheSession.org",
@@ -2628,7 +3580,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 17721,
+        "thesession_username": "Dr. Dow"
       },
       {
         "label": "#17723 by Dr. Dow @ TheSession.org",
@@ -2638,10 +3593,35 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 17723,
+        "thesession_username": "Dr. Dow"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "Bohola",
+        "notes": null
+      },
+      {
+        "name": "Bohola, The",
+        "notes": null
+      },
+      {
+        "name": "Maire Ni Grasaig",
+        "notes": null
+      },
+      {
+        "name": "Martin Ainsborough's",
+        "notes": null
+      },
+      {
+        "name": "Martin Ansboro's",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "Maud Millar",
@@ -2653,6 +3633,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2662,10 +3645,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Michael Gorman's",
@@ -2677,6 +3664,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2686,10 +3676,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Micho Russell's Reel (The Doonagore)",
@@ -2701,6 +3695,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2710,10 +3707,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Mill House",
@@ -2725,6 +3726,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2734,10 +3738,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Miller's Maggot",
@@ -2749,6 +3757,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2758,10 +3769,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Miss Monaghan",
@@ -2773,6 +3788,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2782,10 +3800,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Molly Bán",
@@ -2797,6 +3819,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2806,7 +3831,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -2816,10 +3844,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Mooncoin",
@@ -2831,6 +3863,9 @@
     "origin": null,
     "region": "Arranged by Gretchen Priest",
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2840,10 +3875,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Morrison's",
@@ -2855,6 +3894,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2864,10 +3906,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Mountain Dew",
@@ -2879,6 +3925,9 @@
     "origin": null,
     "region": "Joe Cooley",
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2888,10 +3937,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Mug Of Brown Ale",
@@ -2903,6 +3956,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2912,10 +3968,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Mulvihill's",
@@ -2927,6 +3987,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2936,10 +3999,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Music In The Glen",
@@ -2951,6 +4018,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2960,10 +4030,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Musical Priest",
@@ -2975,6 +4049,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -2984,10 +4061,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "My Love Is In America",
@@ -2999,6 +4080,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3008,10 +4092,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The New Copperplate",
@@ -3023,6 +4111,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3032,10 +4123,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The New Mown Meadows",
@@ -3047,6 +4142,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3056,10 +4154,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "New York Jig (Gretchen Priest arr)",
@@ -3071,6 +4173,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3080,10 +4185,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "No Inclusion",
@@ -3095,6 +4204,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3104,10 +4216,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "A Noodle in the Mix",
@@ -3119,6 +4235,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3128,10 +4247,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "O'Connell's Lamentation",
@@ -3143,6 +4266,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3152,10 +4278,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "O'Keefe's Polka",
@@ -3167,6 +4297,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3176,10 +4309,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Old Copperplate",
@@ -3191,6 +4328,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3200,10 +4340,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Old Favourite",
@@ -3215,6 +4359,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3224,10 +4371,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Old Hag, You Have Killed Me",
@@ -3239,6 +4390,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3248,10 +4402,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Otter's Holt",
@@ -3263,6 +4421,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3272,10 +4433,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Out On The Ocean",
@@ -3287,6 +4452,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3296,10 +4464,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Paddy's Return (Young Tim Murphy)",
@@ -3311,6 +4483,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 948,
+    "thesession_username": "Bannerman",
     "settings": [
       {
         "label": "Standard",
@@ -3320,7 +4495,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#948 by Bannerman @ TheSession.org",
@@ -3330,7 +4508,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 948,
+        "thesession_username": "Bannerman"
       },
       {
         "label": "#4322 by JACKB @ TheSession.org",
@@ -3340,7 +4521,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 4322,
+        "thesession_username": "JACKB"
       },
       {
         "label": "#14140 by ceolachan @ TheSession.org",
@@ -3350,7 +4534,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 14140,
+        "thesession_username": "ceolachan"
       },
       {
         "label": "#14141 by ceolachan @ TheSession.org",
@@ -3360,7 +4547,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 14141,
+        "thesession_username": "ceolachan"
       },
       {
         "label": "#14142 by ceolachan @ TheSession.org",
@@ -3370,7 +4560,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 14142,
+        "thesession_username": "ceolachan"
       },
       {
         "label": "#22047 by Banjo Joe @ TheSession.org",
@@ -3380,7 +4573,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 22047,
+        "thesession_username": "Banjo Joe"
       },
       {
         "label": "#23820 by ceolachan @ TheSession.org",
@@ -3390,7 +4586,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 23820,
+        "thesession_username": "ceolachan"
       },
       {
         "label": "#26777 by Ian Varley @ TheSession.org",
@@ -3400,7 +4599,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 26777,
+        "thesession_username": "Ian Varley"
       },
       {
         "label": "#32215 by JACKB @ TheSession.org",
@@ -3410,7 +4612,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 32215,
+        "thesession_username": "JACKB"
       },
       {
         "label": "#32267 by Steve Ross @ TheSession.org",
@@ -3420,7 +4625,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 32267,
+        "thesession_username": "Steve Ross"
       },
       {
         "label": "#32269 by JACKB @ TheSession.org",
@@ -3430,10 +4638,59 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 32269,
+        "thesession_username": "JACKB"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "Adrian Meehan's Hangover",
+        "notes": null
+      },
+      {
+        "name": "Barney O'Neill",
+        "notes": null
+      },
+      {
+        "name": "Barnie O'Neill",
+        "notes": null
+      },
+      {
+        "name": "Far Away Wedding, The",
+        "notes": null
+      },
+      {
+        "name": "Frost Is All Over, The",
+        "notes": null
+      },
+      {
+        "name": "Jackson's Drum",
+        "notes": null
+      },
+      {
+        "name": "Kilfenora Jig No. 1",
+        "notes": null
+      },
+      {
+        "name": "Kilfenora, The",
+        "notes": null
+      },
+      {
+        "name": "Paddy's Return",
+        "notes": null
+      },
+      {
+        "name": "Patsy McCann's",
+        "notes": null
+      },
+      {
+        "name": "What Would You Do If You Married A Soldier",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "The Parting Of Friends",
@@ -3445,6 +4702,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3454,10 +4714,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Peacock's Feathers",
@@ -3469,6 +4733,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3478,10 +4745,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Peeler's Jacket",
@@ -3493,6 +4764,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3502,10 +4776,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Piper's Despair",
@@ -3517,6 +4795,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3526,10 +4807,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Porthole Of The Kelp",
@@ -3541,6 +4826,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3550,7 +4838,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Porthole Of The Kelp (Em)",
@@ -3560,7 +4851,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 2",
@@ -3570,7 +4864,10 @@
         "source": "Gretchen Priest",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 3",
@@ -3580,7 +4877,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "The Porthole Of The Kelp",
@@ -3590,10 +4890,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Pull The Knife And Stick It Again",
@@ -3605,6 +4909,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3614,10 +4921,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Rambling Pitchfork",
@@ -3629,6 +4940,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3638,10 +4952,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Rattlin' Bog",
@@ -3653,6 +4971,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3662,7 +4983,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -3672,10 +4996,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Reel With The Birl",
@@ -3687,6 +5015,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3696,10 +5027,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Return From Fingal",
@@ -3711,6 +5046,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3720,10 +5058,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Road To Lisdoonvarna",
@@ -3735,6 +5077,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3744,7 +5089,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -3754,10 +5102,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "An Rogaire Dubh",
@@ -3769,6 +5121,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3778,7 +5133,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "The Black Rogue",
@@ -3788,10 +5146,14 @@
         "source": "Gretchen Priest",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Rolling Waves",
@@ -3803,6 +5165,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3812,10 +5177,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Roscommon",
@@ -3827,6 +5196,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3836,10 +5208,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Rose In The Heather",
@@ -3851,6 +5227,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3860,10 +5239,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Rosie Finn's Favourite",
@@ -3875,6 +5258,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3884,10 +5270,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Rowsome's",
@@ -3899,6 +5289,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3908,10 +5301,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Sailor's Bonnet",
@@ -3923,6 +5320,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3932,10 +5332,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Salamanca",
@@ -3947,6 +5351,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3956,10 +5363,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Sally Gardens",
@@ -3971,6 +5382,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -3980,7 +5394,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "The Sally Gardens (Gretchen)",
@@ -3990,10 +5407,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Scarce O' Tatties",
@@ -4005,6 +5426,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4014,10 +5438,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Scatter The Mud",
@@ -4029,6 +5457,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4038,10 +5469,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Scotsman Over The Border",
@@ -4053,6 +5488,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4062,10 +5500,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Sean Bui",
@@ -4077,6 +5519,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4086,10 +5531,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Sean Reid's",
@@ -4101,6 +5550,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4110,10 +5562,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Ships In Full Sail",
@@ -4125,6 +5581,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4134,10 +5593,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Silver Spear",
@@ -4149,6 +5612,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4158,10 +5624,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Sir John Fenwick's The Flower Amang Them A'",
@@ -4173,6 +5643,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4182,7 +5655,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Sir John Fenwick's The Flower Amang Them All",
@@ -4192,10 +5668,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Sliabh Russell",
@@ -4207,6 +5687,9 @@
     "origin": "Gretchen's class",
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4216,7 +5699,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "From the session",
@@ -4226,7 +5712,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
     "difficulties": [
@@ -4235,7 +5724,8 @@
         "difficulty": 2,
         "notes": "I tend to play with a very rounded lilt that may not quite match what is purely traditional, but it feels right to me. "
       }
-    ]
+    ],
+    "aliases": []
   },
   {
     "title": "The Sligo Maid",
@@ -4247,6 +5737,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4256,7 +5749,10 @@
         "source": "Gretchen Priest",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -4266,10 +5762,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Snowy Path",
@@ -4281,6 +5781,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4290,10 +5793,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Sonny Brogan's (Gretchen Priest arr)",
@@ -4305,6 +5812,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4314,7 +5824,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Sonny Brogan's",
@@ -4324,10 +5837,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Spanish Lady",
@@ -4339,6 +5856,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4348,10 +5868,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Spootiskerry",
@@ -4363,6 +5887,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4372,10 +5899,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Sporting Paddy",
@@ -4387,6 +5918,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4396,10 +5930,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Spotted Dog",
@@ -4411,6 +5949,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4420,10 +5961,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Stan Chapman's",
@@ -4435,6 +5980,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4444,10 +5992,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Star Of Munster",
@@ -4459,6 +6011,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4468,10 +6023,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Stasia's",
@@ -4483,6 +6042,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4492,10 +6054,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Swallow's Tail",
@@ -4507,6 +6073,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4516,10 +6085,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Swallowtail",
@@ -4531,6 +6104,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4540,10 +6116,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Sweeney's Buttermilk",
@@ -4555,6 +6135,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4564,10 +6147,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Tabhair Dom Do Lámh (Give me Your Hand)",
@@ -4579,6 +6166,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4588,10 +6178,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Templehouse",
@@ -4603,6 +6197,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4612,10 +6209,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Tempus Fugit",
@@ -4627,6 +6228,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4636,10 +6240,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Torn Jacket",
@@ -4651,6 +6259,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4660,10 +6271,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Toss The Feathers",
@@ -4675,6 +6290,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4684,10 +6302,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Trasna da dTonnta",
@@ -4699,6 +6321,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4708,7 +6333,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Trasna da dTonnta (Am)",
@@ -4718,10 +6346,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Trip To Durrow",
@@ -4733,6 +6365,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4742,10 +6377,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Tripping to the Well",
@@ -4757,6 +6396,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4766,10 +6408,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Up In The Air",
@@ -4781,6 +6427,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 894,
+    "thesession_username": "SPeak",
     "settings": [
       {
         "label": "Standard",
@@ -4790,7 +6439,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#894 by SPeak @ TheSession.org",
@@ -4800,7 +6452,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 894,
+        "thesession_username": "SPeak"
       },
       {
         "label": "#29803 by fidicen @ TheSession.org",
@@ -4810,10 +6465,19 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 29803,
+        "thesession_username": "fidicen"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "Up Up And Away",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "The Virginia",
@@ -4825,6 +6489,9 @@
     "origin": null,
     "region": "Arr. Gretchen Priest",
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4834,10 +6501,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "Wallop The Spot",
@@ -4849,6 +6520,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4858,10 +6532,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Watchmaker",
@@ -4873,6 +6551,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4882,10 +6563,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Wedding Reel",
@@ -4897,6 +6582,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -4906,10 +6594,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The White Petticoat",
@@ -4921,6 +6613,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 332,
+    "thesession_username": "Edgar Bolton",
     "settings": [
       {
         "label": "Standard",
@@ -4930,7 +6625,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#13113 by Edgar Bolton @ TheSession.org",
@@ -4940,7 +6638,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 13113,
+        "thesession_username": "Edgar Bolton"
       },
       {
         "label": "#22857 by JACKB @ TheSession.org",
@@ -4950,7 +6651,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 22857,
+        "thesession_username": "JACKB"
       },
       {
         "label": "#32918 by NfldWhistler @ TheSession.org",
@@ -4960,7 +6664,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 32918,
+        "thesession_username": "NfldWhistler"
       },
       {
         "label": "#38193 by Damien Rogeau @ TheSession.org",
@@ -4970,7 +6677,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 38193,
+        "thesession_username": "Damien Rogeau"
       },
       {
         "label": "#44251 by Fernando Durbán Galnares @ TheSession.org",
@@ -4980,10 +6690,31 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 44251,
+        "thesession_username": "Fernando Durbán Galnares"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "An Cota-Beag Ban",
+        "notes": null
+      },
+      {
+        "name": "An Cota-Beag Bhan",
+        "notes": null
+      },
+      {
+        "name": "Le Jupon Blanc",
+        "notes": null
+      },
+      {
+        "name": "White Pettycoat, The",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "Willie Coleman's",
@@ -4995,6 +6726,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 476,
+    "thesession_username": "UPipes & harp",
     "settings": [
       {
         "label": "Standard",
@@ -5004,7 +6738,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#476 by b.maloney @ TheSession.org",
@@ -5014,7 +6751,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 476,
+        "thesession_username": "b.maloney"
       },
       {
         "label": "#11345 by Rollmop @ TheSession.org",
@@ -5024,7 +6764,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 11345,
+        "thesession_username": "Rollmop"
       },
       {
         "label": "#13367 by ceolachan @ TheSession.org",
@@ -5034,7 +6777,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 13367,
+        "thesession_username": "ceolachan"
       },
       {
         "label": "#47366 by JACKB @ TheSession.org",
@@ -5044,7 +6790,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 47366,
+        "thesession_username": "JACKB"
       },
       {
         "label": "#50468 by UPipes & harp @ TheSession.org",
@@ -5054,7 +6803,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 50468,
+        "thesession_username": "UPipes & harp"
       },
       {
         "label": "#54008 by chansherly212 @ TheSession.org",
@@ -5064,7 +6816,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 54008,
+        "thesession_username": "chansherly212"
       },
       {
         "label": "#56035 by Aberfoyle Whistler @ TheSession.org",
@@ -5074,10 +6829,55 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 56035,
+        "thesession_username": "Aberfoyle Whistler"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "Castle Bay, The",
+        "notes": null
+      },
+      {
+        "name": "Castleray, The",
+        "notes": null
+      },
+      {
+        "name": "Foyne's",
+        "notes": null
+      },
+      {
+        "name": "Mice In The Cupboard",
+        "notes": null
+      },
+      {
+        "name": "Moate Hunt, The",
+        "notes": null
+      },
+      {
+        "name": "Old Boys Session, The",
+        "notes": null
+      },
+      {
+        "name": "Ollie Reilly",
+        "notes": null
+      },
+      {
+        "name": "Sheep On The Moor",
+        "notes": null
+      },
+      {
+        "name": "Willie Coleman's",
+        "notes": null
+      },
+      {
+        "name": "Willy Coleman's",
+        "notes": null
+      }
+    ]
   },
   {
     "title": "The Wind In The Woods",
@@ -5089,6 +6889,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -5098,10 +6901,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Wind That Shakes The Barley",
@@ -5113,6 +6920,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": null,
+    "thesession_username": null,
     "settings": [
       {
         "label": "Standard",
@@ -5122,10 +6932,14 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": []
   },
   {
     "title": "The Wise Maid",
@@ -5137,6 +6951,9 @@
     "origin": null,
     "region": null,
     "notes": null,
+    "visibility": "public",
+    "thesession_tune_id": 118,
+    "thesession_username": "Jeremy",
     "settings": [
       {
         "label": "Standard",
@@ -5146,7 +6963,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "Alternate 1",
@@ -5156,7 +6976,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": null,
+        "thesession_username": null
       },
       {
         "label": "#118 by Jeremy @ TheSession.org",
@@ -5166,7 +6989,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 118,
+        "thesession_username": "Jeremy"
       },
       {
         "label": "#12719 by philmoz @ TheSession.org",
@@ -5176,7 +7002,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 12719,
+        "thesession_username": "philmoz"
       },
       {
         "label": "#21161 by Seamus Martin @ TheSession.org",
@@ -5186,7 +7015,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 21161,
+        "thesession_username": "Seamus Martin"
       },
       {
         "label": "#26861 by JACKB @ TheSession.org",
@@ -5196,7 +7028,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 26861,
+        "thesession_username": "JACKB"
       },
       {
         "label": "#36553 by adelrune @ TheSession.org",
@@ -5206,7 +7041,10 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 36553,
+        "thesession_username": "adelrune"
       },
       {
         "label": "#45477 by leprecawn @ TheSession.org",
@@ -5216,9 +7054,38 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null
+        "mutation_notation": null,
+        "visibility": "public",
+        "thesession_setting_id": 45477,
+        "thesession_username": "leprecawn"
       }
     ],
-    "difficulties": []
+    "difficulties": [],
+    "aliases": [
+      {
+        "name": "All Around The World",
+        "notes": null
+      },
+      {
+        "name": "Connemara Rake, The",
+        "notes": null
+      },
+      {
+        "name": "Docherty's",
+        "notes": null
+      },
+      {
+        "name": "Doherty's",
+        "notes": null
+      },
+      {
+        "name": "Holy Well",
+        "notes": null
+      },
+      {
+        "name": "Tinker Doherty",
+        "notes": null
+      }
+    ]
   }
 ]

@@ -3,11 +3,21 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.models import KeyMode, KeyRoot, TuneSet, TuneSetMember, TuneType
-from cairn.schemas import TuneCreate
-from cairn.services.tunes import create_tune
-from scripts.export_seed import export_sets
-from scripts.seed import seed_sets
+from cairn.models import (
+    ContentVisibility,
+    KeyMode,
+    KeyRoot,
+    Tune,
+    TuneAlias,
+    TuneSet,
+    TuneSetMember,
+    TuneSetting,
+    TuneType,
+)
+from cairn.schemas import TuneCreate, TuneSettingCreate
+from cairn.services.tunes import add_alias, create_setting, create_tune
+from scripts.export_seed import export_sets, export_tunes
+from scripts.seed import seed_sets, seed_tunes
 
 
 async def _tune(db: AsyncSession, title: str = "The Morning Dew"):
@@ -22,6 +32,137 @@ async def _tune(db: AsyncSession, title: str = "The Morning Dew"):
         ),
         abc_notation="|:DEFA BAFA|DEFA BAFA:|\n",
     )
+
+
+# ── seed_tunes ───────────────────────────────────────────────────────────────
+
+
+def _tune_record(**overrides) -> dict:
+    rec = {
+        "title": "The Kesh",
+        "tune_type": "reel",
+        "key_root": "G",
+        "key_mode": "major",
+        "time_signature": "4/4",
+        "settings": [{"label": "Standard", "abc_notation": "|:GABc dedB|dedB dedB:|\n", "is_core": True}],
+    }
+    rec.update(overrides)
+    return rec
+
+
+async def test_seed_tunes_creates_aliases(db: AsyncSession) -> None:
+    rec = _tune_record(aliases=[{"name": "The Kesh Jig", "notes": "common misnomer"}, {"name": "An Ciseach"}])
+    loaded, skipped, errors = await seed_tunes(db, [rec])
+    assert (loaded, skipped, errors) == (1, 0, 0)
+
+    tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
+    aliases = (await db.execute(select(TuneAlias).where(TuneAlias.tune_id == tune.id))).scalars().all()
+    names = {a.name: a.notes for a in aliases}
+    assert names == {"The Kesh Jig": "common misnomer", "An Ciseach": None}
+
+
+async def test_seed_tunes_preserves_tune_visibility_and_thesession_fields(db: AsyncSession) -> None:
+    rec = _tune_record(visibility="enrolled", thesession_tune_id=123, thesession_username="someuser")
+    await seed_tunes(db, [rec])
+    tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
+    assert tune.visibility == ContentVisibility.enrolled
+    assert tune.thesession_tune_id == 123
+    assert tune.thesession_username == "someuser"
+
+
+async def test_seed_tunes_defaults_tune_visibility_when_absent(db: AsyncSession) -> None:
+    await seed_tunes(db, [_tune_record()])
+    tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
+    assert tune.visibility == ContentVisibility.public
+    assert tune.thesession_tune_id is None
+
+
+async def test_seed_tunes_preserves_setting_visibility_and_thesession_fields(db: AsyncSession) -> None:
+    rec = _tune_record(
+        settings=[
+            {
+                "label": "Standard",
+                "abc_notation": "|:GABc dedB|dedB dedB:|\n",
+                "is_core": True,
+                "visibility": "enrolled",
+                "thesession_setting_id": 456,
+                "thesession_username": "coreuser",
+            },
+            {
+                "label": "Alt",
+                "abc_notation": "|:GABc dedB|dedB dedB:|\n",
+                "is_core": False,
+                "visibility": "enrolled",
+                "thesession_setting_id": 789,
+                "thesession_username": "altuser",
+            },
+        ]
+    )
+    await seed_tunes(db, [rec])
+    tune = (await db.execute(select(Tune).where(Tune.title == "The Kesh"))).scalar_one()
+    settings = {
+        s.label: s for s in (await db.execute(select(TuneSetting).where(TuneSetting.tune_id == tune.id))).scalars()
+    }
+    assert settings["Standard"].visibility == ContentVisibility.enrolled
+    assert settings["Standard"].thesession_setting_id == 456
+    assert settings["Standard"].thesession_username == "coreuser"
+    assert settings["Alt"].visibility == ContentVisibility.enrolled
+    assert settings["Alt"].thesession_setting_id == 789
+    assert settings["Alt"].thesession_username == "altuser"
+
+
+# ── export_tunes ─────────────────────────────────────────────────────────────
+
+
+async def test_export_tunes_includes_aliases(db: AsyncSession, tmp_path: Path) -> None:
+    tune = await _tune(db, "The Abbey")
+    await add_alias(db, tune.id, "Alt Name", notes="a note")
+
+    await export_tunes(db, tmp_path)
+    import json
+
+    data = json.loads((tmp_path / "tunes.json").read_text())
+    rec = next(r for r in data if r["title"] == "The Abbey")
+    assert rec["aliases"] == [{"name": "Alt Name", "notes": "a note"}]
+
+
+async def test_export_tunes_includes_visibility_and_thesession_fields(db: AsyncSession, tmp_path: Path) -> None:
+    tune = await _tune(db, "The Abbey")
+    # created_by=stub user so a non-public visibility doesn't drop it out of
+    # list_tunes()'s own visibility filter (export_tunes queries as the stub
+    # user, same as any other user would) -- not what's under test here.
+    tune.created_by = 1
+    tune.visibility = ContentVisibility.enrolled
+    tune.thesession_tune_id = 42
+    tune.thesession_username = "exportuser"
+    await db.commit()
+    core = (await db.execute(select(TuneSetting).where(TuneSetting.tune_id == tune.id))).scalar_one()
+    core.visibility = ContentVisibility.enrolled
+    core.thesession_setting_id = 99
+    core.thesession_username = "settinguser"
+    await db.commit()
+    await create_setting(
+        db,
+        tune.id,
+        TuneSettingCreate(
+            tune_id=tune.id, label="Alt", abc_notation="|:DEFA BAFA:|\n", visibility=ContentVisibility.public
+        ),
+    )
+
+    await export_tunes(db, tmp_path)
+    import json
+
+    data = json.loads((tmp_path / "tunes.json").read_text())
+    rec = next(r for r in data if r["title"] == "The Abbey")
+    assert rec["visibility"] == "enrolled"
+    assert rec["thesession_tune_id"] == 42
+    assert rec["thesession_username"] == "exportuser"
+    settings = {s["label"]: s for s in rec["settings"]}
+    assert settings["Standard"]["visibility"] == "enrolled"
+    assert settings["Standard"]["thesession_setting_id"] == 99
+    assert settings["Standard"]["thesession_username"] == "settinguser"
+    assert settings["Alt"]["visibility"] == "public"
+    assert settings["Alt"]["thesession_setting_id"] is None
 
 
 # ── seed_sets ─────────────────────────────────────────────────────────────────
