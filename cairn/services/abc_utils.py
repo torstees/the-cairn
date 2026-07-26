@@ -490,6 +490,100 @@ def build_set_abc(tune_set: TuneSet, box: TuneBox | None = None, n_bars: int | N
     return file_header + "\n\n" + "\n".join(sections) + "\n"
 
 
+_NOTE_LEN_SUFFIX_RE = re.compile(r"(\d+)?((?:/\d+)|/+)?")
+_NOTE_OR_REST_RE = re.compile(r"[\^_=]*[A-Ga-gzxZX][,']*")
+
+
+def _parse_note_length_suffix(s: str, pos: int) -> tuple[float, int]:
+    """Parse an optional ABC duration modifier at s[pos:] -- digits, a slash
+    fraction ("/2", "3/2"), or bare slashes ("/", "//" -- each halves again).
+    Returns (multiplier relative to the unit note length, position after the
+    modifier).
+    """
+    m = _NOTE_LEN_SUFFIX_RE.match(s, pos)
+    num_str, slash_str = m.group(1), m.group(2)
+    numerator = int(num_str) if num_str else 1
+    if not slash_str:
+        denominator = 1
+    elif slash_str[1:].isdigit():
+        denominator = int(slash_str[1:])
+    else:
+        denominator = 2 ** slash_str.count("/")
+    return numerator / denominator, m.end()
+
+
+def _segment_duration_in_l_units(segment: str) -> float:
+    """Sum note/rest/chord durations in segment, in units of the unit note
+    length (L:). Decorations, grace notes, guitar chords, ties, slurs, and
+    broken-rhythm marks contribute nothing (broken rhythm `>`/`<` redistributes
+    duration between two notes but doesn't change their sum, so it's safe to
+    ignore for a total).
+    """
+    total = 0.0
+    i, n = 0, len(segment)
+    while i < n:
+        c = segment[i]
+        if c == '"':
+            end = segment.find('"', i + 1)
+            i = end + 1 if end != -1 else n
+        elif c == "{":
+            end = segment.find("}", i + 1)
+            i = end + 1 if end != -1 else n
+        elif c == "!":
+            end = segment.find("!", i + 1)
+            i = end + 1 if end != -1 else n
+        elif c == "[":
+            end = segment.find("]", i + 1)
+            if end == -1:
+                break
+            mult, i = _parse_note_length_suffix(segment, end + 1)
+            total += mult
+        else:
+            m = _NOTE_OR_REST_RE.match(segment, i)
+            if m:
+                mult, i = _parse_note_length_suffix(segment, m.end())
+                total += mult
+            else:
+                i += 1
+    return total
+
+
+def _parse_fraction_header(header: str, letter: str) -> tuple[int, int] | None:
+    m = re.search(rf"^{letter}:\s*(.+)$", header, re.MULTILINE)
+    if not m:
+        return None
+    raw = m.group(1).strip()
+    if raw == "C":
+        return 4, 4
+    if raw == "C|":
+        return 2, 2
+    frac = re.match(r"(\d+)/(\d+)", raw)
+    return (int(frac.group(1)), int(frac.group(2))) if frac else None
+
+
+def _is_pickup(segment: str, header: str) -> bool:
+    """Heuristic: segment (the music before the tune's first barline) is a
+    pickup/anacrusis only if its total note duration is clearly shorter than
+    one full bar under the tune's M:/L:, rather than just "doesn't start with
+    a barline character" -- most tunes in practice write their first bar
+    without a leading `|` at all (see #257), so that alone isn't a reliable
+    signal. Falls back to "not a pickup" (i.e. count it toward the bar total,
+    today's existing behavior) whenever M:/L: can't be read, since that's the
+    far more common case and the safer default.
+    """
+    meter = _parse_fraction_header(header, "M")
+    if meter is None or meter[1] == 0:
+        return False
+    m_num, m_den = meter
+    unit_length = _parse_fraction_header(header, "L") or (1, 8)  # see abc_utils L: default note above
+    l_num, l_den = unit_length
+    if l_den == 0:
+        return False
+    pickup_duration = _segment_duration_in_l_units(segment) * (l_num / l_den)
+    bar_duration = m_num / m_den
+    return 0 < pickup_duration < bar_duration * 0.9
+
+
 def truncate_to_bars(abc: str, n_bars: int) -> str:
     """Return abc truncated to approximately the first n_bars measures.
 
@@ -497,7 +591,12 @@ def truncate_to_bars(abc: str, n_bars: int) -> str:
     stops after the n_bars-th one. A leading barline before any notes (e.g.
     the opening `|` of `|:DEFG...` or a plain `|DEFG...`) is a delimiter, not
     a bar boundary, and is skipped so tunes that don't open with one aren't
-    off by one bar. The count is intentionally simple: every other `|` is
+    off by one bar. When the body opens with notes before its first barline
+    (no leading `|`), that first barline is only skipped as a pickup
+    delimiter -- rather than counted as ending bar 1 -- when _is_pickup()
+    finds those notes add up to meaningfully less than a full bar; most tunes
+    just write their first bar without a leading `|` at all and aren't a
+    pickup (#257). The count is intentionally simple: every other `|` is
     treated as one bar boundary, so repeat markers (`|:`, `:|`) count too,
     which is close enough for the practice-session display purpose.
     """
@@ -507,7 +606,11 @@ def truncate_to_bars(abc: str, n_bars: int) -> str:
     header = abc[: k_match.end()]
     body = abc[k_match.end() :]
     lead_match = re.match(r"\s*\|+:?", body)
-    start = lead_match.end() if lead_match else 0
+    if lead_match:
+        start = lead_match.end()
+    else:
+        pipe_match = re.search(r"\|", body)
+        start = pipe_match.end() if pipe_match and _is_pickup(body[: pipe_match.start()], header) else 0
     pipe_count = 0
     for i in range(start, len(body)):
         if body[i] == "|":

@@ -310,6 +310,32 @@ def test_truncate_no_k_header_returns_unchanged() -> None:
     assert truncate_to_bars(abc, 4) == abc
 
 
+def test_truncate_skips_genuine_pickup_before_repeat_start() -> None:
+    # #257: a short pickup (2 notes, well under one 4/4 bar at L:1/8) should
+    # not be counted as bar 1 -- the preview should show 2 real bars after it.
+    abc = "M:4/4\nL:1/8\nK:D\nDE|:FGAB cdef|gfed cBAF|FGAB cdef|gfed cBAG:|\n"
+    result = truncate_to_bars(abc, 2)
+    assert result == "M:4/4\nL:1/8\nK:D\nDE|:FGAB cdef|gfed cBAF|\n"
+
+
+def test_truncate_does_not_treat_full_first_bar_as_pickup() -> None:
+    # A real bar's worth of notes before the first "|" (common when a tune is
+    # transcribed without a leading barline at all) must NOT be mistaken for
+    # a pickup just because there's no leading "|" -- most tunes in the real
+    # corpus look like this (see #257 investigation).
+    abc = "M:4/4\nL:1/8\nK:Ador\n~A3B A2GE|A2GA BGDB|~A3B AGEF|G2GA BGDB|\n"
+    result = truncate_to_bars(abc, 2)
+    assert result == "M:4/4\nL:1/8\nK:Ador\n~A3B A2GE|A2GA BGDB|\n"
+
+
+def test_truncate_pickup_detection_falls_back_without_meter() -> None:
+    # No M: header -- can't do duration math, so fall back to today's
+    # behavior (don't skip; count the first "|" as ending bar 1).
+    abc = "K:D\nDE|FGAB cdef|gfed cBAF|\n"
+    result = truncate_to_bars(abc, 1)
+    assert result == "K:D\nDE|\n"
+
+
 # ── parse_key ────────────────────────────────────────────────────────────────
 
 
