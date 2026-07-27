@@ -810,6 +810,96 @@ async def test_tune_create_with_private_visibility_sets_owner(
     assert tune.created_by == user.id
 
 
+async def test_tune_create_with_link_thesession_redirects_with_query_param(client: AsyncClient) -> None:
+    resp = await client.post(
+        "/tunes/",
+        data={
+            "title": "Link Me",
+            "tune_type": "reel",
+            "key_root": "D",
+            "key_mode": "major",
+            "time_signature": "4/4",
+            "abc_notation": _ABC,
+            "link_thesession": "true",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    assert resp.headers["location"].endswith("?open_thesession_search=1")
+
+
+async def test_tune_create_without_link_thesession_redirects_plain(client: AsyncClient) -> None:
+    resp = await client.post(
+        "/tunes/",
+        data={
+            "title": "Don't Link Me",
+            "tune_type": "reel",
+            "key_root": "D",
+            "key_mode": "major",
+            "time_signature": "4/4",
+            "abc_notation": _ABC,
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    assert "?" not in resp.headers["location"]
+
+
+async def test_tune_detail_auto_opens_wizard_when_requested(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await create_tune(
+        db,
+        TuneCreate(
+            title="Fresh Tune",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+        ),
+        abc_notation=_ABC,
+    )
+    resp = await client.get(f"/tunes/{tune.id}?open_thesession_search=1")
+    assert resp.status_code == 200
+    assert f'hx-get="/tunes/{tune.id}/thesession-search"' in resp.text
+    assert 'hx-trigger="load"' in resp.text
+
+
+async def test_tune_detail_does_not_auto_open_wizard_by_default(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await create_tune(
+        db,
+        TuneCreate(
+            title="Fresh Tune",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+        ),
+        abc_notation=_ABC,
+    )
+    resp = await client.get(f"/tunes/{tune.id}")
+    assert resp.status_code == 200
+    assert 'hx-trigger="load"' not in resp.text
+
+
+async def test_tune_detail_does_not_auto_open_wizard_when_already_linked(client: AsyncClient, db: AsyncSession) -> None:
+    tune = await create_tune(
+        db,
+        TuneCreate(
+            title="Already Linked",
+            tune_type=TuneType.reel,
+            key_root=KeyRoot.D,
+            key_mode=KeyMode.major,
+            time_signature="4/4",
+        ),
+        abc_notation=_ABC,
+    )
+    tune.thesession_tune_id = 477
+    await db.commit()
+
+    resp = await client.get(f"/tunes/{tune.id}?open_thesession_search=1")
+    assert resp.status_code == 200
+    assert 'hx-trigger="load"' not in resp.text
+
+
 async def test_tune_update_toggles_visibility(client: AsyncClient, db: AsyncSession, user: User) -> None:
     tune = await create_tune(
         db,

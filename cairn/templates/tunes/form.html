@@ -142,6 +142,16 @@ K:D
           </details>
         </div>
 
+        {% if not tune %}
+        <div class="flex items-center gap-2">
+          <input id="link_thesession" name="link_thesession" type="checkbox" value="true"
+                 class="rounded border-stone-300 text-stone-700 focus:ring-stone-400">
+          <label for="link_thesession" class="text-sm text-stone-700">
+            Look up this tune on TheSession.org after creating
+          </label>
+        </div>
+        {% endif %}
+
         <div class="flex gap-3 pt-2">
           <button type="submit"
                   class="bg-stone-700 hover:bg-stone-600 text-white px-5 py-2 rounded-lg font-medium">

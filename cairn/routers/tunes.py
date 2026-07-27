@@ -163,6 +163,7 @@ async def tune_create(
     region: str | None = Form(None),
     notes: str | None = Form(None),
     visibility: ContentVisibility = Form(ContentVisibility.public),
+    link_thesession: bool = Form(default=False),
 ) -> Response:
     tune_in = TuneCreate(
         title=title,
@@ -177,7 +178,11 @@ async def tune_create(
         visibility=visibility,
     )
     tune = await create_tune(db, tune_in, abc_notation=abc_notation)
-    return RedirectResponse(f"/tunes/{tune.id}", status_code=303)
+    # #255: opt-in from the New Tune form straight into the existing
+    # TheSession.org link wizard, rather than requiring a separate "Link
+    # Tune" click after landing on the detail page.
+    redirect_url = f"/tunes/{tune.id}?open_thesession_search=1" if link_thesession else f"/tunes/{tune.id}"
+    return RedirectResponse(redirect_url, status_code=303)
 
 
 @router.get("/{tune_id}")
@@ -191,6 +196,7 @@ async def tune_detail(
     from_: str | None = Query(default=None, alias="from"),
     key: str | None = Query(default=None),
     octave: int | None = Query(default=None),
+    open_thesession_search: bool = Query(default=False),
 ) -> Response:
     tune = await get_tune(db, tune_id)
     if tune is None:
@@ -320,6 +326,7 @@ async def tune_detail(
             "settings_abc": settings_abc,
             "active_setting_id": active_setting.id if active_setting else None,
             "thesession_setting_anchor_id": core.thesession_setting_id if core else None,
+            "open_thesession_search": open_thesession_search and tune.thesession_tune_id is None,
             "box": box,
             "box_id": box_id,
             "linked_list": linked_list,
