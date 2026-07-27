@@ -54,7 +54,12 @@
     </div>
   </div>
 
-  <div id="thesession-wizard"></div>
+  <div id="thesession-wizard"
+       {% if open_thesession_search %}
+       hx-get="/tunes/{{ tune.id }}/thesession-search{% if list_id %}?list_id={{ list_id }}{% elif box_id %}?box_id={{ box_id }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML"
+       {% endif %}></div>
 
   {% if tune.origin or tune.notes or tune.composer %}
   <div class="bg-white rounded-lg shadow-sm px-5 py-4 mb-6 space-y-2">
