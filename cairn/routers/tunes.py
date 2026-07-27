@@ -19,7 +19,7 @@ from cairn.models import (
 )
 from cairn.schemas import TuneCreate, TuneUpdate
 from cairn.services.abc_utils import KEY_ROOT_MAP, build_abc, shortest_semitones_to_root, transpose_abc
-from cairn.services.boxes import add_tune, get_box, get_box_entry, list_boxes, set_display_alias, set_preferred_setting
+from cairn.services.boxes import add_tune, get_box, get_box_entry, set_display_alias, set_preferred_setting
 from cairn.services.enrollments import get_active_enrollment_partner_ids
 from cairn.services.lists import add_tune_to_list, get_active_list, get_list, get_list_entry, list_lists
 from cairn.services.recordings import (
@@ -33,6 +33,7 @@ from cairn.services.tune_sets import list_sets_for_tune
 from cairn.services.tunes import (
     FAMILY_LABELS,
     add_alias,
+    box_memberships_context,
     build_tune_previews,
     core_setting,
     create_tune,
@@ -269,20 +270,20 @@ async def tune_detail(
     # instrument tunings of their own.
     if user is None:
         min_tempo, tempo_records = None, []
-        boxes: list = []
-        lists_by_box_id: dict[int, list] = {}
-        active_list = None
+        membership_ctx = {
+            "boxes": [],
+            "box_entries": {},
+            "non_core_settings": [s for s in tune.settings if not s.is_core],
+            "lists_by_box_id": {},
+            "active_list_id": None,
+        }
         my_tunings = []
     else:
         min_tempo, tempo_records = await get_tempo_history(db, user.id, tune_id)
-        boxes = await list_boxes(db, user.id)
-        lists_by_box_id = {}
-        for practice_list in await list_lists(db, user.id):
-            lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
-        active_list = await get_active_list(db, user.id)
+        membership_ctx = await box_memberships_context(db, user.id, tune)
+        del membership_ctx["tune"]  # tune is already set separately in the outer context below
         my_tunings = await list_tunings(db, user.id)
     my_tunings_json = tunings_to_json(my_tunings)
-    box_entries = {b.id: next((e for e in b.entries if e.tune_id == tune_id), None) for b in boxes}
     member_sets = await list_sets_for_tune(db, tune_id)
 
     # Base query string (box/list/breadcrumb context only) so the key picker
@@ -343,11 +344,7 @@ async def tune_detail(
             "chart": _build_tempo_chart(tempo_records),
             "last_tempo": tempo_records[-1].tempo if tempo_records else None,
             "beats_per_bar": beats_per_bar,
-            "boxes": boxes,
-            "box_entries": box_entries,
-            "non_core_settings": [s for s in tune.settings if not s.is_core],
-            "lists_by_box_id": lists_by_box_id,
-            "active_list_id": active_list.id if active_list else None,
+            **membership_ctx,
             "share_links": share_links,
             "tunings": my_tunings,
             "tunings_json": my_tunings_json,
