@@ -21,7 +21,9 @@ from cairn.models import (
 )
 from cairn.schemas import TuneCreate, TuneDifficultyCreate, TuneSettingCreate, TuneSettingUpdate, TuneUpdate
 from cairn.services.abc_utils import build_abc, strip_chord_symbols, strip_decorative_headers, truncate_to_bars
+from cairn.services.boxes import list_boxes
 from cairn.services.enrollments import get_active_enrollment_partner_ids
+from cairn.services.lists import get_active_list, list_lists
 
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
 _TEMPO_HEADER_RE = re.compile(r"^Q:[^\n]*\n?", re.MULTILINE)
@@ -108,6 +110,30 @@ def resolve_display_context(
 def existing_alias_names(tune: Tune) -> set[str]:
     """Return the tune's alias names normalised for case-insensitive dedup checks."""
     return {a.name.strip().lower() for a in tune.aliases}
+
+
+async def box_memberships_context(db: AsyncSession, user_id: int, tune: Tune) -> dict:
+    """Context for tunes/partials/_box_memberships.html -- every box the user
+    owns, this tune's entry (if any) in each, and the lists nested under each
+    box. Shared between tune_detail's full page render and any other route
+    that needs to freshly re-render the whole section as an out-of-band swap
+    (e.g. adding a new setting changes every box's setting dropdown for this
+    tune -- see #263), so both stay in sync rather than drifting apart.
+    """
+    boxes = await list_boxes(db, user_id)
+    lists_by_box_id: dict[int, list] = {}
+    for practice_list in await list_lists(db, user_id):
+        lists_by_box_id.setdefault(practice_list.box_id, []).append(practice_list)
+    active_list = await get_active_list(db, user_id)
+    box_entries = {b.id: next((e for e in b.entries if e.tune_id == tune.id), None) for b in boxes}
+    return {
+        "tune": tune,
+        "boxes": boxes,
+        "box_entries": box_entries,
+        "non_core_settings": [s for s in tune.settings if not s.is_core],
+        "lists_by_box_id": lists_by_box_id,
+        "active_list_id": active_list.id if active_list else None,
+    }
 
 
 class TunePreview(NamedTuple):

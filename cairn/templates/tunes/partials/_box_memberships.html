@@ -2,8 +2,13 @@
   Required context: tune, boxes, box_entries (dict[box_id, TuneBoxEntry|None]),
   non_core_settings, lists_by_box_id (dict[box_id, list[PracticeList]]),
   active_list_id
+
+  Optional context: oob (bool) -- set when this is re-rendered as an
+  out-of-band swap (e.g. after adding a new setting changes every box's
+  setting dropdown for this tune, #263) rather than the normal inline
+  render from tunes/detail.html.
 #}
-<section id="box-memberships-section" class="mb-8">
+<section id="box-memberships-section" {% if oob %}hx-swap-oob="true"{% endif %} class="mb-8">
   <h2 class="text-xl font-semibold text-stone-700 mb-3">Boxes</h2>
 
   {% if boxes %}

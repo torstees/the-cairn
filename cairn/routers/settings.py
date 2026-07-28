@@ -6,7 +6,7 @@ from cairn.models import ContentVisibility, Instrument, OrnamentationLevel, User
 from cairn.schemas import TuneSettingCreate, TuneSettingUpdate
 from cairn.services.abc_utils import build_abc
 from cairn.services.share_links import create_share_link, list_share_links_for_tune
-from cairn.services.tunes import create_setting, get_tune, set_core_setting, update_setting
+from cairn.services.tunes import box_memberships_context, create_setting, get_tune, set_core_setting, update_setting
 from cairn.templating import templates
 
 router = APIRouter(prefix="/tunes", tags=["settings"])
@@ -41,6 +41,7 @@ async def setting_create(
     request: Request,
     tune_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     label: str = Form(...),
     abc_notation: str = Form(...),
     instrument: str = Form(""),
@@ -61,7 +62,16 @@ async def setting_create(
     if result is None:
         raise HTTPException(status_code=404, detail="Tune not found")
     tune = await get_tune(db, tune_id)
-    return templates.TemplateResponse(request, "tunes/partials/_settings.html", _settings_ctx(tune))
+    settings_html = templates.env.get_template("tunes/partials/_settings.html").render(_settings_ctx(tune))
+    # The new setting also needs to show up in every box's "Boxes" setting
+    # dropdown for this tune, which the primary #settings-section swap above
+    # never touches -- an out-of-band swap for that whole section keeps it in
+    # sync instead of going stale until the next full page load (#263).
+    membership_ctx = await box_memberships_context(db, user.id, tune)
+    memberships_html = templates.env.get_template("tunes/partials/_box_memberships.html").render(
+        {**membership_ctx, "oob": True}
+    )
+    return Response(content=settings_html + memberships_html, media_type="text/html")
 
 
 @router.post("/{tune_id}/settings/{setting_id}")

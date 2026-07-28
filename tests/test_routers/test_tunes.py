@@ -947,3 +947,26 @@ async def test_setting_create_with_private_visibility(client: AsyncClient, db: A
     result = await db.execute(select(TuneSetting).where(TuneSetting.label == "Private Arrangement"))
     setting = result.scalar_one()
     assert setting.visibility == ContentVisibility.private
+
+
+async def test_setting_create_oob_swaps_box_memberships_section(
+    client: AsyncClient, db: AsyncSession, user: User
+) -> None:
+    # #263: the new setting must show up in every box's "Boxes" setting
+    # dropdown for this tune in the same response, not just on next reload.
+    tune = await _seed_tune(db)
+    box = await create_box(db, user.id, "Session Box", [Instrument.fiddle])
+    await add_tune(db, box.id, tune.id)
+
+    resp = await client.post(
+        f"/tunes/{tune.id}/settings",
+        data={"label": "Alt Arrangement", "abc_notation": _ABC},
+    )
+    assert resp.status_code == 200
+    assert 'id="box-memberships-section" hx-swap-oob="true"' in resp.text
+    oob_section = resp.text.split('id="box-memberships-section" hx-swap-oob="true"', 1)[1]
+    assert "Alt Arrangement" in oob_section
+
+    # the normal tune detail page render must never carry hx-swap-oob itself
+    detail_resp = await client.get(f"/tunes/{tune.id}")
+    assert 'hx-swap-oob="true"' not in detail_resp.text
