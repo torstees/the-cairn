@@ -1,5 +1,45 @@
 [
   {
+    "title": "Banish Misfortune / Gillan's Apples",
+    "description": null,
+    "source": "the Chieftains 2",
+    "abc_header": null,
+    "flow_difficulty": null,
+    "flow_difficulty_notes": null,
+    "members": [
+      {
+        "tune_title": "Banish Misfortune",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Gillan's Apples",
+        "setting_label": null
+      }
+    ]
+  },
+  {
+    "title": "Gillan's Apples-Bolen's Fancy-The Miller's Maggot",
+    "description": null,
+    "source": null,
+    "abc_header": null,
+    "flow_difficulty": null,
+    "flow_difficulty_notes": null,
+    "members": [
+      {
+        "tune_title": "Gillan's Apples",
+        "setting_label": null
+      },
+      {
+        "tune_title": "Bolen's Fancy (Connie The Soldier)",
+        "setting_label": null
+      },
+      {
+        "tune_title": "The Miller's Maggot",
+        "setting_label": null
+      }
+    ]
+  },
+  {
     "title": "The Honeymoon at the Abbey",
     "description": null,
     "source": null,

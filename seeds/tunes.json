@@ -389,7 +389,7 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\n|:GB ~B2 GBdB|GBBG FGAF|GB ~B2 GBdg|1 ecAG FGAF:|2 ecAG FGAG||\n|:BE~E2 BEGA|BE ~E2 A2GA|BE ~E2 cABG|1 AGFG A2GA:|2 AGFG AcBA||\n",
-        "is_core": true,
+        "is_core": false,
         "instrument": null,
         "source": null,
         "source_notes": null,
@@ -402,7 +402,7 @@
       {
         "label": "#1437 by gian marco @ TheSession.org",
         "abc_notation": "|:GB ~B2 GBdB|GBBG FGAF|GB ~B2 GBdg|1 ecAG FGAF:|2 ecAG FGAG||\r\n|:BE~E2 BEGA|BE ~E2 A2GA|BE ~E2 cABG|1 AGFG A2GA:|2 AGFG AcBA||",
-        "is_core": false,
+        "is_core": true,
         "instrument": null,
         "source": null,
         "source_notes": null,
@@ -508,10 +508,47 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null,
-        "visibility": "public",
-        "thesession_setting_id": null,
-        "thesession_username": null
+        "mutation_notation": null
+      },
+      {
+        "label": "#9 by Jeremy @ TheSession.org",
+        "abc_notation": "|:fed cAG|A2d cAG|F2D DED|FEF GFG|\r\nAGA cAG|AGA cde|fed cAG|Ad^c d3:|\r\n|:f2d d^cd|f2g agf|e2c cBc|e2f gfe|\r\nf2g agf|e2f gfe|fed cAG|Ad^c d3:|\r\n|:f2g e2f|d2e c2d|ABA GAG|F2F GED|\r\nc3 cAG|AGA cde|fed cAG|Ad^c d3:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#28408 by Bryce @ TheSession.org",
+        "abc_notation": "|de|:\"D\"fed \"C\"cAG|\"D\"Add \"C\"cAG|\"D\"F2D DED|FEF \"C\"GFG|\r\n\"D\"AGA \"C\"cAG|\"D\"AGA \"C\"cde|\"D\"fed \"C\"cAG|\"D\"Ad^c d2e:|\r\n|:\"D\"f2d d^cd|f2g agf|\"C\"e2c cBc|e2f gfe|\r\n\"D\"f2g agf|\"C\"e2f gfe|\"D\"fed \"C\"cAG|\"D\"Ad^c d2e:|\r\n|:\"D\"f2g \"C\"e2f|\"D\"d2e \"C\"c2d|\"D\"ABA \"C\"GAG|\"D\"F2F GED|\r\n\"C\"c3 cAG|AGA cde|\"D\"fed cAG|1 \"C\"Ad^c \"D\"d2e:|2 \"C\"Ad^c \"D\"d3||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#33887 by Eubonian @ TheSession.org",
+        "abc_notation": "|:e|fed cAG|A2d cAG|F2D DED|FEF GFG|\r\nA3 cAG|AGA ^cde|fed cAG|Add d2:|\r\n|:e|f2d d^cd|f3 afd|e2c c2d|e2f gfe|\r\nf2g agf|e2f gfe|fed cAG|Add d2:|\r\n|:e|f2g e2f|d2e c2d|A3 G3|F3 GED|\r\nc3 cAG|A2A ^cde|fed cAG|Add d2:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#46380 by TJ @ TheSession.org",
+        "abc_notation": "|:fed cAG|A2d cAG|~F3 DED|~F3 ~G3|\r\n~A3 cAG|~A3 B/c/de|fed cAG|Ad^c d2e:|\r\n|:f2d d^cd|fdf agf|e2c cBc|ece gfe|\r\nf2g agf|e2f gfe|fed cAG|Ad^c d2e:|\r\n|:f2g e2f|d2e c2d|~A3 ~G3|~F3 GED|\r\n~c3 cAG|~A3 B/c/de|fed cAG|Ad^c d2e:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
       }
     ],
     "difficulties": [],
@@ -688,8 +725,8 @@
   {
     "title": "Bolen's Fancy (Connie The Soldier)",
     "tune_type": "jig",
-    "key_root": "D",
-    "key_mode": "major",
+    "key_root": "A",
+    "key_mode": "dorian",
     "time_signature": "6/8",
     "composer": null,
     "origin": null,
@@ -701,16 +738,43 @@
     "settings": [
       {
         "label": "Standard",
-        "abc_notation": "L: 1/8\n\nA3 BAB|=cBc E2D|EGG EGG|EAA ED2|\nA3 BAB|=cBc g3|fed cAG|1 FGE D2G:|2 FDC D2e||\n|:f2d ede|f2d Add|f2d ded|=cAG FED|\nefg efg|bge d2B|A=cB ABF|GED D3:|\n",
+        "abc_notation": "L: 1/8\n\nA3 BAB|cBc E2D|EGG EGG|EAA ED2|\nA3 BAB|cBc g3|fed cAG|1 FGE D2G:|2 FDC D2e||\n|:f2d ede|f2d Add|f2d ded|cAG FED|\nefg efg|bge d2B|AcB ABF|GED D3:|\n",
         "is_core": true,
         "instrument": null,
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null,
-        "visibility": "public",
-        "thesession_setting_id": null,
-        "thesession_username": null
+        "mutation_notation": null
+      },
+      {
+        "label": "#2762 by Aidan Crossey @ TheSession.org",
+        "abc_notation": "|:E/F/G|A3 B3|cBc E2D|E>FG E>FG|E/F/GA G>ED|\r\nE2A A2B|c>Bc E2d|^c2A B>AG|1 F2D D:|2 F2D D2||\r\n|:g|f>ed d2g|f>ed d2g|f>ed e2d|^c>AA A2g|\r\nf>ga e>fg|f/g/fe d>^cA|G>AG E>FG|1 F2D D2:|2 F2D D3||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#13186 by Jeremy @ TheSession.org",
+        "abc_notation": "~A3 AdB|cAG EFD|DGG DEG|AGE cGE|\r\n~A2G AdB|cAG EFD|~D3 AGE|GED DEG|\r\n~A3 A2d|cAG EFD|DGG GFG|DGG GFG|\r\n~A2G AdB|cAG EFD|~D3 AGE|GED D2e\r\n|:fed ed^c|ed^c d2e|fed efd|=cAG Ade|\r\nfed efd|cAB c2d|cAG EAG|1 EFD D2e:|2 EFD D3||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#13187 by ceolachan @ TheSession.org",
+        "abc_notation": "|:A2 A AdB|cAG E2 F|DGG DE/F/G|AGE cGE|\r\nAB/A/G AdB|cAG E2 F|D2 G AGE|GED D-:|\r\nf2 d edc|Adc A2 e|f2 d ef/e/d|cA^G A2 e|\r\nfdd ed/d/d|cAB c2 d|cAG EAG|ED/D/D D-:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
       }
     ],
     "difficulties": [],
@@ -1038,10 +1102,57 @@
         "source": "Rose",
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null,
-        "visibility": "public",
-        "thesession_setting_id": null,
-        "thesession_username": null
+        "mutation_notation": null
+      },
+      {
+        "label": "#12641 by slainte @ TheSession.org",
+        "abc_notation": "|:~F3 FEF c2 A|~F3 FEF AFE|~F3 FEF c2 d|ecA BAF AFE:|\r\necA ABc d2 f|ecA ABc BAF|ecA ABc d2 B|cBA BAF AFE:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#12644 by ceolachan @ TheSession.org",
+        "abc_notation": "|:BcB BAB g2 A|BcB BAB dBA|BcB BAB g2 e|fed edB dBA:|\r\nafd def g2 e|afd def gfe|afd def g2 e|fed edB dBA|\r\nafd def g2 e|afd def gfe|a2 a agf g2 e|fed edB dBA||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#12645 by Moritz Haas @ TheSession.org",
+        "abc_notation": "|:~F3 FEF BcA|~F3 FEF AFE|~F3 FEF Bcd|ec/B/A BAF AFE|\r\n~F3 FEF BcA|~F3 FEF AFE|~F3 FEF Bcd|ecA BAF AFE|\r\necA ABc d2 f|ecA ABc BAF|ecA ABc dcB|cBA BAF AFE|\r\necA ABc de/f/g|aec ABc BAF|ecA ABc dcB|cBA BAF AFE:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#26029 by JACKB @ TheSession.org",
+        "abc_notation": "B3 BAB f2A|B3 BAB dBA|B3 BAB f2g|af/e/d edB dBA|\r\nB3 BAB f2A|B3 BAB dBA|B3 BAB f2g|afd edB dBA||\r\nafd def g3|afd edB dBA|afd def g2e|fed edB dBA|\r\nafd def g3|afd edB dBA|afd def g2e|fed edB dBA||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#42600 by Michel B @ TheSession.org",
+        "abc_notation": "|:B3 BAB f2A|B3 BAB cBA|B3 BAB f2g|afd edB dBA:|\r\n|:afd def g2f|afd dfe dBA|afd def g2e|fed edB dBA:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
       }
     ],
     "difficulties": [],
@@ -2059,10 +2170,47 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null,
-        "visibility": "public",
-        "thesession_setting_id": null,
-        "thesession_username": null
+        "mutation_notation": null
+      },
+      {
+        "label": "#1855 by Stiamh @ TheSession.org",
+        "abc_notation": "|:g3 B2A|GBA GBd|efe edB|dBA A2 D|\r\nGBA G2D|GBd g2 a|bag fge|ed^c d3:|\r\nfaa faa|faa agf|gbb gbb|gbb bag|\r\nfaa faa|faa aga|bag fge|ed^c d3:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#46651 by leprecawn @ TheSession.org",
+        "abc_notation": "|:~g3 B2A|GBA GBd|efe edB|dBA ABA|\r\nDGG GBA|GBd g2 a|bag fgf|ed^c d3:|\r\n|:faa faa|faa agf|gbb gbb|gbb bag|\r\nfaa faa|faa afa|bag fgf|ed^c d3:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#48852 by tresdetrebolfolk @ TheSession.org",
+        "abc_notation": "|:\"G\"~g3 \"D\"B2A|\"G\"~G3 GBd|\"C\"~e3 \"Am\"edB|dBA \"D7\"AGF|\r\n\"G\"GBd \"D\"gdB|\"G\"GBd \"Em\"g2 a|\"C\"bag \"A7\"fge|\"D\"ed^c d3:|\r\n|:\"D\"faa faa|faa afd|\"Em\"gbb gbb|\"A7\"gbb bag|\r\n\"D\"faa faf|~a3 afa|\"G\"bag \"Em\"fgf|1 \"A7\"ed^c \"D\"d2e:|2 \"A7\"ed^c \"D\"def||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#49504 by Finnbarr @ TheSession.org",
+        "abc_notation": "|:g3 B2A|GAG GBd|efe edB|dBA ABd|\r\ng3 B2A|GBd g2 a|bag agf|ged def:|\r\n|:faa faa|faa afd|gbb gbb|gbb ba|\r\nfaa faa|faa afd|bag agf|1 ged def:|2 g3 BAG||\r\n",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
       }
     ],
     "difficulties": [],
@@ -2426,10 +2574,47 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null,
-        "visibility": "public",
-        "thesession_setting_id": null,
-        "thesession_username": null
+        "mutation_notation": null
+      },
+      {
+        "label": "#572 by Christopher Reynolds @ TheSession.org",
+        "abc_notation": "|:E2B2 BAFA|BABc dedB|D2A2 AGFG|ADAB AGFG|\r\nE2B2 BAFA|BABc dedB|ABde fedf|1 edBA FGFD:|2 edBA Beef||\r\ng2e2 edBA|Beed edBe|dBAF DE(3FED|FAdA BAFA|\r\ng2e2 edBA|Beed edBe|dFFF DFAB|dBAF BEE2|\r\ng2e2 edBA|Beed edBe|dBAF DE(3FED|FAdA BAFA|\r\ne2efg bge|f2edB AFD|BABc dedB|edBA FAFD||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#26695 by JACKB @ TheSession.org",
+        "abc_notation": "|:E2B2 BAFA|BABc dedB|D2A2 AGFG|ADAB AGFG|\r\nE2B2 BAFA|BABc dedB|ABde fedf|1 edBA FGFD:|2 edBA Beef||\r\n|:g2e2 edBA|Beed edBe|dBAF DE (3FED|FAdA BAFA|\r\ng2e2 edBA|Beed edBe|dF F2 DFAB|dBAF BEE2|\r\ng2e2 edBA|Beed edBe|dBAF DE (3FED|FAdA BAFA|\r\ne3f gedB|dedB AFED|EDEF GedB|BAGB GAFG||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#31605 by Mark Foley @ TheSession.org",
+        "abc_notation": "E2 B2 BAFB|BABc dedA|D2 A2 AGFA|BdAB FEDF|\r\nE2 B2 BAFB|BABc dedB|A2 dA fedf|edBA (FG)FD|\r\nE2 B2 BAFB|BABc dedA|D2 D2 AD D2|BdAB FEDF|\r\nE2 B2 BAFB|BABc dedB|A2 dA fedf|edBA Be e2|\r\ng2 e2 edBA|Be e2 edBe|dBAF AFDE|F/E/D FA dA A/B/d|\r\ng2 e2 edBA|Beed edBe|dF F2 DEFA|dBAF BE E2|\r\ng2 e2 edBA|Beed edBe|dBAF AFDE|F/E/D FA dA A/B/d|\r\ne2 ef gb e/f/g|f2 ed dBAF|BABc dfed|d2 BA (FG)FD||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#50176 by Rice Paddy @ TheSession.org",
+        "abc_notation": "|:E2 B2 BAFA|BABc dedB|D2 A2 AGFA|BdAB FEDF|E2 B2 BAFA|\r\nBABc dedB|A2 d2 fedf|1 edBA (FG)FD:|2 edBA Be ef||\r\n|:g2 e2 edBA|Be e2 edBe|dBAF AFDE|F/E/D FA dA Bd|\r\n[1g2 e2 edBA|Beed edBe|dF F2 DEFA|dBAF BE E2:|\r\n[2e3 f gb fg|edef edBA|BABc dedB|BAGA (FG)FD||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
       }
     ],
     "difficulties": [],
@@ -3027,7 +3212,7 @@
       {
         "label": "Standard",
         "abc_notation": "L: 1/8\n\n|:F3 FED|FGA Bcd|A2 B BAF|E3 EDE|\nF3 FED|FGA Bcd|A2 B BAF|1 EFE D2 E:|2 EFE DFA||\n|:d3 def|B3 BAB|d3 def|fed efe|\nd3 def|B3 BAB|A2 d dAF|1 EFE DFA:|2 EFE D2 E||\n",
-        "is_core": true,
+        "is_core": false,
         "instrument": null,
         "source": null,
         "source_notes": null,
@@ -3045,10 +3230,37 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null,
-        "visibility": "public",
-        "thesession_setting_id": null,
-        "thesession_username": null
+        "mutation_notation": null
+      },
+      {
+        "label": "#139 by Will Harmon @ TheSession.org",
+        "abc_notation": "|:F3 FED|FGA Bcd|A2 B BAF|~E3 EDE|\r\n~F3 FED|FGA Bcd|A2 B BAF|1 EFE D2 E:|2 EFE DFA||\r\n|:d3 def|B3 BAB|d3 def|fed efe|\r\nd3 def|B3 BAB|A2 d dAF|1 EFE DFA:|2 EFE D2 E||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#25806 by JACKB @ TheSession.org",
+        "abc_notation": "|:F3 FED|AF/G/A Bcd|AF/G/A dAF|E3 EFG|\r\nF3 FED|AF/G/A Bcd|AF/G/A dAF|1 GEc D2E:|2 GEc DF/G/A||\r\n|:dB/c/d def|B3 BAF|d3 def|fed e2c|\r\ndB/c/d def|BcB Bcd|AF/G/A dAF|1 GEc DF/G/A:|2 GEc D2E||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#26435 by Mix O'Lydian @ TheSession.org",
+        "abc_notation": "|:D|F2 F FED|FGA Bcd|A2 A BAF|E2 E EDE|\r\nF2 F FED|FGA Bcd|A2 A BAF|EFE D2:|\r\n|:A|d2 d def|B2 B BAB|d2 d def|fed e2 A|\r\nd3 def|B2 B BAB|AFA dAF|EFE D2:|",
+        "is_core": true,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
       }
     ],
     "difficulties": [],
@@ -3769,10 +3981,27 @@
         "source": null,
         "source_notes": null,
         "ornamentation_level": "none",
-        "mutation_notation": null,
-        "visibility": "public",
-        "thesession_setting_id": null,
-        "thesession_username": null
+        "mutation_notation": null
+      },
+      {
+        "label": "#333 by Will Harmon @ TheSession.org",
+        "abc_notation": "|:G2 A B2 A|B2 A BGE|G2 A B2 A|Bee dBA|\r\nG2 A B2 A|B2 A BGE|gfe dBA|Bee dBA:|\r\n|:e2 f fge|d2 B BAG|e2 f fgg|aga bge|\r\ne2 f fge|d2 B BAG|A2 B cBA|Bee dBA:|",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
+      },
+      {
+        "label": "#13117 by bayswater @ TheSession.org",
+        "abc_notation": "|:\"G\"G2A B2A|B2A \"Em\"BGE|\"G\"G2A \"G/F#m\"B2A|\"Em\"B2e \"C\"e3|\r\n\"G\"G2A B2A|B2A \"Em\"BGE|\"C\"gfe \"G\"dBA|\"Em\"B2e e3:|\r\n|:\"C\"e2f g2e|\"G\"d2B BAB|\"C\"e2f g3|\"D\"aga \"Em\"b3|\r\n\"C\"e2f g2e|\"G\"d2B BAG|\"Am\"A2B cBA|\"Em\"Bee edB:|\"Em\"Bee \"A7\"e2z||",
+        "is_core": false,
+        "instrument": null,
+        "source": null,
+        "source_notes": null,
+        "ornamentation_level": "none",
+        "mutation_notation": null
       }
     ],
     "difficulties": [],
